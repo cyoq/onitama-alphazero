@@ -38,7 +38,15 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(deck: Deck) -> Self {
+    pub fn new() -> Self {
+        State {
+            deck: Deck::default(),
+            kings: [RED_KING, BLUE_KING],
+            pawns: [RED_PAWNS, BLUE_PAWNS],
+        }
+    }
+
+    pub fn with_deck(deck: Deck) -> Self {
         State {
             deck,
             kings: [RED_KING, BLUE_KING],
@@ -50,5 +58,9 @@ impl State {
 
     pub fn make_move(&mut self, mov: Move, player_color: PlayerColor) -> MoveResult {
         MoveResult::InProgress
+    }
+
+    pub fn generate_legal_moves(&self) -> Vec<Move> {
+        vec![]
     }
 }

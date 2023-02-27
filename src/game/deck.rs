@@ -1,6 +1,15 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
-use super::card::Card;
+use rand::{seq::SliceRandom, thread_rng};
+
+use super::card::{Card, ORIGINAL_CARDS};
+
+// positions in the deck array, corresponding to the card used by the owner
+pub const RED_CARD1: usize = 0;
+pub const RED_CARD2: usize = 1;
+pub const BLUE_CARD1: usize = 2;
+pub const BLUE_CARD2: usize = 3;
+pub const NEUTRAL: usize = 4;
 
 #[derive(Debug, Clone)]
 pub struct Deck {
@@ -11,6 +20,24 @@ impl Deck {
     pub fn new(deck: [Card; 5]) -> Self {
         Deck { cards: deck }
     }
+
+    pub fn neutral_card(&self) -> &Card {
+        &self.cards[NEUTRAL]
+    }
+}
+
+impl Default for Deck {
+    fn default() -> Self {
+        let mut rng = thread_rng();
+        let mut shuffled = ORIGINAL_CARDS.clone();
+        shuffled.shuffle(&mut rng);
+
+        Self {
+            cards: shuffled[0..5]
+                .try_into()
+                .expect("Deck should have 5 random cards"),
+        }
+    }
 }
 
 impl Deref for Deck {
@@ -18,5 +45,11 @@ impl Deref for Deck {
 
     fn deref(&self) -> &Self::Target {
         &self.cards
+    }
+}
+
+impl DerefMut for Deck {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.cards
     }
 }

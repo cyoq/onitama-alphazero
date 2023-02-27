@@ -1,5 +1,5 @@
-use crate::game::r#move::Move;
+use crate::game::{r#move::Move, state::State};
 
 pub trait Agent {
-    fn make_move(&self) -> Option<Move>;
+    fn generate_move(&self, state: &State) -> Option<Move>;
 }
