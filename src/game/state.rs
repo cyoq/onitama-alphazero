@@ -1,6 +1,8 @@
 use crate::common::get_bit;
 
-use super::{deck::Deck, move_result::MoveResult, player_color::PlayerColor, r#move::Move};
+use super::{
+    card::Card, deck::Deck, move_result::MoveResult, player_color::PlayerColor, r#move::Move,
+};
 
 // Figure starting positions(SP)
 // 00000
@@ -63,7 +65,7 @@ impl State {
     }
 
     pub fn display(&self) -> String {
-        let border = String::from("   +---+---+---+---+---+\n");
+        let border = String::from("---+---+---+---+---+---+\n");
         let mut result = border.clone();
         let length: usize = 25;
         for i in 0..length {
@@ -97,37 +99,69 @@ impl State {
         result
     }
 
-    pub fn make_move(&mut self, mov: Move, player_color: PlayerColor) -> MoveResult {
+    pub fn make_move(&mut self, mov: &Move, player_color: &PlayerColor, card: &Card) -> MoveResult {
         MoveResult::InProgress
     }
 
-    pub fn generate_legal_moves(&self) -> Vec<Move> {
+    pub fn generate_legal_moves(&self, player_color: &PlayerColor) -> Vec<Move> {
         vec![]
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::game::{
+        card::{CRAB, DRAGON, FROG, RABBIT, TIGER},
+        deck::Deck,
+        player_color::PlayerColor,
+        r#move::Move,
+    };
+
     use super::State;
 
     #[test]
     fn correct_display() {
         let expected = "
-   +---+---+---+---+---+
+---+---+---+---+---+---+
  5 | b | b | B | b | b |
-   +---+---+---+---+---+
+---+---+---+---+---+---+
  4 | . | . | . | . | . |
-   +---+---+---+---+---+
+---+---+---+---+---+---+
  3 | . | . | . | . | . |
-   +---+---+---+---+---+
+---+---+---+---+---+---+
  2 | . | . | . | . | . |
-   +---+---+---+---+---+
+---+---+---+---+---+---+
  1 | r | r | R | r | r |
-   +---+---+---+---+---+
+---+---+---+---+---+---+
    | a | b | c | d | e |
 ";
         let state = State::new();
         let result = state.display();
+        // Add newlines as result variable is separated by them for better observability
         assert_eq!(format!("\n{}\n", result), expected);
+    }
+
+    #[test]
+    fn create_all_legal_moves_for_red_in_starting_position() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let state = State::with_deck(deck);
+
+        let expected_moves = vec![
+            // All legal moves for the crab at starting position
+            // All moves go forward for red
+            Move::from([(4, 0), (3, 0)]),
+            Move::from([(4, 1), (3, 1)]),
+            Move::from([(4, 2), (3, 2)]),
+            Move::from([(4, 3), (3, 3)]),
+            Move::from([(4, 4), (3, 4)]),
+            // All legal moves for the rabbit at starting position
+            // All moves go diagonally
+            Move::from([(4, 0), (3, 1)]),
+            Move::from([(4, 1), (3, 2)]),
+            Move::from([(4, 2), (3, 3)]),
+            Move::from([(4, 3), (3, 4)]),
+        ];
+        let moves = state.generate_legal_moves(&PlayerColor::Red);
+        assert_eq!(moves, expected_moves);
     }
 }
