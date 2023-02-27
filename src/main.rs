@@ -1,18 +1,27 @@
-use game::{card::ORIGINAL_CARDS, deck::Deck};
+use game::{
+    card::ORIGINAL_CARDS,
+    deck::Deck,
+    state::{State, BLUE_KING_IDX, BLUE_PAWNS_IDX, RED_KING_IDX, RED_PAWNS_IDX},
+};
 
-use crate::game::card::CardRepresentation;
+use crate::{common::get_bit, game::card::CardRepresentation};
 
 pub mod ai;
+pub mod common;
 pub mod game;
 
 fn main() {
-    let deck = Deck::new(ORIGINAL_CARDS.clone());
+    // let deck = Deck::new(ORIGINAL_CARDS.clone());
 
-    for card in deck.iter() {
-        println!(
-            "Card {}: \n{}\n",
-            card.name,
-            card.positions.represent_card()
-        );
-    }
+    // for card in deck.iter() {
+    //     println!(
+    //         "Card {}: \n{}\n",
+    //         card.name,
+    //         card.positions.represent_card()
+    //     );
+    // }
+    let state = State::new();
+
+    let result = state.display();
+    println!("{}", result);
 }

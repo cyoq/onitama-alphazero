@@ -1,4 +1,4 @@
-use crate::game::r#move::Move;
+use crate::game::{r#move::Move, state::State};
 
 use super::agent::Agent;
 
