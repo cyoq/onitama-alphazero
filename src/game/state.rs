@@ -40,6 +40,9 @@ pub const BLUE_KING_IDX: usize = 1;
 pub const RED_PAWNS_IDX: usize = 0;
 pub const BLUE_PAWNS_IDX: usize = 1;
 
+pub const RED_PLAYER_IDX: usize = 0;
+pub const BLUE_PLAYER_IDX: usize = 1;
+
 #[derive(Debug, Clone)]
 pub struct State {
     pub deck: Deck,

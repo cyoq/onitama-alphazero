@@ -4,7 +4,10 @@ use game::{
     state::{State, BLUE_KING_IDX, BLUE_PAWNS_IDX, RED_KING_IDX, RED_PAWNS_IDX},
 };
 
-use crate::{common::get_bit, game::card::CardRepresentation};
+use crate::{
+    common::get_bit,
+    game::card::{CardRepresentation, ATTACK_MAPS},
+};
 
 pub mod ai;
 pub mod common;
@@ -24,4 +27,7 @@ fn main() {
 
     let result = state.display();
     println!("{}", result);
+
+    let attack_map = ATTACK_MAPS[0][0][22];
+    println!("{}", attack_map);
 }
