@@ -1,6 +1,6 @@
 use crate::common::from_2d_to_bitboard;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Move {
     pub from: u32,
     pub to: u32,
