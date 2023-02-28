@@ -1,7 +1,4 @@
-use super::{
-    player_color::{self, PlayerColor},
-    state::{BLUE_PLAYER_IDX, RED_PLAYER_IDX},
-};
+use super::{player_color::PlayerColor, state::BLUE_PLAYER_IDX};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Card {
@@ -13,7 +10,7 @@ pub struct Card {
     pub player_color: PlayerColor,
     /// Name of the card to display
     pub name: &'static str,
-    /// unique number for a card to identify it in the lookup table
+    /// unique number for a card to identify it in the attack lookup table
     pub index: usize,
 }
 
@@ -188,7 +185,25 @@ pub const ORIGINAL_CARDS: [Card; 5] = [TIGER, DRAGON, FROG, RABBIT, CRAB];
 
 pub const ATTACK_MAPS: [[[u32; 25]; 5]; 2] = generate_attack_maps();
 
+/*
+    1 0 0 0 0
+    1 0 0 0 0
+    1 0 0 0 0
+    1 0 0 0 0
+    1 0 0 0 0
+    ---- Trailing ----
+    0 0 0 0 0 0 0
+*/
 const FILE_A: u32 = 0x8421_0800;
+/*
+    0 0 0 0 1
+    0 0 0 0 1
+    0 0 0 0 1
+    0 0 0 0 1
+    0 0 0 0 1
+    ---- Trailing ----
+    0 0 0 0 0 0 0
+*/
 const FILE_E: u32 = 0x0842_1080;
 /*
     1 1 0 0 0
@@ -211,7 +226,7 @@ const FILE_AB: u32 = 0xC631_8C00;
 */
 const FILE_DE: u32 = 0x18C6_3180;
 
-/// Generates all attack maps for all the players, cards and positions
+/// Generates all attack maps for all players, cards and positions
 const fn generate_attack_maps() -> [[[u32; 25]; 5]; 2] {
     let mut result = [[[0u32; 25]; 5]; 2];
     let mut player = 0;
@@ -230,6 +245,7 @@ const fn generate_attack_maps() -> [[[u32; 25]; 5]; 2] {
             card_idx += 1;
         }
         player += 1;
+        card_idx = 0;
     }
     return result;
 }

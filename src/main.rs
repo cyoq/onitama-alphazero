@@ -28,6 +28,6 @@ fn main() {
     let result = state.display();
     println!("{}", result);
 
-    let attack_map = ATTACK_MAPS[0][0][22];
+    let attack_map = ATTACK_MAPS[1][0][22];
     println!("{}", attack_map);
 }
