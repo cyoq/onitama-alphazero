@@ -146,7 +146,7 @@ mod tests {
         let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
         let state = State::with_deck(deck);
 
-        let expected_moves = vec![
+        let mut expected_moves = vec![
             // All legal moves for the crab at starting position
             // All moves go forward for red
             Move::from([(4, 0), (3, 0)]),
@@ -161,7 +161,35 @@ mod tests {
             Move::from([(4, 2), (3, 3)]),
             Move::from([(4, 3), (3, 4)]),
         ];
-        let moves = state.generate_legal_moves(&PlayerColor::Red);
+        let mut moves = state.generate_legal_moves(&PlayerColor::Red);
+        moves.sort();
+        expected_moves.sort();
+        assert_eq!(moves, expected_moves);
+    }
+
+    #[test]
+    fn create_all_legal_moves_for_blue_in_starting_position() {
+        let deck = Deck::new([DRAGON, TIGER, RABBIT, CRAB, FROG]);
+        let state = State::with_deck(deck);
+
+        let mut expected_moves = vec![
+            // All legal moves for the crab at starting position
+            // All moves go forward for red
+            Move::from([(0, 0), (1, 0)]),
+            Move::from([(0, 1), (1, 1)]),
+            Move::from([(0, 2), (1, 2)]),
+            Move::from([(0, 3), (1, 3)]),
+            Move::from([(0, 4), (1, 4)]),
+            // All legal moves for the rabbit at starting position
+            // All moves go diagonally
+            Move::from([(0, 1), (1, 0)]),
+            Move::from([(0, 2), (1, 1)]),
+            Move::from([(0, 3), (1, 2)]),
+            Move::from([(0, 4), (1, 3)]),
+        ];
+        let mut moves = state.generate_legal_moves(&PlayerColor::Red);
+        moves.sort();
+        expected_moves.sort();
         assert_eq!(moves, expected_moves);
     }
 }
