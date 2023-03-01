@@ -124,7 +124,7 @@ impl State {
         let enemy = player_color.enemy();
 
         let enemy_pawn = get_bit(self.pawns[enemy as usize], to);
-        let enemy_king = get_bit(self.pawns[enemy as usize], to);
+        let enemy_king = get_bit(self.kings[enemy as usize], to);
 
         if enemy_pawn == 1 {
             // Clear enemy bit
@@ -385,5 +385,95 @@ mod tests {
         // b5 does not have a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 1), 0);
         // TODO: Check card rotation
+    }
+
+    #[test]
+    fn capture_as_red() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+            5 | . | b | B | b | b |
+            ---+---+---+---+---+---+
+            4 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+            3 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+            2 | b | . | . | . | . |
+            ---+---+---+---+---+---+
+            1 | r | r | R | r | r |
+           ---+---+---+---+---+---+
+              | a | b | c | d | e |
+        */
+        state.pawns[PlayerColor::Blue as usize] = 0x5801_0000;
+
+        let cards = state.deck.get_player_cards(&PlayerColor::Red);
+        // Cloning to avoid immutable borrow before mutable
+        let crab = cards[0].clone();
+
+        let mov = Move {
+            from: 20, // a1
+            to: 15,   // a2
+            figure: Figure::Pawn,
+        };
+        let mov_result = state.make_move(&mov, &PlayerColor::Red, &crab);
+
+        // Check if the game stays in progress after the move
+        assert_eq!(mov_result, MoveResult::Capture);
+        // b3 has a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 15), 1);
+        // b5 does not have a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 20), 0);
+        // TODO: Check card rotation
+
+        // Check if blue has only 3 pawns on b5, d5 and e5
+        assert_eq!(state.pawns[PlayerColor::Blue as usize], 0x5800_0000);
+    }
+
+    #[test]
+    fn capture_win_as_red() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+            5 | b | b | B | b | b |
+            ---+---+---+---+---+---+
+            4 | . | . | r | . | . |
+            ---+---+---+---+---+---+
+            3 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+            2 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+            1 | . | r | R | r | r |
+           ---+---+---+---+---+---+
+              | a | b | c | d | e |
+        */
+        state.pawns[PlayerColor::Red as usize] = 0x0100_0680;
+
+        let cards = state.deck.get_player_cards(&PlayerColor::Red);
+        // Cloning to avoid immutable borrow before mutable
+        let crab = cards[0].clone();
+
+        let mov = Move {
+            from: 7, // c4
+            to: 2,   // c5
+            figure: Figure::Pawn,
+        };
+        let mov_result = state.make_move(&mov, &PlayerColor::Red, &crab);
+
+        // Check if the game stays in progress after the move
+        assert_eq!(mov_result, MoveResult::RedWin);
+        // b3 has a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 2), 1);
+        // b5 does not have a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 7), 0);
+        // TODO: Check card rotation
+
+        // Check if blue king is dead
+        assert_eq!(state.kings[PlayerColor::Blue as usize], 0);
     }
 }
