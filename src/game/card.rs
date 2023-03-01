@@ -1,4 +1,4 @@
-use super::{player_color::PlayerColor, state::BLUE_PLAYER_IDX};
+use super::player_color::PlayerColor;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Card {
@@ -238,7 +238,7 @@ const fn generate_attack_maps() -> [[[u32; 25]; 5]; 2] {
         while card_idx < ORIGINAL_CARDS.len() {
             let card = ORIGINAL_CARDS[card_idx];
             let mut positions = card.positions;
-            if player == BLUE_PLAYER_IDX {
+            if player == PlayerColor::Blue as usize {
                 positions = card.mirror;
             }
             result[player][card.index] = generate_attack_maps_for_card(positions);

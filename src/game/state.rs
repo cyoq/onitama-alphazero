@@ -3,6 +3,7 @@ use crate::common::get_bit;
 use super::{
     card::{Card, ATTACK_MAPS},
     deck::Deck,
+    figure::Figure,
     move_result::MoveResult,
     player_color::PlayerColor,
     r#move::Move,
@@ -44,8 +45,8 @@ pub const BLUE_KING_IDX: usize = 1;
 pub const RED_PAWNS_IDX: usize = 0;
 pub const BLUE_PAWNS_IDX: usize = 1;
 
-pub const RED_PLAYER_IDX: usize = 0;
-pub const BLUE_PLAYER_IDX: usize = 1;
+// pub const RED_PLAYER_IDX: usize = 0;
+// pub const BLUE_PLAYER_IDX: usize = 1;
 
 #[derive(Debug, Clone)]
 pub struct State {
@@ -106,29 +107,40 @@ impl State {
         result
     }
 
+    /// When making a move, we assume that the move is completely legal by rules
     pub fn make_move(&mut self, mov: &Move, player_color: &PlayerColor, card: &Card) -> MoveResult {
+        let from = mov.from;
+        let to = mov.to;
+
+        // Check what figure is being moved
+
+        // Clear 'from' position
+
+        // Card rotation:
+
         MoveResult::InProgress
     }
 
+    /// Generates all legal moves for the specific card and the player
     pub fn generate_legal_moves(&self, player_color: &PlayerColor, card: &Card) -> Vec<Move> {
         let mut result: Vec<Move> = Vec::new();
         // Save pawns for the specific player
-        let pawns: u32;
+        let pawns: u32 = self.pawns[*player_color as usize];
         // Save king for the specific player
-        let king: u32;
+        let king: u32 = self.kings[*player_color as usize];
         // Save index for the attack lookup map
-        let player_idx: usize;
+        // let player_idx: usize;
 
         // Get pawns and king position considering the player position
-        if *player_color == PlayerColor::Red {
-            pawns = self.pawns[RED_PLAYER_IDX];
-            king = self.kings[RED_PLAYER_IDX];
-            player_idx = RED_PLAYER_IDX;
-        } else {
-            pawns = self.pawns[BLUE_PLAYER_IDX];
-            king = self.kings[BLUE_PLAYER_IDX];
-            player_idx = BLUE_PLAYER_IDX;
-        }
+        // if *player_color == PlayerColor::Red {
+        //     pawns = self.pawns[RED_PLAYER_IDX];
+        //     king = self.kings[RED_PLAYER_IDX];
+        //     player_idx = RED_PLAYER_IDX;
+        // } else {
+        //     pawns = self.pawns[BLUE_PLAYER_IDX];
+        //     king = self.kings[BLUE_PLAYER_IDX];
+        //     player_idx = BLUE_PLAYER_IDX;
+        // }
 
         for n in 0..25 {
             // Getting a position bit for a pawn
@@ -142,20 +154,23 @@ impl State {
             }
 
             // Get attack map for the specific player, card and the position
-            let attack_map = ATTACK_MAPS[player_idx][card.index][n];
+            let attack_map = ATTACK_MAPS[*player_color as usize][card.index][n];
 
             let map: u32;
+            let figure: Figure;
             // Generate attacks
             if pawn_bit == 1 {
                 // 1. apply all pawns to the attack map
                 // 2. mask out all the pawns to remove overlapping moves with the same color figures
-                // 3. mask out the king figure if it is overlapping
+                // 3. mask out the same color king figure if it is overlapping
                 map = ((attack_map | pawns) & !pawns) & !king;
+                figure = Figure::Pawn;
             } else {
                 // 1. apply a king to the attack map
-                // 2. mask out the king figure if it is overlapping
+                // 2. mask out the same color king figure if it is overlapping
                 // 3. mask out all the pawns to remove overlapping moves of mask and pawns
                 map = ((attack_map | king) & !king) & !pawns;
+                figure = Figure::King;
             }
 
             for i in 0..25 {
@@ -168,6 +183,7 @@ impl State {
                 result.push(Move {
                     from: n as u32,
                     to: i as u32,
+                    figure,
                 });
             }
         }
@@ -178,11 +194,16 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-    use crate::game::{
-        card::{CRAB, DRAGON, FROG, RABBIT, TIGER},
-        deck::Deck,
-        player_color::PlayerColor,
-        r#move::Move,
+    use crate::{
+        common::get_bit,
+        game::{
+            card::{CRAB, DRAGON, FROG, RABBIT, TIGER},
+            deck::Deck,
+            figure::Figure,
+            move_result::MoveResult,
+            player_color::PlayerColor,
+            r#move::Move,
+        },
     };
 
     use super::State;
@@ -220,11 +241,11 @@ mod tests {
         let mut crab_expected_moves = vec![
             // All legal moves for the crab at starting position
             // All moves go forward for red
-            Move::from([(4, 0), (3, 0)]),
-            Move::from([(4, 1), (3, 1)]),
-            Move::from([(4, 2), (3, 2)]),
-            Move::from([(4, 3), (3, 3)]),
-            Move::from([(4, 4), (3, 4)]),
+            Move::from(([(4, 0), (3, 0)], Figure::Pawn)),
+            Move::from(([(4, 1), (3, 1)], Figure::Pawn)),
+            Move::from(([(4, 2), (3, 2)], Figure::King)),
+            Move::from(([(4, 3), (3, 3)], Figure::Pawn)),
+            Move::from(([(4, 4), (3, 4)], Figure::Pawn)),
         ];
         let mut crab_moves = state.generate_legal_moves(&PlayerColor::Red, crab);
         crab_moves.sort();
@@ -235,10 +256,10 @@ mod tests {
         let mut rabbit_expected_moves = vec![
             // All legal moves for the rabbit at starting position
             // All moves go diagonally
-            Move::from([(4, 0), (3, 1)]),
-            Move::from([(4, 1), (3, 2)]),
-            Move::from([(4, 2), (3, 3)]),
-            Move::from([(4, 3), (3, 4)]),
+            Move::from(([(4, 0), (3, 1)], Figure::Pawn)),
+            Move::from(([(4, 1), (3, 2)], Figure::Pawn)),
+            Move::from(([(4, 2), (3, 3)], Figure::King)),
+            Move::from(([(4, 3), (3, 4)], Figure::Pawn)),
         ];
         let mut rabbit_moves = state.generate_legal_moves(&PlayerColor::Red, rabbit);
         rabbit_moves.sort();
@@ -258,11 +279,11 @@ mod tests {
         let mut crab_expected_moves = vec![
             // All legal moves for the crab at starting position
             // All moves go forward for red
-            Move::from([(0, 0), (1, 0)]),
-            Move::from([(0, 1), (1, 1)]),
-            Move::from([(0, 2), (1, 2)]),
-            Move::from([(0, 3), (1, 3)]),
-            Move::from([(0, 4), (1, 4)]),
+            Move::from(([(0, 0), (1, 0)], Figure::Pawn)),
+            Move::from(([(0, 1), (1, 1)], Figure::Pawn)),
+            Move::from(([(0, 2), (1, 2)], Figure::King)),
+            Move::from(([(0, 3), (1, 3)], Figure::Pawn)),
+            Move::from(([(0, 4), (1, 4)], Figure::Pawn)),
         ];
         let mut crab_moves = state.generate_legal_moves(&PlayerColor::Blue, crab);
         crab_moves.sort();
@@ -273,14 +294,38 @@ mod tests {
         let mut rabbit_expected_moves = vec![
             // All legal moves for the rabbit at starting position
             // All moves go diagonally
-            Move::from([(0, 1), (1, 0)]),
-            Move::from([(0, 2), (1, 1)]),
-            Move::from([(0, 3), (1, 2)]),
-            Move::from([(0, 4), (1, 3)]),
+            Move::from(([(0, 1), (1, 0)], Figure::Pawn)),
+            Move::from(([(0, 2), (1, 1)], Figure::King)),
+            Move::from(([(0, 3), (1, 2)], Figure::Pawn)),
+            Move::from(([(0, 4), (1, 3)], Figure::Pawn)),
         ];
         let mut rabbit_moves = state.generate_legal_moves(&PlayerColor::Blue, rabbit);
         rabbit_moves.sort();
         rabbit_expected_moves.sort();
         assert_eq!(rabbit_moves, rabbit_expected_moves);
+    }
+
+    #[test]
+    fn make_move_as_red() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        let cards = state.deck.get_player_cards(&PlayerColor::Red);
+        // Cloning to avoid immutable borrow before mutable
+        let crab = cards[0].clone();
+
+        let mov = Move {
+            from: 20, // a1
+            to: 15,   // a2
+            figure: Figure::Pawn,
+        };
+        let mov_result = state.make_move(&mov, &PlayerColor::Red, &crab);
+
+        // Check if the game stays in progress after the move
+        assert_eq!(mov_result, MoveResult::InProgress);
+        // a2 has a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 15), 1);
+        // a1 does not have a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 20), 0);
     }
 }
