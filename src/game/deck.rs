@@ -25,16 +25,29 @@ impl Deck {
     }
 
     #[inline]
-    pub fn get_player_cards(&self, player_color: &PlayerColor) -> [&Card; 2] {
-        if *player_color == PlayerColor::Red {
-            return [&self.cards[RED_CARD1], &self.cards[RED_CARD2]];
+    pub fn get_player_cards(&self, player_color: PlayerColor) -> [&Card; 2] {
+        match player_color {
+            PlayerColor::Red => [&self.cards[RED_CARD1], &self.cards[RED_CARD2]],
+            PlayerColor::Blue => [&self.cards[BLUE_CARD1], &self.cards[BLUE_CARD2]],
         }
-        return [&self.cards[BLUE_CARD1], &self.cards[BLUE_CARD2]];
     }
 
     #[inline]
     pub fn neutral_card(&self) -> &Card {
         &self.cards[NEUTRAL]
+    }
+
+    /// Rotates cards between the used one and the neutral
+    ///
+    /// Be aware that the index should only be from 0 to 1,
+    #[inline]
+    pub fn rotate(&mut self, idx: usize, player_color: PlayerColor) {
+        assert!(idx < 2);
+        match player_color {
+            PlayerColor::Red => self.cards.swap(idx, NEUTRAL),
+            // Blue player cards are at index 2 and 3
+            PlayerColor::Blue => self.cards.swap(idx + 2, NEUTRAL),
+        }
     }
 }
 
