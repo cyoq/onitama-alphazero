@@ -1,7 +1,7 @@
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum PlayerColor {
-    Red,
-    Blue,
+    Red = 0,
+    Blue = 1,
 }
 
 impl PlayerColor {
