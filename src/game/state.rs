@@ -147,6 +147,8 @@ impl State {
             Figure::King => set_bit(&mut self.kings[*player_color as usize], to),
         }
 
+        // If it is a king, check if it is coming to the temple
+
         // Card rotation:
 
         move_result
@@ -159,19 +161,6 @@ impl State {
         let pawns: u32 = self.pawns[*player_color as usize];
         // Save king for the specific player
         let king: u32 = self.kings[*player_color as usize];
-        // Save index for the attack lookup map
-        // let player_idx: usize;
-
-        // Get pawns and king position considering the player position
-        // if *player_color == PlayerColor::Red {
-        //     pawns = self.pawns[RED_PLAYER_IDX];
-        //     king = self.kings[RED_PLAYER_IDX];
-        //     player_idx = RED_PLAYER_IDX;
-        // } else {
-        //     pawns = self.pawns[BLUE_PLAYER_IDX];
-        //     king = self.kings[BLUE_PLAYER_IDX];
-        //     player_idx = BLUE_PLAYER_IDX;
-        // }
 
         for n in 0..25 {
             // Getting a position bit for a pawn
@@ -395,17 +384,17 @@ mod tests {
         // Set the following state:
         /*
             ---+---+---+---+---+---+
-            5 | . | b | B | b | b |
+             5 | . | b | B | b | b |
             ---+---+---+---+---+---+
-            4 | . | . | . | . | . |
+             4 | . | . | . | . | . |
             ---+---+---+---+---+---+
-            3 | . | . | . | . | . |
+             3 | . | . | . | . | . |
             ---+---+---+---+---+---+
-            2 | b | . | . | . | . |
+             2 | b | . | . | . | . |
             ---+---+---+---+---+---+
-            1 | r | r | R | r | r |
-           ---+---+---+---+---+---+
-              | a | b | c | d | e |
+             1 | r | r | R | r | r |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
         */
         state.pawns[PlayerColor::Blue as usize] = 0x5801_0000;
 
@@ -433,6 +422,51 @@ mod tests {
     }
 
     #[test]
+    fn capture_as_blue() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+             5 | . | b | B | b | b |
+            ---+---+---+---+---+---+
+             4 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+             3 | b | . | . | . | . |
+            ---+---+---+---+---+---+
+             2 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+             1 | r | r | R | r | r |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
+        */
+        state.pawns[PlayerColor::Blue as usize] = 0x5820_0000;
+
+        let cards = state.deck.get_player_cards(&PlayerColor::Blue);
+        // Cloning to avoid immutable borrow before mutable
+        let tiger = cards[1].clone();
+
+        let mov = Move {
+            from: 10, // a3
+            to: 20,   // a1
+            figure: Figure::Pawn,
+        };
+        let mov_result = state.make_move(&mov, &PlayerColor::Blue, &tiger);
+
+        // Check if the game stays in progress after the move
+        assert_eq!(mov_result, MoveResult::Capture);
+        // a1 has a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 20), 1);
+        // a3 does not have a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 10), 0);
+        // TODO: Check card rotation
+
+        // Check if red has only 3 pawns on b1, d1 and e1
+        assert_eq!(state.pawns[PlayerColor::Red as usize], 0x0000_0580);
+    }
+
+    #[test]
     fn capture_win_as_red() {
         let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
         let mut state = State::with_deck(deck);
@@ -440,17 +474,17 @@ mod tests {
         // Set the following state:
         /*
             ---+---+---+---+---+---+
-            5 | b | b | B | b | b |
+             5 | b | b | B | b | b |
             ---+---+---+---+---+---+
-            4 | . | . | r | . | . |
+             4 | . | . | r | . | . |
             ---+---+---+---+---+---+
-            3 | . | . | . | . | . |
+             3 | . | . | . | . | . |
             ---+---+---+---+---+---+
-            2 | . | . | . | . | . |
+             2 | . | . | . | . | . |
             ---+---+---+---+---+---+
-            1 | . | r | R | r | r |
-           ---+---+---+---+---+---+
-              | a | b | c | d | e |
+             1 | . | r | R | r | r |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
         */
         state.pawns[PlayerColor::Red as usize] = 0x0100_0680;
 
@@ -475,5 +509,50 @@ mod tests {
 
         // Check if blue king is dead
         assert_eq!(state.kings[PlayerColor::Blue as usize], 0);
+    }
+
+    #[test]
+    fn capture_win_as_blue() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+             5 | . | b | B | b | b |
+            ---+---+---+---+---+---+
+             4 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+             3 | . | . | b | . | . |
+            ---+---+---+---+---+---+
+             2 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+             1 | r | r | R | r | r |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
+        */
+        state.pawns[PlayerColor::Blue as usize] = 0x5808_0000;
+
+        let cards = state.deck.get_player_cards(&PlayerColor::Blue);
+        // Cloning to avoid immutable borrow before mutable
+        let tiger = cards[1].clone();
+
+        let mov = Move {
+            from: 12, // c3
+            to: 22,   // c1
+            figure: Figure::Pawn,
+        };
+        let mov_result = state.make_move(&mov, &PlayerColor::Blue, &tiger);
+
+        // Check if the game stays in progress after the move
+        assert_eq!(mov_result, MoveResult::BlueWin);
+        // a1 has a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 22), 1);
+        // a3 does not have a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 12), 0);
+        // TODO: Check card rotation
+
+        // Check if red king is dead
+        assert_eq!(state.kings[PlayerColor::Red as usize], 0);
     }
 }
