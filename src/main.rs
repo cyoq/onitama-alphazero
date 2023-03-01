@@ -6,7 +6,7 @@ use game::{
 
 use crate::{
     common::get_bit,
-    game::card::{CardRepresentation, ATTACK_MAPS},
+    game::card::{CardRepresentation, ATTACK_MAPS, DRAGON},
 };
 
 pub mod ai;
@@ -28,6 +28,6 @@ fn main() {
     let result = state.display();
     println!("{}", result);
 
-    let attack_map = ATTACK_MAPS[1][0][22];
+    let attack_map = ATTACK_MAPS[1][DRAGON.index][2];
     println!("{}", attack_map);
 }

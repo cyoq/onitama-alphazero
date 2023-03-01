@@ -15,6 +15,12 @@ pub const fn from_2d_to_bitboard(value: (u32, u32)) -> u32 {
     0x8000_0000 >> z
 }
 
+#[inline]
+pub const fn from_2d_to_1d(value: (u32, u32)) -> u32 {
+    let (y, x) = value;
+    return y * 5 + x;
+}
+
 #[cfg(test)]
 mod tests {
     use crate::common::{from_2d_to_bitboard, get_bit};

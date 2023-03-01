@@ -2,7 +2,10 @@ use std::ops::{Deref, DerefMut};
 
 use rand::{seq::SliceRandom, thread_rng};
 
-use super::card::{Card, ORIGINAL_CARDS};
+use super::{
+    card::{Card, ORIGINAL_CARDS},
+    player_color::PlayerColor,
+};
 
 // positions in the deck array, corresponding to the card used by the owner
 pub const RED_CARD1: usize = 0;
@@ -21,6 +24,15 @@ impl Deck {
         Deck { cards: deck }
     }
 
+    #[inline]
+    pub fn get_player_cards(&self, player_color: &PlayerColor) -> [&Card; 2] {
+        if *player_color == PlayerColor::Red {
+            return [&self.cards[RED_CARD1], &self.cards[RED_CARD2]];
+        }
+        return [&self.cards[BLUE_CARD1], &self.cards[BLUE_CARD2]];
+    }
+
+    #[inline]
     pub fn neutral_card(&self) -> &Card {
         &self.cards[NEUTRAL]
     }
