@@ -1,4 +1,4 @@
-use crate::common::get_bit;
+use crate::common::{clear_bit, get_bit, set_bit};
 
 use super::{
     card::{Card, ATTACK_MAPS},
@@ -109,16 +109,47 @@ impl State {
 
     /// When making a move, we assume that the move is completely legal by rules
     pub fn make_move(&mut self, mov: &Move, player_color: &PlayerColor, card: &Card) -> MoveResult {
-        let from = mov.from;
-        let to = mov.to;
-
-        // Check what figure is being moved
+        let from = mov.from as usize;
+        let to = mov.to as usize;
+        let figure = mov.figure;
+        let mut move_result = MoveResult::InProgress;
 
         // Clear 'from' position
+        match figure {
+            Figure::Pawn => clear_bit(&mut self.pawns[*player_color as usize], from),
+            Figure::King => clear_bit(&mut self.kings[*player_color as usize], from),
+        }
+
+        // Check if there is a capture of an enemy piece
+        let enemy = player_color.enemy();
+
+        let enemy_pawn = get_bit(self.pawns[enemy as usize], to);
+        let enemy_king = get_bit(self.pawns[enemy as usize], to);
+
+        if enemy_pawn == 1 {
+            // Clear enemy bit
+            clear_bit(&mut self.pawns[enemy as usize], to);
+            // Set a move result
+            move_result = MoveResult::Capture;
+        } else if enemy_king == 1 {
+            // Clear enemy bit
+            clear_bit(&mut self.kings[enemy as usize], to);
+            // Set a move result
+            match *player_color {
+                PlayerColor::Red => move_result = MoveResult::RedWin,
+                PlayerColor::Blue => move_result = MoveResult::BlueWin,
+            }
+        }
+
+        // Set a new 'to' position
+        match figure {
+            Figure::Pawn => set_bit(&mut self.pawns[*player_color as usize], to),
+            Figure::King => set_bit(&mut self.kings[*player_color as usize], to),
+        }
 
         // Card rotation:
 
-        MoveResult::InProgress
+        move_result
     }
 
     /// Generates all legal moves for the specific card and the player
@@ -173,6 +204,7 @@ impl State {
                 figure = Figure::King;
             }
 
+            // Generate moves
             for i in 0..25 {
                 let bit = get_bit(map, i);
 
@@ -327,5 +359,31 @@ mod tests {
         assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 15), 1);
         // a1 does not have a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 20), 0);
+        // TODO: Check card rotation
+    }
+
+    #[test]
+    fn make_move_as_blue() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        let cards = state.deck.get_player_cards(&PlayerColor::Blue);
+        // Cloning to avoid immutable borrow before mutable
+        let tiger = cards[1].clone();
+
+        let mov = Move {
+            from: 1, // b5
+            to: 11,  // b3
+            figure: Figure::Pawn,
+        };
+        let mov_result = state.make_move(&mov, &PlayerColor::Blue, &tiger);
+
+        // Check if the game stays in progress after the move
+        assert_eq!(mov_result, MoveResult::InProgress);
+        // b3 has a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 11), 1);
+        // b5 does not have a pawn
+        assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 1), 0);
+        // TODO: Check card rotation
     }
 }

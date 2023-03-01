@@ -26,20 +26,20 @@ pub const fn from_2d_to_1d(value: (u32, u32)) -> u32 {
 
 /// Sets a bit in the specific position
 #[inline]
-pub fn set_bit(value: &mut u32, pos: u32) {
+pub fn set_bit(value: &mut u32, pos: usize) {
     *value |= 1u32 << (31 - pos);
 }
 
 /// Toggles a bit at the specific position
 #[inline]
-pub fn toggle_bit(value: &mut u32, pos: u32) {
+pub fn toggle_bit(value: &mut u32, pos: usize) {
     *value ^= 1u32 << (31 - pos);
 }
 
 /// Clears a bit in the specific position
 #[inline]
-pub fn clear_bit(value: &mut u32, pos: u32) {
-    *value &= 1u32 << (31 - pos);
+pub fn clear_bit(value: &mut u32, pos: usize) {
+    *value &= !(1u32 << (31 - pos));
 }
 
 #[cfg(test)]
