@@ -15,10 +15,31 @@ pub const fn from_2d_to_bitboard(value: (u32, u32)) -> u32 {
     0x8000_0000 >> z
 }
 
+/// Converts 2D cooredinates to the 1D representation
+/// (0, 0) is a top left corner
+/// (4, 4) is a bottom right corner
 #[inline]
 pub const fn from_2d_to_1d(value: (u32, u32)) -> u32 {
     let (y, x) = value;
     return y * 5 + x;
+}
+
+/// Sets a bit in the specific position
+#[inline]
+pub fn set_bit(value: &mut u32, pos: u32) {
+    *value |= 1u32 << (31 - pos);
+}
+
+/// Toggles a bit at the specific position
+#[inline]
+pub fn toggle_bit(value: &mut u32, pos: u32) {
+    *value ^= 1u32 << (31 - pos);
+}
+
+/// Clears a bit in the specific position
+#[inline]
+pub fn clear_bit(value: &mut u32, pos: u32) {
+    *value &= 1u32 << (31 - pos);
 }
 
 #[cfg(test)]
