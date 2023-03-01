@@ -425,7 +425,7 @@ mod tests {
         };
         let mov_result = state.make_move(&mov, PlayerColor::Red, 0);
 
-        // Check if the game stays in progress after the move
+        // Check if capture occurred
         assert_eq!(mov_result, MoveResult::Capture);
         // a2 has a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 15), 1);
@@ -470,7 +470,7 @@ mod tests {
         };
         let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
 
-        // Check if the game stays in progress after the move
+        // Check if capture occurred
         assert_eq!(mov_result, MoveResult::Capture);
         // a1 has a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 20), 1);
@@ -515,11 +515,11 @@ mod tests {
         };
         let mov_result = state.make_move(&mov, PlayerColor::Red, 0);
 
-        // Check if the game stays in progress after the move
+        // Check if the game is won
         assert_eq!(mov_result, MoveResult::RedWin);
-        // b3 has a pawn
+        // c5 has a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 2), 1);
-        // b5 does not have a pawn
+        // c4 does not have a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Red as usize], 7), 0);
         // Check card rotation
         assert_eq!(*state.deck.neutral_card(), crab);
@@ -560,15 +560,107 @@ mod tests {
         };
         let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
 
-        // Check if the game stays in progress after the move
+        // Check if the game is won
         assert_eq!(mov_result, MoveResult::BlueWin);
-        // a1 has a pawn
+        // c1 has a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 22), 1);
-        // a3 does not have a pawn
+        // c3 does not have a pawn
         assert_eq!(get_bit(state.pawns[PlayerColor::Blue as usize], 12), 0);
         // Check card rotation
         assert_eq!(*state.deck.neutral_card(), tiger);
         // Check if red king is dead
         assert_eq!(state.kings[PlayerColor::Red as usize], 0);
+    }
+
+    #[test]
+    fn king_in_temple_as_blue() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+             5 | b | b | . | b | b |
+            ---+---+---+---+---+---+
+             4 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+             3 | . | . | B | . | . |
+            ---+---+---+---+---+---+
+             2 | . | . | . | R | . |
+            ---+---+---+---+---+---+
+             1 | r | r | . | r | r |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
+        */
+        state.kings[PlayerColor::Blue as usize] = 0x0008_0000;
+        state.kings[PlayerColor::Red as usize] = 0x0000_2000;
+
+        let cards = state.deck.get_player_cards(PlayerColor::Blue);
+        // Cloning to avoid immutable borrow before mutable
+        let tiger = cards[1].clone();
+
+        let mov = Move {
+            from: 12, // c3
+            to: 22,   // c1
+            figure: Figure::King,
+        };
+        let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
+
+        // Check if the game is won
+        assert_eq!(mov_result, MoveResult::BlueWin);
+        // a1 has a king
+        assert_eq!(get_bit(state.kings[PlayerColor::Blue as usize], 22), 1);
+        // a3 does not have a king
+        assert_eq!(get_bit(state.kings[PlayerColor::Blue as usize], 12), 0);
+        // Check card rotation
+        assert_eq!(*state.deck.neutral_card(), tiger);
+        // Check if red king is alive, but he lost
+        assert!(state.kings[PlayerColor::Red as usize] > 0);
+    }
+
+    #[test]
+    fn king_in_temple_as_red() {
+        let deck = Deck::new([CRAB, RABBIT, DRAGON, TIGER, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+             5 | b | b | . | b | b |
+            ---+---+---+---+---+---+
+             4 | . | . | R | . | . |
+            ---+---+---+---+---+---+
+             3 | . | . | B | . | . |
+            ---+---+---+---+---+---+
+             2 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+             1 | r | r | . | r | r |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
+        */
+        state.kings[PlayerColor::Blue as usize] = 0x0008_0000;
+        state.kings[PlayerColor::Red as usize] = 0x0100_0000;
+
+        let cards = state.deck.get_player_cards(PlayerColor::Red);
+        // Cloning to avoid immutable borrow before mutable
+        let crab = cards[0].clone();
+
+        let mov = Move {
+            from: 7, // c4
+            to: 2,   // c5
+            figure: Figure::King,
+        };
+        let mov_result = state.make_move(&mov, PlayerColor::Red, 0);
+
+        // Check if the game is won
+        assert_eq!(mov_result, MoveResult::RedWin);
+        // c5 has a king
+        assert_eq!(get_bit(state.kings[PlayerColor::Red as usize], 2), 1);
+        // c4 does not have a king
+        assert_eq!(get_bit(state.kings[PlayerColor::Red as usize], 7), 0);
+        // Check card rotation
+        assert_eq!(*state.deck.neutral_card(), crab);
+        // Check if blue king is alive, but he lost
+        assert!(state.kings[PlayerColor::Blue as usize] > 0);
     }
 }
