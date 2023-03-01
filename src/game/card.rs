@@ -272,8 +272,8 @@ const fn generate_attack_maps_for_card(card: u32) -> [u32; 25] {
     while n < 13 {
         // Make shifts
         // Use mask to get first 25 bits only
-        let mut left = (card << n) & 0xFFFF_F800;
-        let mut right = (card >> n) & 0xFFFF_F800;
+        let mut left = (card << n) & 0xFFFF_FF80;
+        let mut right = (card >> n) & 0xFFFF_FF80;
 
         // remove everything on file E when position is on file B
         // and remove on file A when position is on file D
