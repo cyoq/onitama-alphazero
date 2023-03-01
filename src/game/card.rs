@@ -14,39 +14,6 @@ pub struct Card {
     pub index: usize,
 }
 
-pub trait CardRepresentation {
-    fn represent_card(&self) -> String;
-}
-
-impl CardRepresentation for u32 {
-    fn represent_card(&self) -> String {
-        let s = format!("{:032b}", &self);
-
-        let mut result = String::new();
-        for (i, ch) in s.chars().take(25).enumerate() {
-            match i {
-                5 | 10 | 15 | 20 | 25 => {
-                    result += &format!(
-                        "\n{}",
-                        match ch {
-                            '0' => ".",
-                            '1' => "X",
-                            _ => "E",
-                        }
-                    );
-                }
-                12 => result += "O",
-                _ => match ch {
-                    '0' => result += ".",
-                    '1' => result += "X",
-                    _ => (),
-                },
-            }
-        }
-        return result;
-    }
-}
-
 pub const TIGER: Card = Card {
     // 0 0 1 0 0   |  . . X . .
     // 0 0 0 0 0   |  . . . . .
