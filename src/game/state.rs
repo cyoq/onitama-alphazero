@@ -39,13 +39,7 @@ pub const BLUE_PAWNS_SP: u32 = 0xD800_0000;
 // 0000000 - Trailing zeroes
 pub const RED_PAWNS_SP: u32 = 0x0000_0D80;
 
-// Array acces indices
-pub const RED_KING_IDX: usize = 0;
-pub const BLUE_KING_IDX: usize = 1;
-pub const RED_PAWNS_IDX: usize = 0;
-pub const BLUE_PAWNS_IDX: usize = 1;
-
-// Indexes where the temples are
+// Indexes where the temples are located
 pub const BLUE_TEMPLE: usize = 2;
 pub const RED_TEMPLE: usize = 22;
 
@@ -84,13 +78,13 @@ impl State {
             }
 
             // Check cell type
-            if get_bit(self.pawns[RED_PAWNS_IDX], i) == 1 {
+            if get_bit(self.pawns[PlayerColor::Red as usize], i) == 1 {
                 result += "| r "
-            } else if get_bit(self.pawns[BLUE_PAWNS_IDX], i) == 1 {
+            } else if get_bit(self.pawns[PlayerColor::Blue as usize], i) == 1 {
                 result += "| b "
-            } else if get_bit(self.kings[RED_KING_IDX], i) == 1 {
+            } else if get_bit(self.kings[PlayerColor::Red as usize], i) == 1 {
                 result += "| R "
-            } else if get_bit(self.kings[BLUE_KING_IDX], i) == 1 {
+            } else if get_bit(self.kings[PlayerColor::Blue as usize], i) == 1 {
                 result += "| B "
             } else {
                 result += "| . ";

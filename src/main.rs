@@ -1,13 +1,6 @@
-use game::{
-    card::ORIGINAL_CARDS,
-    deck::Deck,
-    state::{State, BLUE_KING_IDX, BLUE_PAWNS_IDX, RED_KING_IDX, RED_PAWNS_IDX},
-};
+use game::state::State;
 
-use crate::{
-    common::get_bit,
-    game::card::{CardRepresentation, ATTACK_MAPS, DRAGON},
-};
+use crate::game::card::{ATTACK_MAPS, DRAGON};
 
 pub mod ai;
 pub mod common;
