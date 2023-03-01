@@ -1,5 +1,7 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MoveResult {
     Capture,
-    Win,
+    RedWin,
+    BlueWin,
     InProgress,
 }
