@@ -1,26 +1,38 @@
-use game::state::State;
-
-use crate::game::card::{ATTACK_MAPS, DRAGON};
+use ai::{human::Human, random::Random};
+use game::{game::Game, move_result::MoveResult};
 
 pub mod ai;
 pub mod common;
 pub mod game;
 
 fn main() {
-    // let deck = Deck::new(ORIGINAL_CARDS.clone());
+    let mut progress = MoveResult::InProgress;
 
-    // for card in deck.iter() {
-    //     println!(
-    //         "Card {}: \n{}\n",
-    //         card.name,
-    //         card.positions.represent_card()
-    //     );
-    // }
-    let state = State::new();
+    let red_agent = Human;
+    let blue_agent = Random;
 
-    let result = state.display();
-    println!("{}", result);
+    let mut game = Game::new(&red_agent, &blue_agent);
+    let max_plies = 200;
 
-    let attack_map = ATTACK_MAPS[1][DRAGON.index][2];
-    println!("{}", attack_map);
+    while progress != MoveResult::BlueWin && progress != MoveResult::RedWin {
+        println!("{}", game.state.deck.display());
+        println!("{}", game.state.display());
+
+        if max_plies < 0 {
+            println!("Game has become infinite!");
+            break;
+        }
+
+        progress = game.next_turn();
+    }
+
+    println!("{}", game.state.display());
+    if max_plies != 0 {
+        match progress {
+            MoveResult::Capture => (),
+            MoveResult::RedWin => println!("Red won!"),
+            MoveResult::BlueWin => println!("Blue won!"),
+            MoveResult::InProgress => (),
+        }
+    }
 }

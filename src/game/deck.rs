@@ -2,6 +2,8 @@ use std::ops::{Deref, DerefMut};
 
 use rand::{seq::SliceRandom, thread_rng};
 
+use crate::common::get_bit;
+
 use super::{
     card::{Card, ORIGINAL_CARDS},
     player_color::PlayerColor,
@@ -48,6 +50,52 @@ impl Deck {
             // Blue player cards are at index 2 and 3
             PlayerColor::Blue => self.cards.swap(idx + 2, NEUTRAL),
         }
+    }
+
+    pub fn display(&self) -> String {
+        let border = String::from("---+---+---+---+---+---+\n");
+        let mut result = border.clone();
+        let length: usize = 25;
+        for (i, card) in self.cards.iter().enumerate() {
+            let positions = match i {
+                0 | 1 => card.positions,
+                2 | 3 => card.mirror,
+                _ => card.positions,
+            };
+            let name = match i {
+                0 | 1 => "PLAYER1",
+                2 | 3 => "PLAYER2",
+                4 => "NEUTRAL",
+                _ => "UNKNOWN",
+            };
+            for n in 0..length {
+                // Add a number if it is as start of a string
+                if n % 5 == 0 {
+                    result += &format!(" {} ", (5 - n / 5).to_string());
+                }
+
+                // Check cell type
+                if get_bit(positions, n) == 1 {
+                    result += "| X ";
+                } else if n == 12 {
+                    result += "| O ";
+                } else {
+                    result += "| . ";
+                }
+
+                // Add a border and ending wall if it is an end of the line
+                if (n + 1) % 5 == 0 {
+                    result += "|\n";
+                    result += &border;
+                }
+            }
+
+            // Add a column identifier
+            result += "   | a | b | c | d | e |\n";
+            result += &format!("   {}({})\n\n", name, card.name);
+        }
+
+        result
     }
 }
 

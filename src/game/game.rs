@@ -9,13 +9,12 @@ pub struct Game<'a> {
     pub history: Vec<State>,
     /// Agents that are in the game. First agent is a red one, second is a blue one
     pub agents: [&'a dyn Agent; 2],
-    pub max_plies: u32,
     pub curr_agent_idx: usize,
-    pub curr_player: PlayerColor,
+    pub curr_player_color: PlayerColor,
 }
 
 impl<'a> Game<'a> {
-    pub fn new(max_plies: u32, red_agent: &'a dyn Agent, blue_agent: &'a dyn Agent) -> Self {
+    pub fn new(red_agent: &'a dyn Agent, blue_agent: &'a dyn Agent) -> Self {
         let state = State::new();
         let player_color = state.deck.neutral_card().player_color;
         let current_player_idx = if player_color == PlayerColor::Red {
@@ -28,17 +27,36 @@ impl<'a> Game<'a> {
             state,
             history: vec![],
             agents: [red_agent, blue_agent],
-            max_plies,
             curr_agent_idx: current_player_idx,
-            curr_player: player_color,
+            curr_player_color: player_color,
         }
     }
 
-    pub fn progress(&mut self) -> MoveResult {
-        let mov = self.agents[self.curr_agent_idx].generate_move(&self.state);
+    pub fn next_turn(&mut self) -> MoveResult {
+        // Save the history
+        self.history.push(self.state.clone());
 
-        MoveResult::InProgress
+        // move must be a legal one
+        let done_move =
+            self.agents[self.curr_agent_idx].generate_move(&self.state, self.curr_player_color);
+
+        let move_result = self.state.make_move(
+            &done_move.mov,
+            self.curr_player_color,
+            done_move.used_card_idx,
+        );
+
+        // progress the game to the next turn
+        self.curr_agent_idx = (self.curr_agent_idx + 1) % 2;
+        self.curr_player_color.switch();
+
+        move_result
     }
 
-    pub fn undo(&mut self) {}
+    pub fn undo(&mut self) {
+        match self.history.pop() {
+            Some(state) => self.state = state,
+            None => (),
+        }
+    }
 }
