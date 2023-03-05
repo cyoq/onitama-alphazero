@@ -315,17 +315,163 @@ pub const CRANE: Card = Card {
     index: 10,
 };
 
-pub const ORIGINAL_CARDS: [Card; 11] = [
-    TIGER, DRAGON, FROG, RABBIT, CRAB, ELEPHANT, GOOSE, ROOSTER, MONKEY, MANTIS, CRANE,
+pub const HORSE: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 1 0 0  |  . . X . .
+      0 1 0 0 0  |  . X O . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0001 0001 0000 0100 0000 0000 0000
+    */
+    positions: 0x0110_4000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 1 0  |  . . O X .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0001 0000 0100 0100 0000 0000 0000
+    */
+    mirror: 0x0104_4000,
+    player_color: PlayerColor::Red,
+    index: 11,
+};
+
+pub const OX: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 1 0  |  . . O X .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0001 0000 0100 0100 0000 0000 0000
+    */
+    positions: HORSE.mirror,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 1 0 0  |  . . X . .
+      0 1 0 0 0  |  . X O . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0001 0001 0000 0100 0000 0000 0000
+    */
+    mirror: HORSE.positions,
+    player_color: PlayerColor::Blue,
+    index: 12,
+};
+
+pub const BOAR: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 1 0 0  |  . . X . .
+      0 1 0 1 0  |  . X O X .
+      0 0 0 0 0  |  . . . . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0001 0001 0100 0000 0000 0000 0000
+    */
+    positions: 0x0114_0000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 0 0 0  |  . . . . .
+      0 1 0 1 0  |  . X O X .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0000 0001 0100 0100 0000 0000 0000
+    */
+    mirror: 0x0014_4000,
+    player_color: PlayerColor::Red,
+    index: 13,
+};
+
+pub const EEL: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 0 0  |  . X . . .
+      0 0 0 1 0  |  . . O X .
+      0 1 0 0 0  |  . X . . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 0000 0100 1000 0000 0000 0000
+    */
+    positions: 0x0204_8000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 0 1 0  |  . . . X .
+      0 1 0 0 0  |  . X O . .
+      0 0 0 1 0  |  . . . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0000 1001 0000 0010 0000 0000 0000
+    */
+    mirror: 0x0090_2000,
+    player_color: PlayerColor::Blue,
+    index: 14,
+};
+
+pub const COBRA: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 0 1 0  |  . . . X .
+      0 1 0 0 0  |  . X O . .
+      0 0 0 1 0  |  . . . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0000 1001 0000 0010 0000 0000 0000
+    */
+    positions: EEL.mirror,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 0 0  |  . X . . .
+      0 0 0 1 0  |  . . O X .
+      0 1 0 0 0  |  . X . . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 0000 0100 1000 0000 0000 0000
+    */
+    mirror: EEL.positions,
+    player_color: PlayerColor::Red,
+    index: 15,
+};
+
+pub const ORIGINAL_CARDS: [Card; 16] = [
+    TIGER, DRAGON, FROG, RABBIT, CRAB, ELEPHANT, GOOSE, ROOSTER, MONKEY, MANTIS, CRANE, HORSE, OX,
+    BOAR, EEL, COBRA,
 ];
 
-// A separate array with card names. Used to optimize cloning for the state, since there will be no need to clone whole strings
-pub const CARD_NAMES: [&'static str; 11] = [
+// A separate array with card names. Used to optimize cloning for the state, since there will be no need to clone whole strings with cards
+pub const CARD_NAMES: [&'static str; 16] = [
     "Tiger", "Dragon", "Frog", "Rabbit", "Crab", "Elephant", "Goose", "Rooster", "Monkey",
-    "Mantis", "Crane",
+    "Mantis", "Crane", "Horse", "Ox", "Boar", "Eel", "Cobra",
 ];
 
-pub const ATTACK_MAPS: [[[u32; 25]; 11]; 2] = generate_attack_maps();
+pub const ATTACK_MAPS: [[[u32; 25]; 16]; 2] = generate_attack_maps();
 
 /*
     1 0 0 0 0
@@ -369,8 +515,8 @@ const FILE_AB: u32 = 0xC631_8C00;
 const FILE_DE: u32 = 0x18C6_3180;
 
 /// Generates all attack maps for all players, cards and positions
-const fn generate_attack_maps() -> [[[u32; 25]; 11]; 2] {
-    let mut result = [[[0u32; 25]; 11]; 2];
+const fn generate_attack_maps() -> [[[u32; 25]; 16]; 2] {
+    let mut result = [[[0u32; 25]; 16]; 2];
     let mut player = 0;
     let mut card_idx = 0;
 
