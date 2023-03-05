@@ -15,7 +15,7 @@ pub const fn from_2d_to_bitboard(value: (u32, u32)) -> u32 {
     0x8000_0000 >> z
 }
 
-/// Converts 2D cooredinates to the 1D representation
+/// Converts 2D coordinates to the 1D representation
 /// (0, 0) is a top left corner
 /// (4, 4) is a bottom right corner
 #[inline]

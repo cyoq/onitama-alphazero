@@ -1,7 +1,7 @@
 use std::io::{self, stdout, Write};
 
 use crate::{
-    common::{from_2d_to_1d, get_bit},
+    common::get_bit,
     game::{
         done_move::DoneMove, figure::Figure, player_color::PlayerColor, r#move::Move, state::State,
     },
@@ -11,94 +11,111 @@ use super::agent::Agent;
 
 pub struct Human;
 
-// TODO: THIS CODE IS TERRYFYING, IT NEEDS REFACTORING ASAP!!!!!!
-impl Agent for Human {
-    fn generate_move(&self, state: &State, player_color: PlayerColor) -> DoneMove {
-        for card in state.deck.get_player_cards(player_color) {
-            println!("All possible moves for card {}", card.name);
-            for mov in state.generate_legal_moves(player_color, card) {
-                println!("{}", mov);
-            }
-        }
+impl Human {
+    pub fn read_console_input(input_string: &str) -> io::Result<String> {
+        print!("{}", input_string);
+        stdout().flush().unwrap();
+        let mut user_input = String::new();
+        let stdin = io::stdin(); // We get `Stdin` here.
+        stdin.read_line(&mut user_input)?;
+        Ok(user_input)
+    }
 
-        let from: u32;
-        let to: u32;
+    pub fn read_card_index() -> u32 {
         let card_idx: u32;
         loop {
-            print!("Card idx(0 or 1): ");
-            stdout().flush().unwrap();
-            let mut user_input = String::new();
-            let stdin = io::stdin(); // We get `Stdin` here.
-            stdin.read_line(&mut user_input).unwrap();
+            let user_input = match Human::read_console_input("Card index(0 or 1): ") {
+                Ok(u) => u,
+                Err(e) => {
+                    println!("An error occurred while reading the input: {}", e);
+                    continue;
+                }
+            };
 
             if user_input.trim().len() != 1 {
                 println!("Incorrect length of the input!");
                 continue;
             }
 
-            card_idx = user_input.chars().nth(0).unwrap().to_digit(10).unwrap();
+            card_idx = match user_input.chars().nth(0) {
+                Some(x) => match x.to_digit(10) {
+                    Some(x) => match x {
+                        0..=1 => x,
+                        _ => {
+                            println!("A number must be 0 or 1!");
+                            continue;
+                        }
+                    },
+                    None => {
+                        println!("Was not able to parse value: {}", x);
+                        continue;
+                    }
+                },
+                None => continue,
+            };
             break;
         }
+        card_idx
+    }
 
+    pub fn read_notation(input_string: &str) -> u32 {
+        let from: u32;
         loop {
-            print!("From: ");
-            stdout().flush().unwrap();
-            let mut user_input = String::new();
-            let stdin = io::stdin(); // We get `Stdin` here.
-            stdin.read_line(&mut user_input).unwrap();
+            let user_input = match Human::read_console_input(input_string) {
+                Ok(u) => u,
+                Err(e) => {
+                    println!("An error occurred while reading the input: {}", e);
+                    continue;
+                }
+            };
 
             if user_input.trim().len() != 2 {
                 println!("Incorrect length of the input!");
                 continue;
             }
 
-            let letter = user_input.chars().nth(0).unwrap();
-            let col = match letter {
-                'a' => 0,
-                'b' => 1,
-                'c' => 2,
-                'd' => 3,
-                'e' => 4,
-                _ => {
-                    println!("First character is not a letter a, b, c, d or e!");
+            from = match Move::convert_notation_to_idx(&user_input) {
+                Ok(x) => x,
+                Err(e) => {
+                    println!("An error while converting notation: {}", e);
                     continue;
                 }
             };
-            let row = 5 - user_input.chars().nth(1).unwrap().to_digit(10).unwrap();
-
-            let value = from_2d_to_1d((row, col));
-            from = value;
             break;
         }
+        from
+    }
+}
+
+impl Agent for Human {
+    fn generate_move(&self, state: &State, player_color: PlayerColor) -> DoneMove {
+        let mut moves = vec![];
+        for card in state.deck.get_player_cards(player_color) {
+            println!("All possible moves for card {}", card.name);
+            for mov in state.generate_legal_moves(player_color, card) {
+                println!("{}", mov);
+                moves.push(mov);
+            }
+        }
+
+        let mut card_idx: u32;
+        let mut from: u32;
+        let mut to: u32;
 
         loop {
-            print!("To: ");
-            stdout().flush().unwrap();
-            let mut user_input = String::new();
-            let stdin = io::stdin(); // We get `Stdin` here.
-            stdin.read_line(&mut user_input).unwrap();
+            card_idx = Human::read_card_index();
+            from = Human::read_notation("From: ");
+            to = Human::read_notation("To: ");
 
-            if user_input.trim().len() != 2 {
-                println!("Incorrect length of the input!");
+            let mov_exist = moves.iter().any(|m| m.from == from && m.to == to);
+            if !mov_exist {
+                println!(
+                    "Move from {} to {} does not exist!",
+                    Move::convert_idx_to_notation(from),
+                    Move::convert_idx_to_notation(to)
+                );
                 continue;
             }
-
-            let letter = user_input.chars().nth(0).unwrap();
-            let col = match letter {
-                'a' => 0,
-                'b' => 1,
-                'c' => 2,
-                'd' => 3,
-                'e' => 4,
-                _ => {
-                    println!("First character is not a letter a, b, c, d or e!");
-                    continue;
-                }
-            };
-            let row = 5 - user_input.chars().nth(1).unwrap().to_digit(10).unwrap();
-
-            let value = from_2d_to_1d((row, col));
-            to = value;
             break;
         }
 
