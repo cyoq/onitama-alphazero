@@ -3,7 +3,8 @@ use std::io::{self, stdout, Write};
 use crate::{
     common::get_bit,
     game::{
-        done_move::DoneMove, figure::Figure, player_color::PlayerColor, r#move::Move, state::State,
+        card::CARD_NAMES, done_move::DoneMove, figure::Figure, player_color::PlayerColor,
+        r#move::Move, state::State,
     },
 };
 
@@ -91,7 +92,7 @@ impl Agent for HumanConsole {
     fn generate_move(&self, state: &State, player_color: PlayerColor) -> DoneMove {
         let mut moves = vec![];
         for card in state.deck.get_player_cards(player_color) {
-            println!("All possible moves for card {}", card.name);
+            println!("All possible moves for card {}", CARD_NAMES[card.index]);
             for mov in state.generate_legal_moves(player_color, card) {
                 println!("{}", mov);
                 moves.push(mov);

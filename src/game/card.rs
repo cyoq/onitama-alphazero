@@ -8,8 +8,6 @@ pub struct Card {
     pub mirror: u32,
     /// Starting player color
     pub player_color: PlayerColor,
-    /// Name of the card to display
-    pub name: &'static str,
     /// unique number for a card to identify it in the attack lookup table
     pub index: usize,
 }
@@ -36,7 +34,6 @@ pub const TIGER: Card = Card {
     // 0000 0001 0000 1000 0000 0010 0000 0000
     mirror: 0x0100_0200,
     player_color: PlayerColor::Blue,
-    name: "Tiger",
     index: 0,
 };
 
@@ -62,7 +59,6 @@ pub const DRAGON: Card = Card {
     // 0000 0010 1000 1001 0001 0000 0000 0000
     mirror: 0x0281_1000,
     player_color: PlayerColor::Red,
-    name: "Dragon",
     index: 1,
 };
 
@@ -88,7 +84,6 @@ pub const FROG: Card = Card {
     // 0000 0010 0000 1010 0010 0000 0000 0000
     mirror: 0x0202_2000,
     player_color: PlayerColor::Red,
-    name: "Frog",
     index: 2,
 };
 
@@ -114,7 +109,6 @@ pub const RABBIT: Card = Card {
     // 0000 0000 1010 0000 1000 0000 0000 0000
     mirror: 0x00A0_8000,
     player_color: PlayerColor::Red,
-    name: "Rabbit",
     index: 3,
 };
 
@@ -144,7 +138,6 @@ pub const CRAB: Card = Card {
     */
     mirror: 0x0022_4000,
     player_color: PlayerColor::Blue,
-    name: "Crab",
     index: 4,
 };
 
@@ -174,7 +167,6 @@ pub const ELEPHANT: Card = Card {
     */
     mirror: 0x0014_A000,
     player_color: PlayerColor::Red,
-    name: "Elephant",
     index: 5,
 };
 
@@ -204,7 +196,6 @@ pub const GOOSE: Card = Card {
     */
     mirror: 0x0214_2000,
     player_color: PlayerColor::Blue,
-    name: "Goose",
     index: 6,
 };
 
@@ -234,7 +225,6 @@ pub const ROOSTER: Card = Card {
     */
     mirror: 0x0094_8000,
     player_color: PlayerColor::Red,
-    name: "Rooster",
     index: 7,
 };
 
@@ -264,7 +254,6 @@ pub const MONKEY: Card = Card {
     */
     mirror: 0x0280_A000,
     player_color: PlayerColor::Blue,
-    name: "Monkey",
     index: 8,
 };
 
@@ -294,7 +283,6 @@ pub const MANTIS: Card = Card {
     */
     mirror: 0x0100_A000,
     player_color: PlayerColor::Red,
-    name: "Mantis",
     index: 9,
 };
 
@@ -324,11 +312,15 @@ pub const CRANE: Card = Card {
     */
     mirror: MANTIS.positions,
     player_color: PlayerColor::Blue,
-    name: "Crane",
     index: 10,
 };
 
 pub const ORIGINAL_CARDS: [Card; 5] = [TIGER, DRAGON, FROG, RABBIT, CRAB];
+
+pub const CARD_NAMES: [&'static str; 11] = [
+    "Tiger", "Dragon", "Frog", "Rabbit", "Crab", "Elephant", "Goose", "Rooster", "Monkey",
+    "Mantis", "Crane",
+];
 
 pub const ATTACK_MAPS: [[[u32; 25]; 5]; 2] = generate_attack_maps();
 

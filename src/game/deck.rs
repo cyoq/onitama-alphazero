@@ -5,7 +5,7 @@ use rand::{seq::SliceRandom, thread_rng};
 use crate::common::get_bit;
 
 use super::{
-    card::{Card, ORIGINAL_CARDS},
+    card::{Card, CARD_NAMES, ORIGINAL_CARDS},
     player_color::PlayerColor,
 };
 
@@ -92,7 +92,7 @@ impl Deck {
 
             // Add a column identifier
             result += "   | a | b | c | d | e |\n";
-            result += &format!("   {}({})\n\n", name, card.name);
+            result += &format!("   {}({})\n\n", name, CARD_NAMES[card.index]);
         }
 
         result
