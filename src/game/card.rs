@@ -244,27 +244,34 @@ const fn generate_attack_maps_for_card(card: u32) -> [u32; 25] {
 
         // remove everything on file E when position is on file B
         // and remove on file A when position is on file D
-        if n % 5 == 1 {
-            // remove everything on file E when position is on file B
-            // and remove on file A when position is on file D
-            left &= !FILE_E;
-            right &= !FILE_A;
-        } else if n % 5 == 2 {
-            // remove everything on file D & E when position is on file A
-            // and remove on file A & B when position is on file E
-            left &= !FILE_DE;
-            right &= !FILE_AB;
-        } else if n % 5 == 3 {
-            // remove everything on file A & B when position is on file E
-            // and remove on file D & E when position is on file A
-            left &= !FILE_AB;
-            right &= !FILE_DE;
-        } else if n % 5 == 4 {
-            // remove everything on file A when position is on file D
-            // and remove on file E when position is on file B
-            left &= !FILE_A;
-            right &= !FILE_E;
-        }
+        match n % 5 {
+            1 => {
+                // remove everything on file E when position is on file B
+                // and remove on file A when position is on file D
+                left &= !FILE_E;
+                right &= !FILE_A;
+            }
+            2 => {
+                // remove everything on file D & E when position is on file A
+                // and remove on file A & B when position is on file E
+                left &= !FILE_DE;
+                right &= !FILE_AB;
+            }
+            3 => {
+                // remove everything on file A & B when position is on file E
+                // and remove on file D & E when position is on file A
+                left &= !FILE_AB;
+                right &= !FILE_DE;
+            }
+            4 => {
+                // remove everything on file A when position is on file D
+                // and remove on file E when position is on file B
+                left &= !FILE_A;
+                right &= !FILE_E;
+            }
+            _ => (),
+        };
+
         // Save the mask for the positions
         attack_map[12 - n] = left;
         attack_map[12 + n] = right;
