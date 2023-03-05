@@ -12,7 +12,7 @@ fn main() {
     let blue_agent = Random;
 
     let mut game = Game::new(&red_agent, &blue_agent);
-    let max_plies = 200;
+    let mut max_plies = 200;
 
     while progress != MoveResult::BlueWin && progress != MoveResult::RedWin {
         println!("{}", game.state.deck.display());
@@ -24,6 +24,7 @@ fn main() {
         }
 
         progress = game.next_turn();
+        max_plies -= 1;
     }
 
     println!("{}", game.state.display());

@@ -58,5 +58,7 @@ impl<'a> Game<'a> {
             Some(state) => self.state = state,
             None => (),
         }
+        self.curr_agent_idx = (self.curr_agent_idx + 1) % 2;
+        self.curr_player_color.switch();
     }
 }
