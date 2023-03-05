@@ -1,9 +1,5 @@
-use ai::{human_console::HumanConsole, random::Random};
-use game::{game::Game, move_result::MoveResult};
-
-pub mod ai;
-pub mod common;
-pub mod game;
+use onitama_game::ai::{human_console::HumanConsole, random::Random};
+use onitama_game::game::{game::Game, move_result::MoveResult};
 
 fn main() {
     let mut progress = MoveResult::InProgress;
