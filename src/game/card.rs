@@ -148,6 +148,186 @@ pub const CRAB: Card = Card {
     index: 4,
 };
 
+pub const ELEPHANT: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 1 0  |  . X . X .
+      0 1 0 1 0  |  . X O X .
+      0 0 0 0 0  |  . . . . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 1001 0100 0000 0000 0000 0000
+    */
+    positions: 0x02940_0000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 0 0 0  |  . . . . .
+      0 1 0 1 0  |  . X O X .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0000 0001 0100 1010 0000 0000 0000
+    */
+    mirror: 0x0014_A000,
+    player_color: PlayerColor::Red,
+    name: "Elephant",
+    index: 5,
+};
+
+pub const GOOSE: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 0 0  |  . X . . .
+      0 1 0 1 0  |  . X O X .
+      0 0 0 1 0  |  . . . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 0001 0100 0010 0000 0000 0000
+    */
+    positions: 0x0214_2000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 0 0  |  . X . . .
+      0 1 0 1 0  |  . X O X .
+      0 0 0 1 0  |  . . . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 0001 0100 0010 0000 0000 0000
+    */
+    mirror: 0x0214_2000,
+    player_color: PlayerColor::Blue,
+    name: "Goose",
+    index: 6,
+};
+
+pub const ROOSTER: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 0 1 0  |  . . . X .
+      0 1 0 1 0  |  . X O X .
+      0 1 0 0 0  |  . X . . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0000 1001 0100 1000 0000 0000 0000
+    */
+    positions: 0x0094_8000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 0 1 0  |  . . . X .
+      0 1 0 1 0  |  . X O X .
+      0 1 0 0 0  |  . X . . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0000 1001 0100 1000 0000 0000 0000
+    */
+    mirror: 0x0094_8000,
+    player_color: PlayerColor::Red,
+    name: "Rooster",
+    index: 7,
+};
+
+pub const MONKEY: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . O . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 1000 0000 1010 0000 0000 0000
+    */
+    positions: 0x0280_A000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . O . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 1000 0000 1010 0000 0000 0000
+    */
+    mirror: 0x0280_A000,
+    player_color: PlayerColor::Blue,
+    name: "Monkey",
+    index: 8,
+};
+
+pub const MANTIS: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . O . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 1000 0000 0100 0000 0000 0000
+    */
+    positions: 0x0280_4000,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . O . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0001 0000 0000 1010 0000 0000 0000
+    */
+    mirror: 0x0100_A000,
+    player_color: PlayerColor::Red,
+    name: "Mantis",
+    index: 9,
+};
+
+pub const CRANE: Card = Card {
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . O . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0001 0000 0000 1010 0000 0000 0000
+    */
+    positions: MANTIS.mirror,
+    /*
+      0 0 0 0 0  |  . . . . .
+      0 1 0 1 0  |  . X . X .
+      0 0 0 0 0  |  . . O . .
+      0 0 1 0 0  |  . . X . .
+      0 0 0 0 0  |  . . . . .
+      ---- Trailing ----
+      0 0 0 0 0 0 0
+      -------
+      0000 0010 1000 0000 0100 0000 0000 0000
+    */
+    mirror: MANTIS.positions,
+    player_color: PlayerColor::Blue,
+    name: "Crane",
+    index: 10,
+};
+
 pub const ORIGINAL_CARDS: [Card; 5] = [TIGER, DRAGON, FROG, RABBIT, CRAB];
 
 pub const ATTACK_MAPS: [[[u32; 25]; 5]; 2] = generate_attack_maps();
