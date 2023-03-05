@@ -315,14 +315,17 @@ pub const CRANE: Card = Card {
     index: 10,
 };
 
-pub const ORIGINAL_CARDS: [Card; 5] = [TIGER, DRAGON, FROG, RABBIT, CRAB];
+pub const ORIGINAL_CARDS: [Card; 11] = [
+    TIGER, DRAGON, FROG, RABBIT, CRAB, ELEPHANT, GOOSE, ROOSTER, MONKEY, MANTIS, CRANE,
+];
 
+// A separate array with card names. Used to optimize cloning for the state, since there will be no need to clone whole strings
 pub const CARD_NAMES: [&'static str; 11] = [
     "Tiger", "Dragon", "Frog", "Rabbit", "Crab", "Elephant", "Goose", "Rooster", "Monkey",
     "Mantis", "Crane",
 ];
 
-pub const ATTACK_MAPS: [[[u32; 25]; 5]; 2] = generate_attack_maps();
+pub const ATTACK_MAPS: [[[u32; 25]; 11]; 2] = generate_attack_maps();
 
 /*
     1 0 0 0 0
@@ -366,8 +369,8 @@ const FILE_AB: u32 = 0xC631_8C00;
 const FILE_DE: u32 = 0x18C6_3180;
 
 /// Generates all attack maps for all players, cards and positions
-const fn generate_attack_maps() -> [[[u32; 25]; 5]; 2] {
-    let mut result = [[[0u32; 25]; 5]; 2];
+const fn generate_attack_maps() -> [[[u32; 25]; 11]; 2] {
+    let mut result = [[[0u32; 25]; 11]; 2];
     let mut player = 0;
     let mut card_idx = 0;
 
