@@ -1,4 +1,4 @@
-use ai::{human::Human, random::Random};
+use ai::{human_console::HumanConsole, random::Random};
 use game::{game::Game, move_result::MoveResult};
 
 pub mod ai;
@@ -8,7 +8,7 @@ pub mod game;
 fn main() {
     let mut progress = MoveResult::InProgress;
 
-    let red_agent = Human;
+    let red_agent = HumanConsole;
     let blue_agent = Random;
 
     let mut game = Game::new(&red_agent, &blue_agent);

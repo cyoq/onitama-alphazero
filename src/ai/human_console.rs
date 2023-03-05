@@ -9,9 +9,9 @@ use crate::{
 
 use super::agent::Agent;
 
-pub struct Human;
+pub struct HumanConsole;
 
-impl Human {
+impl HumanConsole {
     pub fn read_console_input(input_string: &str) -> io::Result<String> {
         print!("{}", input_string);
         stdout().flush().unwrap();
@@ -24,7 +24,7 @@ impl Human {
     pub fn read_card_index() -> u32 {
         let card_idx: u32;
         loop {
-            let user_input = match Human::read_console_input("Card index(0 or 1): ") {
+            let user_input = match HumanConsole::read_console_input("Card index(0 or 1): ") {
                 Ok(u) => u,
                 Err(e) => {
                     println!("An error occurred while reading the input: {}", e);
@@ -61,7 +61,7 @@ impl Human {
     pub fn read_notation(input_string: &str) -> u32 {
         let from: u32;
         loop {
-            let user_input = match Human::read_console_input(input_string) {
+            let user_input = match HumanConsole::read_console_input(input_string) {
                 Ok(u) => u,
                 Err(e) => {
                     println!("An error occurred while reading the input: {}", e);
@@ -87,7 +87,7 @@ impl Human {
     }
 }
 
-impl Agent for Human {
+impl Agent for HumanConsole {
     fn generate_move(&self, state: &State, player_color: PlayerColor) -> DoneMove {
         let mut moves = vec![];
         for card in state.deck.get_player_cards(player_color) {
@@ -103,9 +103,9 @@ impl Agent for Human {
         let mut to: u32;
 
         loop {
-            card_idx = Human::read_card_index();
-            from = Human::read_notation("From: ");
-            to = Human::read_notation("To: ");
+            card_idx = HumanConsole::read_card_index();
+            from = HumanConsole::read_notation("From: ");
+            to = HumanConsole::read_notation("To: ");
 
             let mov_exist = moves.iter().any(|m| m.from == from && m.to == to);
             if !mov_exist {
