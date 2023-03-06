@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 onitama_game = { path = "onitama-game" }
 
-# [workspace]
-# members = [
-#     "onitama_game",
-# ]
+[workspace]
+members = [
+    "onitama-game", "ui"
+]
