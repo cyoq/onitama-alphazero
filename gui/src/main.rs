@@ -1,7 +1,11 @@
 use iced::{
     widget::{column, Button, Column, Container, Text},
-    Sandbox, Settings,
+    Application, Sandbox, Settings,
 };
+use onitama_gui::OnitamaGui;
+
+pub mod onitama_gui;
+pub mod style;
 
 pub struct Hello {
     count: i32,
@@ -48,7 +52,8 @@ impl Sandbox for Hello {
 fn main() -> iced::Result {
     env_logger::builder().format_timestamp(None).init();
 
-    Hello::run(Settings::default())
+    OnitamaGui::run(Settings::default())
+    // Hello::run(Settings::default())
 
     // GameOfLife::run(Settings {
     //     antialiasing: true,
