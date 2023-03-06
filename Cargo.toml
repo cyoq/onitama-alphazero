@@ -10,5 +10,5 @@ onitama_game = { path = "onitama-game" }
 
 [workspace]
 members = [
-    "onitama-game", "ui"
+    "onitama-game", "gui"
 ]
