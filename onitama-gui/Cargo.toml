@@ -1,5 +1,5 @@
 [package]
-name = "onitama_gui"
+name = "onitama-gui"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 onitama_game = { path = "../onitama-game" }
-iced = { version = "0.8.0", features = ["canvas", "tokio", "debug"] }
-tokio = { version = "1.26.0", features = ["sync"] }
-env_logger = "0.10.0"
+egui = "0.21.0"
+eframe = "0.21.3"
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
+egui_extras = "0.21.0"
