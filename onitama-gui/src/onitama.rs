@@ -5,6 +5,8 @@ use egui::{
 };
 use egui_extras::{Column, Size, StripBuilder, TableBuilder};
 
+use crate::cell::Cell;
+
 const UTILITY_PANEL_WIDTH: f32 = 370.;
 const BOARD_PANEL_WIDTH: f32 = 930.;
 const PADDING: f32 = 15.;
@@ -12,11 +14,13 @@ const PADDING: f32 = 15.;
 // const HISTORY_PANEL_HEIGHT: f32 = 340.;
 
 #[derive(Debug)]
-pub struct Onitama;
+pub struct Onitama {
+    on: bool,
+}
 
 impl Default for Onitama {
     fn default() -> Self {
-        Self
+        Self { on: false }
     }
 }
 
@@ -24,7 +28,7 @@ impl Onitama {
     pub fn new(cc: &CreationContext) -> Self {
         Onitama::configure_fonts(&cc.egui_ctx);
 
-        Self
+        Self { on: false }
     }
 
     fn configure_fonts(ctx: &Context) {
@@ -182,6 +186,7 @@ impl App for Onitama {
             });
 
         CentralPanel::default().show(ctx, |ui| {
+            ui.add(Cell::new(0, 0, 50., &mut self.on));
             ui.label("Hello world!");
             ui.label("It is me, deck panel!");
         });
