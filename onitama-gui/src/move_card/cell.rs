@@ -1,26 +1,19 @@
-use egui::{style::WidgetVisuals, Color32, Stroke, Ui, Widget};
+use egui::{Color32, Stroke, Ui, Widget};
 
-pub struct Cell<'a> {
-    pub row: u32,
-    pub col: u32,
+pub struct Cell {
+    pub bg_fill: Color32,
     pub size: f32,
-    pub on: &'a mut bool,
 }
 
-impl<'a> Cell<'a> {
-    pub fn new(row: u32, col: u32, size: f32, on: &'a mut bool) -> Self {
-        Self { row, col, size, on }
+impl Cell {
+    pub fn new(bg_fill: Color32, size: f32) -> Self {
+        Self { bg_fill, size }
     }
 }
 
-impl<'a> Widget for Cell<'a> {
+impl Widget for Cell {
     fn ui(self, ui: &mut Ui) -> egui::Response {
-        let Cell {
-            row,
-            col,
-            size,
-            mut on,
-        } = self;
+        let Cell { bg_fill, size } = self;
         // Widget code can be broken up in four steps:
         //  1. Decide a size for the widget
         //  2. Allocate space for it
@@ -35,24 +28,18 @@ impl<'a> Widget for Cell<'a> {
         // 2. Allocating space:
         // This is where we get a region of the screen assigned.
         // We also tell the Ui to sense clicks in the allocated region.
-        let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+        let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
 
         // 3. Interact: Time to check for clicks!
-        if response.clicked() {
-            *on = !*on;
-            tracing::debug!("({},{})", row, col);
-            response.mark_changed(); // report back that the value changed
-        }
 
         // Attach some meta-data to the response which can be used by screen readers:
-        response.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, *on, ""));
+        response.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::Other));
 
         // 4. Paint!
         // Make sure we need to paint:
         if ui.is_rect_visible(rect) {
             // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
             let stroke: Stroke = (0.5, Color32::BLACK).into();
-            let bg_fill = Color32::WHITE;
             let rect = rect.expand(0.0);
             ui.painter().rect(rect, 0., bg_fill, stroke);
         }

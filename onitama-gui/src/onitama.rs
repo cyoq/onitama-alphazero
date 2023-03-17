@@ -1,11 +1,12 @@
 use eframe::{App, CreationContext};
 use egui::{
     Button, CentralPanel, Color32, Context, Direction, FontData, FontDefinitions, FontFamily,
-    Hyperlink, Label, Layout, Pos2, Rect, RichText, SidePanel, TopBottomPanel, Ui,
+    Hyperlink, Label, Layout, Pos2, Rect, RichText, SidePanel, Ui,
 };
-use egui_extras::{Column, Size, StripBuilder, TableBuilder};
+use egui_extras::{Size, StripBuilder};
+use onitama_game::game::card::{Card, DRAGON, FROG, HORSE, ORIGINAL_CARDS};
 
-use crate::cell::Cell;
+use crate::move_card::MoveCard;
 
 const UTILITY_PANEL_WIDTH: f32 = 370.;
 const BOARD_PANEL_WIDTH: f32 = 930.;
@@ -174,7 +175,7 @@ impl Onitama {
 
 impl App for Onitama {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        // ctx.set_debug_on_hover(true);
+        ctx.set_debug_on_hover(true);
         SidePanel::new(egui::panel::Side::Left, "board_panel")
             .max_width(BOARD_PANEL_WIDTH)
             .min_width(BOARD_PANEL_WIDTH)
@@ -186,20 +187,26 @@ impl App for Onitama {
             });
 
         CentralPanel::default().show(ctx, |ui| {
-            egui::Grid::new("small_board")
-                .min_col_width(0.)
-                .min_row_height(0.)
-                .spacing(egui::vec2(0., 0.))
-                .show(ui, |ui| {
-                    for row in 0..5 {
-                        for col in 0..5 {
-                            ui.add(Cell::new(row, col, 32., &mut self.on));
-                        }
-                        ui.end_row();
-                    }
-                });
-            ui.label("Hello world!");
-            ui.label("It is me, deck panel!");
+            ui.add(MoveCard {
+                mirror: &mut false,
+                card: &ORIGINAL_CARDS[DRAGON.index],
+                name: "Dragon",
+                cell_size: 32.,
+            });
+
+            ui.add(MoveCard {
+                mirror: &mut false,
+                card: &ORIGINAL_CARDS[FROG.index],
+                name: "Frog",
+                cell_size: 32.,
+            });
+
+            ui.add(MoveCard {
+                mirror: &mut true,
+                card: &ORIGINAL_CARDS[HORSE.index],
+                name: "Horse",
+                cell_size: 32.,
+            });
         });
 
         SidePanel::new(egui::panel::Side::Right, "right_panel")

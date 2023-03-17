@@ -2,7 +2,8 @@ use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
 use onitama::Onitama;
 
-pub mod cell;
+pub mod game_board;
+pub mod move_card;
 pub mod onitama;
 
 fn main() -> Result<(), eframe::Error> {
