@@ -1,6 +1,6 @@
 pub mod cell;
 
-use egui::{CentralPanel, Color32, Widget};
+use egui::{Color32, Widget};
 use onitama_game::{
     common::{from_2d_to_1d, get_bit},
     game::card::Card,
@@ -38,12 +38,13 @@ impl<'a> Widget for MoveCard<'a> {
         // 1. Deciding widget size:
         // You can query the `ui` how much space is available,
         // but in this example we have a fixed size widget based on the height of a standard button:
-        let desired_size = egui::vec2(cell_size, cell_size);
+        let desired_size = egui::vec2(cell_size * 5., cell_size * 5.);
 
         // 2. Allocating space:
         // This is where we get a region of the screen assigned.
         // We also tell the Ui to sense clicks in the allocated region.
-        let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+        // let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+        let mut response = ui.allocate_response(egui::vec2(0., 0.), egui::Sense::click());
 
         // 3. Interact: Time to check for clicks!
         if response.clicked() {
@@ -55,9 +56,9 @@ impl<'a> Widget for MoveCard<'a> {
 
         // 4. Paint!
         // Make sure we need to paint:
-        if !ui.is_rect_visible(rect) {
-            return response;
-        }
+        // if !ui.is_rect_visible(rect) {
+        //     return response;
+        // }
 
         let mut bg_fill = BG_FILL;
         egui::Grid::new(format!("card_board_{}", name))

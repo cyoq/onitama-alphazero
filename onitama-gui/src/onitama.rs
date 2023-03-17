@@ -4,9 +4,12 @@ use egui::{
     Hyperlink, Label, Layout, Pos2, Rect, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
-use onitama_game::game::card::{Card, DRAGON, FROG, HORSE, ORIGINAL_CARDS};
+use onitama_game::game::{
+    card::{Card, DRAGON, FROG, HORSE, ORIGINAL_CARDS},
+    state::State,
+};
 
-use crate::move_card::MoveCard;
+use crate::{game_board::GameBoard, move_card::MoveCard};
 
 const UTILITY_PANEL_WIDTH: f32 = 370.;
 const BOARD_PANEL_WIDTH: f32 = 930.;
@@ -181,8 +184,9 @@ impl App for Onitama {
             .min_width(BOARD_PANEL_WIDTH)
             .resizable(false)
             .show(ctx, |ui| {
-                ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
-                    self.board_panel(ui);
+                ui.add(GameBoard {
+                    state: &State::new(),
+                    cell_size: 150.,
                 });
             });
 

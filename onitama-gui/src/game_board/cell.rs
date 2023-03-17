@@ -4,17 +4,28 @@ pub struct Cell {
     pub row: u32,
     pub col: u32,
     pub size: f32,
+    pub bg_fill: Color32,
 }
 
 impl Cell {
-    pub fn new(row: u32, col: u32, size: f32) -> Self {
-        Self { row, col, size }
+    pub fn new(row: u32, col: u32, bg_fill: Color32, size: f32) -> Self {
+        Self {
+            row,
+            col,
+            bg_fill,
+            size,
+        }
     }
 }
 
 impl Widget for Cell {
     fn ui(self, ui: &mut Ui) -> egui::Response {
-        let Cell { row, col, size } = self;
+        let Cell {
+            row,
+            col,
+            bg_fill,
+            size,
+        } = self;
         // Widget code can be broken up in four steps:
         //  1. Decide a size for the widget
         //  2. Allocate space for it
@@ -33,7 +44,7 @@ impl Widget for Cell {
 
         // 3. Interact: Time to check for clicks!
         if response.clicked() {
-            tracing::debug!("Cell at ({},{})", row, col);
+            tracing::info!("Cell at ({},{})", row, col);
             response.mark_changed(); // report back that the value changed
         }
 
@@ -45,7 +56,6 @@ impl Widget for Cell {
         if ui.is_rect_visible(rect) {
             // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
             let stroke: Stroke = (0.5, Color32::BLACK).into();
-            let bg_fill = Color32::WHITE;
             let rect = rect.expand(0.0);
             ui.painter().rect(rect, 0., bg_fill, stroke);
         }
