@@ -186,7 +186,18 @@ impl App for Onitama {
             });
 
         CentralPanel::default().show(ctx, |ui| {
-            ui.add(Cell::new(0, 0, 50., &mut self.on));
+            egui::Grid::new("small_board")
+                .min_col_width(0.)
+                .min_row_height(0.)
+                .spacing(egui::vec2(0., 0.))
+                .show(ui, |ui| {
+                    for row in 0..5 {
+                        for col in 0..5 {
+                            ui.add(Cell::new(row, col, 32., &mut self.on));
+                        }
+                        ui.end_row();
+                    }
+                });
             ui.label("Hello world!");
             ui.label("It is me, deck panel!");
         });
