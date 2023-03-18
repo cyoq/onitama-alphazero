@@ -1,11 +1,12 @@
 use eframe::{App, CreationContext};
 use egui::{
-    Button, CentralPanel, Color32, Context, Direction, FontData, FontDefinitions, FontFamily,
-    Hyperlink, Label, Layout, Pos2, Rect, RichText, SidePanel, Ui,
+    Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
+    Label, Layout, Pos2, Rect, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
-    card::{Card, DRAGON, FROG, HORSE, ORIGINAL_CARDS},
+    card::{CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
+    deck::Deck,
     state::State,
 };
 
@@ -14,8 +15,9 @@ use crate::{game_board::GameBoard, move_card::MoveCard};
 const UTILITY_PANEL_WIDTH: f32 = 370.;
 const BOARD_PANEL_WIDTH: f32 = 930.;
 const PADDING: f32 = 15.;
-// const UTILITY_PANEL_HEIGHT: f32 = 500.;
-// const HISTORY_PANEL_HEIGHT: f32 = 340.;
+const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
+                                      // const UTILITY_PANEL_HEIGHT: f32 = 500.;
+                                      // const HISTORY_PANEL_HEIGHT: f32 = 340.;
 
 #[derive(Debug)]
 pub struct Onitama {
@@ -191,26 +193,22 @@ impl App for Onitama {
             });
 
         CentralPanel::default().show(ctx, |ui| {
-            ui.add(MoveCard {
-                mirror: &mut false,
-                card: &ORIGINAL_CARDS[DRAGON.index],
-                name: "Dragon",
-                cell_size: 32.,
-            });
+            let deck = Deck::new([
+                ORIGINAL_CARDS[DRAGON.index].clone(),
+                ORIGINAL_CARDS[FROG.index].clone(),
+                ORIGINAL_CARDS[HORSE.index].clone(),
+                ORIGINAL_CARDS[RABBIT.index].clone(),
+                ORIGINAL_CARDS[TIGER.index].clone(),
+            ]);
 
-            ui.add(MoveCard {
-                mirror: &mut false,
-                card: &ORIGINAL_CARDS[FROG.index],
-                name: "Frog",
-                cell_size: 32.,
-            });
-
-            ui.add(MoveCard {
-                mirror: &mut true,
-                card: &ORIGINAL_CARDS[HORSE.index],
-                name: "Horse",
-                cell_size: 32.,
-            });
+            for card in deck.iter() {
+                ui.add(MoveCard {
+                    mirror: &mut false,
+                    card: card,
+                    name: CARD_NAMES[card.index],
+                    cell_size: MOVE_CARD_CELL_SIZE,
+                });
+            }
         });
 
         SidePanel::new(egui::panel::Side::Right, "right_panel")
