@@ -1,5 +1,3 @@
-pub mod cell;
-
 use egui::{Color32, Widget};
 use onitama_game::{
     common::{from_2d_to_1d, get_bit},
@@ -21,6 +19,27 @@ pub struct MoveCard<'a> {
     pub cell_size: f32,
 }
 
+impl<'a> MoveCard<'a> {
+    pub fn paint_cell(
+        x: i32,
+        y: i32,
+        bg_fill: Color32,
+        cell_size: f32,
+        painter: &egui::Painter,
+        rect: &egui::Rect,
+    ) {
+        let stroke: egui::Stroke = (0.5, Color32::BLACK).into();
+        // Get physical center of a rectangle
+        let center = rect.center();
+        // Subtract center cell coords(2, 2) from (x, y) to get the (x, y) offset relative to the center
+        let offset: egui::Pos2 = ((x - 2) as f32, (y - 2) as f32).into();
+        // Get the absolute coords based on the cell size
+        let coords = center - egui::Pos2::new(offset.x * cell_size, offset.y * cell_size);
+        let cell = egui::Rect::from_center_size(coords.to_pos2(), egui::vec2(cell_size, cell_size));
+        painter.rect(cell, 0., bg_fill, stroke);
+    }
+}
+
 impl<'a> Widget for MoveCard<'a> {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let MoveCard {
@@ -37,17 +56,17 @@ impl<'a> Widget for MoveCard<'a> {
 
         // 1. Deciding widget size:
         // You can query the `ui` how much space is available,
-        // but in this example we have a fixed size widget based on the height of a standard button:
+        // but in this example we have a fixed size widget based on the size of a cell
         let desired_size = egui::vec2(cell_size * 5., cell_size * 5.);
 
         // 2. Allocating space:
         // This is where we get a region of the screen assigned.
         // We also tell the Ui to sense clicks in the allocated region.
-        // let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
-        let mut response = ui.allocate_response(egui::vec2(0., 0.), egui::Sense::click());
+        let (mut response, painter) = ui.allocate_painter(desired_size, egui::Sense::click());
 
         // 3. Interact: Time to check for clicks!
         if response.clicked() {
+            tracing::info!("Clicked on move card");
             response.mark_changed(); // report back that the value changed
         }
 
@@ -56,9 +75,9 @@ impl<'a> Widget for MoveCard<'a> {
 
         // 4. Paint!
         // Make sure we need to paint:
-        // if !ui.is_rect_visible(rect) {
-        //     return response;
-        // }
+        if !ui.is_rect_visible(response.rect) {
+            return response;
+        }
 
         let mut bg_fill = BG_FILL;
         egui::Grid::new(format!("card_board_{}", name))
@@ -88,7 +107,14 @@ impl<'a> Widget for MoveCard<'a> {
                             bg_fill = BG_CENTER;
                         }
 
-                        ui.add(self::cell::Cell::new(bg_fill, cell_size));
+                        MoveCard::paint_cell(
+                            col as i32,
+                            4 - row as i32, // inverse row from bitmap
+                            bg_fill,
+                            cell_size,
+                            &painter,
+                            &response.rect,
+                        );
                     }
                     ui.end_row();
                 }
