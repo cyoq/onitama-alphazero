@@ -27,6 +27,15 @@ impl Deck {
     }
 
     #[inline]
+    /// Return if the card should be mirrored. Mirroring is default to the blue player
+    pub fn is_mirrored(&self, card: &Card) -> Option<bool> {
+        match self.cards.iter().position(|c| c == card) {
+            Some(pos) => Some(pos == 2 || pos == 3), // blue player cards positions
+            None => None,
+        }
+    }
+
+    #[inline]
     pub fn get_player_cards(&self, player_color: PlayerColor) -> [&Card; 2] {
         match player_color {
             PlayerColor::Red => [&self.cards[RED_CARD1], &self.cards[RED_CARD2]],

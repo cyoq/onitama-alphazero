@@ -196,14 +196,14 @@ impl App for Onitama {
             let deck = Deck::new([
                 ORIGINAL_CARDS[DRAGON.index].clone(),
                 ORIGINAL_CARDS[FROG.index].clone(),
-                ORIGINAL_CARDS[HORSE.index].clone(),
-                ORIGINAL_CARDS[RABBIT.index].clone(),
                 ORIGINAL_CARDS[TIGER.index].clone(),
+                ORIGINAL_CARDS[RABBIT.index].clone(),
+                ORIGINAL_CARDS[HORSE.index].clone(),
             ]);
 
             for card in deck.iter() {
                 ui.add(MoveCard {
-                    mirror: &mut false,
+                    mirror: &deck.is_mirrored(card).unwrap_or(false),
                     card: card,
                     name: CARD_NAMES[card.index],
                     cell_size: MOVE_CARD_CELL_SIZE,

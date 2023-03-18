@@ -10,7 +10,7 @@ pub const BG_CENTER: Color32 = Color32::GRAY;
 /// A representation of a move card
 pub struct MoveCard<'a> {
     /// Determine if moves should be painted as mirrored
-    pub mirror: &'a mut bool,
+    pub mirror: &'a bool,
     /// A representing card
     pub card: &'a Card,
     /// A name of the card to display
