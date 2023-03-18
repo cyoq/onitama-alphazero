@@ -34,7 +34,9 @@ impl<'a> MoveCard<'a> {
         // Subtract center cell coords(2, 2) from (x, y) to get the (x, y) offset relative to the center
         let offset: egui::Pos2 = ((x - 2) as f32, (y - 2) as f32).into();
         // Get the absolute coords based on the cell size
-        let coords = center - egui::Pos2::new(offset.x * cell_size, offset.y * cell_size);
+        // Adding half a cell to the y, because additional row was added for the text
+        let coords =
+            center - egui::Pos2::new(offset.x * cell_size, offset.y * cell_size + cell_size / 2.);
         let cell = egui::Rect::from_center_size(coords.to_pos2(), egui::vec2(cell_size, cell_size));
         painter.rect(cell, 0., bg_fill, stroke);
     }
@@ -57,7 +59,8 @@ impl<'a> Widget for MoveCard<'a> {
         // 1. Deciding widget size:
         // You can query the `ui` how much space is available,
         // but in this example we have a fixed size widget based on the size of a cell
-        let desired_size = egui::vec2(cell_size * 5., cell_size * 5.);
+        // Adding additional cell row for the text - card name
+        let desired_size = egui::vec2(cell_size * 5., cell_size * 6.);
 
         // 2. Allocating space:
         // This is where we get a region of the screen assigned.
@@ -119,7 +122,18 @@ impl<'a> Widget for MoveCard<'a> {
                     ui.end_row();
                 }
             });
-        ui.label(name);
+        let text_coords =
+            response.rect.center() + egui::Vec2::new(0., 2. * cell_size + cell_size / 2.);
+        painter.text(
+            text_coords,
+            egui::Align2::CENTER_CENTER,
+            name,
+            egui::FontId {
+                size: 14.,
+                family: egui::FontFamily::Proportional,
+            },
+            Color32::BLACK,
+        );
 
         // All done! Return the interaction response so the user can check what happened
         // (hovered, clicked, ...) and maybe show a tooltip:
