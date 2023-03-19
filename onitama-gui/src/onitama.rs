@@ -1,7 +1,12 @@
-use eframe::{App, CreationContext};
+use std::path::{Path, PathBuf};
+
+use eframe::{
+    epaint::ahash::{HashMap, HashMapExt},
+    App, CreationContext,
+};
 use egui::{
-    Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
-    Label, Layout, Pos2, Rect, RichText, SidePanel, Ui,
+    Button, CentralPanel, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Label, Layout,
+    RichText, SidePanel, TextureHandle, Ui,
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
@@ -11,7 +16,7 @@ use onitama_game::game::{
     state::State,
 };
 
-use crate::{game_board::GameBoard, move_card::MoveCard};
+use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
 
 const UTILITY_PANEL_WIDTH: f32 = 370.;
 const BOARD_PANEL_WIDTH: f32 = 930.;
@@ -20,22 +25,32 @@ const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
                                       // const UTILITY_PANEL_HEIGHT: f32 = 500.;
                                       // const HISTORY_PANEL_HEIGHT: f32 = 340.;
 
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone)]
+pub enum Figure {
+    BlueKing,
+    BluePawn,
+    RedKing,
+    RedPawn,
+}
+
 pub struct Onitama {
-    on: bool,
+    images: HashMap<Figure, Image>,
 }
 
 impl Default for Onitama {
     fn default() -> Self {
-        Self { on: false }
+        Self {
+            images: HashMap::new(),
+        }
     }
 }
 
 impl Onitama {
     pub fn new(cc: &CreationContext) -> Self {
         Onitama::configure_fonts(&cc.egui_ctx);
+        let images = Onitama::load_images();
 
-        Self { on: false }
+        Self { images }
     }
 
     fn configure_fonts(ctx: &Context) {
@@ -58,6 +73,37 @@ impl Onitama {
         ctx.set_fonts(font_def);
     }
 
+    fn load_images() -> HashMap<Figure, Image> {
+        // Path comes from `target` folder
+        let images = [
+            (
+                Figure::BlueKing,
+                "blue_king",
+                "onitama-gui/assets/images/blue_king.svg",
+            ),
+            (
+                Figure::BluePawn,
+                "blue_pawn",
+                "onitama-gui/assets/images/blue_pawn.svg",
+            ),
+            (
+                Figure::RedKing,
+                "red_king",
+                "onitama-gui/assets/images/red_king.svg",
+            ),
+            (
+                Figure::RedPawn,
+                "red_pawn",
+                "onitama-gui/assets/images/red_pawn.svg",
+            ),
+        ];
+
+        images
+            .iter()
+            .map(|i| (i.0, Image::load_image(i.1.to_owned(), &PathBuf::from(i.2))))
+            .collect::<HashMap<Figure, Image>>()
+    }
+
     fn board_panel(&self, ui: &mut Ui) {
         ui.add_space(PADDING);
         ui.vertical_centered(|ui| {
@@ -77,6 +123,7 @@ impl Onitama {
                     GameBoard {
                         state: &State::new(),
                         cell_size: 150.,
+                        images: &self.images,
                     }
                     .show(ui);
                 });

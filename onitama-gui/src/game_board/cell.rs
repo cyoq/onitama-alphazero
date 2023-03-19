@@ -10,21 +10,21 @@ enum TextDirection<'a> {
 
 const TEXT_FIELD_PADDING: f32 = 15.;
 
-pub struct Cell {
+pub struct Cell<'a> {
     pub row: u32,
     pub col: u32,
     pub size: f32,
     pub bg_fill: Color32,
-    pub figure: Option<RetainedImage>,
+    pub figure: Option<&'a RetainedImage>,
 }
 
-impl Cell {
+impl<'a> Cell<'a> {
     pub fn new(
         row: u32,
         col: u32,
         bg_fill: Color32,
         size: f32,
-        figure: Option<RetainedImage>,
+        figure: Option<&'a RetainedImage>,
     ) -> Self {
         Self {
             row,
@@ -50,7 +50,7 @@ fn draw_text(painter: &Painter, rect: &Rect, text: &str, offset: Vec2) {
     );
 }
 
-impl Widget for Cell {
+impl<'a> Widget for Cell<'a> {
     fn ui(self, ui: &mut Ui) -> egui::Response {
         let Cell {
             row,
@@ -110,6 +110,16 @@ impl Widget for Cell {
         // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
         let stroke: Stroke = (0.5, Color32::BLACK).into();
         ui.painter().rect(rect, 0., bg_fill, stroke);
+
+        if let Some(image) = figure {
+            let texture = image.texture_id(ui.ctx());
+            ui.painter().image(
+                texture,
+                rect,
+                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
+        }
 
         // Draw text near cells if necessary
         match text_direction {
