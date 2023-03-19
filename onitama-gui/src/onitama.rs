@@ -44,7 +44,7 @@ impl Onitama {
         // load the font
         font_def.font_data.insert(
             "MesloLGS".to_string(),
-            FontData::from_static(include_bytes!("../MesloLGS_NF_Regular.ttf")),
+            FontData::from_static(include_bytes!("../assets/fonts/MesloLGS_NF_Regular.ttf")),
         );
 
         // set the font to be in the first priority
