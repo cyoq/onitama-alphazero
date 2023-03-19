@@ -46,7 +46,7 @@ impl<'a> GameBoard<'a> {
                             bg_fill = BG_FILL;
                         }
 
-                        ui.add(self::cell::Cell::new(row, col, bg_fill, *cell_size));
+                        ui.add(self::cell::Cell::new(row, col, bg_fill, *cell_size, None));
                     }
                     ui.end_row();
                 }

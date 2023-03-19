@@ -1,19 +1,28 @@
 use egui::{Color32, Stroke, Ui, Widget};
+use egui_extras::RetainedImage;
 
 pub struct Cell {
     pub row: u32,
     pub col: u32,
     pub size: f32,
     pub bg_fill: Color32,
+    pub figure: Option<RetainedImage>,
 }
 
 impl Cell {
-    pub fn new(row: u32, col: u32, bg_fill: Color32, size: f32) -> Self {
+    pub fn new(
+        row: u32,
+        col: u32,
+        bg_fill: Color32,
+        size: f32,
+        figure: Option<RetainedImage>,
+    ) -> Self {
         Self {
             row,
             col,
             bg_fill,
             size,
+            figure,
         }
     }
 }
@@ -25,6 +34,7 @@ impl Widget for Cell {
             col,
             bg_fill,
             size,
+            figure,
         } = self;
         // Widget code can be broken up in four steps:
         //  1. Decide a size for the widget
