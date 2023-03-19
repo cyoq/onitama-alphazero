@@ -5,8 +5,9 @@ use egui::{
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
-    card::{CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
+    card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
     deck::Deck,
+    player_color::PlayerColor,
     state::State,
 };
 
@@ -178,6 +179,15 @@ impl Onitama {
     }
 }
 
+fn move_card_to_ui(ui: &mut Ui, card: &Card, deck: &Deck) {
+    ui.add(MoveCard {
+        mirror: &deck.is_mirrored(card).unwrap_or(false),
+        card: card,
+        name: CARD_NAMES[card.index],
+        cell_size: MOVE_CARD_CELL_SIZE,
+    });
+}
+
 impl App for Onitama {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         ctx.set_debug_on_hover(true);
@@ -207,20 +217,13 @@ impl App for Onitama {
                 ORIGINAL_CARDS[HORSE.index].clone(),
             ]);
 
-            // ui.with_layout(Layout::top_down(egui::Align::LEFT), |ui| {
-            //     for card in deck.iter() {
-            //         ui.add(MoveCard {
-            //             mirror: &deck.is_mirrored(card).unwrap_or(false),
-            //             card: card,
-            //             name: CARD_NAMES[card.index],
-            //             cell_size: MOVE_CARD_CELL_SIZE,
-            //         });
-            //     }
-            // });
+            let red_player_cards = deck.get_player_cards(PlayerColor::Red);
+            let blue_player_cards = deck.get_player_cards(PlayerColor::Blue);
+            let neutral_card = deck.neutral_card();
 
             StripBuilder::new(ui)
-                // size for the top row of textutal information
-                .size(Size::exact(20.))
+                // size for the top row of textual information
+                .size(Size::exact(30.))
                 // Sizes for the card rows
                 .size(Size::relative(1. / 3.))
                 .size(Size::relative(1. / 3.))
@@ -229,57 +232,39 @@ impl App for Onitama {
                 .vertical(|mut strip| {
                     // Textual information strip
                     strip.cell(|ui| {
-                        ui.label("Text information");
+                        ui.vertical_centered(|ui| {
+                            ui.label(
+                                RichText::new("Text information")
+                                    .text_style(egui::TextStyle::Heading),
+                            );
+                        });
                     });
                     // strip builder that will separate row into two columns
                     strip.strip(|builder| {
                         builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui.painter().rect_filled(
-                                    ui.available_rect_before_wrap(),
-                                    0.0,
-                                    Color32::BLACK,
-                                );
-                                ui.label("width: 50%\nheight: 1/3");
-                            });
-                            strip.cell(|ui| {
-                                ui.painter().rect_filled(
-                                    ui.available_rect_before_wrap(),
-                                    0.0,
-                                    Color32::YELLOW,
-                                );
-                                ui.label("width: 50%\nheight: 1/3");
-                            });
+                            for i in 0..2 {
+                                strip.cell(|ui| {
+                                    ui.vertical_centered(|ui| {
+                                        move_card_to_ui(ui, blue_player_cards[i], &deck)
+                                    });
+                                });
+                            }
                         });
                     });
                     // Middle row with 1 column
                     strip.cell(|ui| {
-                        ui.painter().rect_filled(
-                            ui.available_rect_before_wrap(),
-                            0.0,
-                            Color32::BLUE,
-                        );
-                        ui.label("width: 100%\nheight: 1/3");
+                        ui.vertical_centered(|ui| move_card_to_ui(ui, neutral_card, &deck));
                     });
                     // Last row with 2 columns
                     strip.strip(|builder| {
                         builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
-                            strip.cell(|ui| {
-                                ui.painter().rect_filled(
-                                    ui.available_rect_before_wrap(),
-                                    0.0,
-                                    Color32::RED,
-                                );
-                                ui.label("width: 50%\nheight: 1/3");
-                            });
-                            strip.cell(|ui| {
-                                ui.painter().rect_filled(
-                                    ui.available_rect_before_wrap(),
-                                    0.0,
-                                    Color32::GREEN,
-                                );
-                                ui.label("width: 50%\nheight: 1/3");
-                            });
+                            for i in 0..2 {
+                                strip.cell(|ui| {
+                                    ui.vertical_centered(|ui| {
+                                        move_card_to_ui(ui, red_player_cards[i], &deck);
+                                    });
+                                });
+                            }
                         });
                     });
                 });
