@@ -59,51 +59,29 @@ impl Onitama {
     }
 
     fn board_panel(&self, ui: &mut Ui) {
-        let faded_color = ui.visuals().window_fill();
-        let faded_color = |color: Color32| -> Color32 {
-            use egui::Rgba;
-            egui::lerp(Rgba::from(color)..=Rgba::from(faded_color), 0.5).into()
-        };
-
-        ui.horizontal(|ui| {
-            let background = Rect::from_points(&[
-                Pos2::new(0., 0.),
-                Pos2::new(750., 0.),
-                Pos2::new(0., 750.),
-                Pos2::new(750., 750.),
-            ]);
-            ui.painter().rect_filled(background, 0.0, Color32::BLACK);
-            StripBuilder::new(ui)
-                .size(Size::exact(150.0))
-                .vertical(|mut strip| {
-                    // Create a builder
-                    strip.strip(|builder| {
-                        // Create rows
-                        builder.sizes(Size::exact(150.), 5).vertical(|mut strip| {
-                            for _row in 0..5 {
-                                // Create column builder
-                                strip.strip(|builder| {
-                                    // Create columns
-                                    builder.sizes(Size::exact(150.), 5).horizontal(|mut strip| {
-                                        for _col in 0..5 {
-                                            strip.cell(|ui| {
-                                                let rect = ui.available_rect_before_wrap();
-                                                ui.painter().rect_filled(
-                                                    rect,
-                                                    0.0,
-                                                    faded_color(Color32::RED),
-                                                );
-                                                // ui.add(Button::new(format!("{}, {}", _row, _col)));
-                                                ui.label("width: 50%\nheight: remaining");
-                                            });
-                                        }
-                                    });
-                                });
-                            }
-                        });
-                    });
-                });
+        ui.add_space(PADDING);
+        ui.vertical_centered(|ui| {
+            ui.label(RichText::new("Game information").text_style(egui::TextStyle::Heading));
         });
+
+        ui.add_space(PADDING);
+
+        // StripBuilder is for centering the board
+        StripBuilder::new(ui)
+            .size(Size::exact(90.))
+            .size(Size::remainder())
+            .size(Size::exact(90.))
+            .horizontal(|mut strip| {
+                strip.empty();
+                strip.cell(|ui| {
+                    GameBoard {
+                        state: &State::new(),
+                        cell_size: 150.,
+                    }
+                    .show(ui);
+                });
+                strip.empty();
+            });
     }
 
     fn deck_panel(&self, ui: &mut Ui) {
@@ -254,33 +232,7 @@ impl App for Onitama {
             .max_width(BOARD_PANEL_WIDTH)
             .min_width(BOARD_PANEL_WIDTH)
             .resizable(false)
-            .show(ctx, |ui| {
-                ui.add_space(PADDING);
-                ui.vertical_centered(|ui| {
-                    ui.label(
-                        RichText::new("Game information").text_style(egui::TextStyle::Heading),
-                    );
-                });
-
-                ui.add_space(PADDING);
-
-                // StripBuilder is for centering the board
-                StripBuilder::new(ui)
-                    .size(Size::exact(90.))
-                    .size(Size::remainder())
-                    .size(Size::exact(90.))
-                    .horizontal(|mut strip| {
-                        strip.empty();
-                        strip.cell(|ui| {
-                            GameBoard {
-                                state: &State::new(),
-                                cell_size: 150.,
-                            }
-                            .show(ui);
-                        });
-                        strip.empty();
-                    });
-            });
+            .show(ctx, |ui| self.board_panel(ui));
 
         SidePanel::new(egui::panel::Side::Right, "right_panel")
             .max_width(UTILITY_PANEL_WIDTH)
