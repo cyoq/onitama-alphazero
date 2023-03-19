@@ -56,7 +56,6 @@ impl Widget for Cell {
         if ui.is_rect_visible(rect) {
             // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
             let stroke: Stroke = (0.5, Color32::BLACK).into();
-            let rect = rect.expand(0.0);
             ui.painter().rect(rect, 0., bg_fill, stroke);
         }
 

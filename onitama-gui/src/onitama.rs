@@ -255,10 +255,31 @@ impl App for Onitama {
             .min_width(BOARD_PANEL_WIDTH)
             .resizable(false)
             .show(ctx, |ui| {
-                ui.add(GameBoard {
-                    state: &State::new(),
-                    cell_size: 150.,
+                ui.add_space(PADDING);
+                ui.vertical_centered(|ui| {
+                    ui.label(
+                        RichText::new("Game information").text_style(egui::TextStyle::Heading),
+                    );
                 });
+
+                ui.add_space(PADDING);
+
+                // StripBuilder is for centering the board
+                StripBuilder::new(ui)
+                    .size(Size::exact(90.))
+                    .size(Size::remainder())
+                    .size(Size::exact(90.))
+                    .horizontal(|mut strip| {
+                        strip.empty();
+                        strip.cell(|ui| {
+                            GameBoard {
+                                state: &State::new(),
+                                cell_size: 150.,
+                            }
+                            .show(ui);
+                        });
+                        strip.empty();
+                    });
             });
 
         SidePanel::new(egui::panel::Side::Right, "right_panel")
