@@ -219,10 +219,19 @@ impl App for Onitama {
             // });
 
             StripBuilder::new(ui)
+                // size for the top row of textutal information
+                .size(Size::exact(20.))
+                // Sizes for the card rows
                 .size(Size::relative(1. / 3.))
                 .size(Size::relative(1. / 3.))
                 .size(Size::relative(1. / 3.))
+                // Signal that strips will represent rows
                 .vertical(|mut strip| {
+                    // Textual information strip
+                    strip.cell(|ui| {
+                        ui.label("Text information");
+                    });
+                    // strip builder that will separate row into two columns
                     strip.strip(|builder| {
                         builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
                             strip.cell(|ui| {
@@ -231,7 +240,7 @@ impl App for Onitama {
                                     0.0,
                                     Color32::BLACK,
                                 );
-                                ui.label("width: 50%\nheight: 285px");
+                                ui.label("width: 50%\nheight: 1/3");
                             });
                             strip.cell(|ui| {
                                 ui.painter().rect_filled(
@@ -239,18 +248,20 @@ impl App for Onitama {
                                     0.0,
                                     Color32::YELLOW,
                                 );
-                                ui.label("width: 50%\nheight: 285px");
+                                ui.label("width: 50%\nheight: 1/3");
                             });
                         });
                     });
+                    // Middle row with 1 column
                     strip.cell(|ui| {
                         ui.painter().rect_filled(
                             ui.available_rect_before_wrap(),
                             0.0,
                             Color32::BLUE,
                         );
-                        ui.label("width: 100%\nheight: 285px");
+                        ui.label("width: 100%\nheight: 1/3");
                     });
+                    // Last row with 2 columns
                     strip.strip(|builder| {
                         builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
                             strip.cell(|ui| {
@@ -259,7 +270,7 @@ impl App for Onitama {
                                     0.0,
                                     Color32::RED,
                                 );
-                                ui.label("width: 50%\nheight: 285px");
+                                ui.label("width: 50%\nheight: 1/3");
                             });
                             strip.cell(|ui| {
                                 ui.painter().rect_filled(
@@ -267,7 +278,7 @@ impl App for Onitama {
                                     0.0,
                                     Color32::GREEN,
                                 );
-                                ui.label("width: 50%\nheight: 285px");
+                                ui.label("width: 50%\nheight: 1/3");
                             });
                         });
                     });
