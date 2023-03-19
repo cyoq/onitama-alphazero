@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use eframe::{
     epaint::ahash::{HashMap, HashMapExt},
@@ -6,7 +6,7 @@ use eframe::{
 };
 use egui::{
     Button, CentralPanel, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Label, Layout,
-    RichText, SidePanel, TextureHandle, Ui,
+    RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
