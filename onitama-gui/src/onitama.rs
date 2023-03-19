@@ -192,6 +192,12 @@ impl App for Onitama {
                 });
             });
 
+        SidePanel::new(egui::panel::Side::Right, "right_panel")
+            .max_width(UTILITY_PANEL_WIDTH)
+            .min_width(UTILITY_PANEL_WIDTH)
+            .resizable(false)
+            .show(ctx, |ui| self.utility_panel(ui));
+
         CentralPanel::default().show(ctx, |ui| {
             let deck = Deck::new([
                 ORIGINAL_CARDS[DRAGON.index].clone(),
@@ -201,20 +207,71 @@ impl App for Onitama {
                 ORIGINAL_CARDS[HORSE.index].clone(),
             ]);
 
-            for card in deck.iter() {
-                ui.add(MoveCard {
-                    mirror: &deck.is_mirrored(card).unwrap_or(false),
-                    card: card,
-                    name: CARD_NAMES[card.index],
-                    cell_size: MOVE_CARD_CELL_SIZE,
-                });
-            }
-        });
+            // ui.with_layout(Layout::top_down(egui::Align::LEFT), |ui| {
+            //     for card in deck.iter() {
+            //         ui.add(MoveCard {
+            //             mirror: &deck.is_mirrored(card).unwrap_or(false),
+            //             card: card,
+            //             name: CARD_NAMES[card.index],
+            //             cell_size: MOVE_CARD_CELL_SIZE,
+            //         });
+            //     }
+            // });
 
-        SidePanel::new(egui::panel::Side::Right, "right_panel")
-            .max_width(UTILITY_PANEL_WIDTH)
-            .min_width(UTILITY_PANEL_WIDTH)
-            .resizable(false)
-            .show(ctx, |ui| self.utility_panel(ui));
+            StripBuilder::new(ui)
+                .size(Size::relative(1. / 3.))
+                .size(Size::relative(1. / 3.))
+                .size(Size::relative(1. / 3.))
+                .vertical(|mut strip| {
+                    strip.strip(|builder| {
+                        builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.painter().rect_filled(
+                                    ui.available_rect_before_wrap(),
+                                    0.0,
+                                    Color32::BLACK,
+                                );
+                                ui.label("width: 50%\nheight: 285px");
+                            });
+                            strip.cell(|ui| {
+                                ui.painter().rect_filled(
+                                    ui.available_rect_before_wrap(),
+                                    0.0,
+                                    Color32::YELLOW,
+                                );
+                                ui.label("width: 50%\nheight: 285px");
+                            });
+                        });
+                    });
+                    strip.cell(|ui| {
+                        ui.painter().rect_filled(
+                            ui.available_rect_before_wrap(),
+                            0.0,
+                            Color32::BLUE,
+                        );
+                        ui.label("width: 100%\nheight: 285px");
+                    });
+                    strip.strip(|builder| {
+                        builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.painter().rect_filled(
+                                    ui.available_rect_before_wrap(),
+                                    0.0,
+                                    Color32::RED,
+                                );
+                                ui.label("width: 50%\nheight: 285px");
+                            });
+                            strip.cell(|ui| {
+                                ui.painter().rect_filled(
+                                    ui.available_rect_before_wrap(),
+                                    0.0,
+                                    Color32::GREEN,
+                                );
+                                ui.label("width: 50%\nheight: 285px");
+                            });
+                        });
+                    });
+                });
+        });
     }
 }
