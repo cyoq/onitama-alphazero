@@ -1,5 +1,14 @@
-use egui::{Color32, Stroke, Ui, Widget};
+use egui::{Color32, Painter, Rect, Stroke, Ui, Vec2, Widget};
 use egui_extras::RetainedImage;
+
+enum TextDirection<'a> {
+    Left(&'a str),
+    Bottom(&'a str),
+    Both(&'a str, &'a str),
+    None,
+}
+
+const TEXT_FIELD_PADDING: f32 = 15.;
 
 pub struct Cell {
     pub row: u32,
@@ -27,6 +36,20 @@ impl Cell {
     }
 }
 
+fn draw_text(painter: &Painter, rect: &Rect, text: &str, offset: Vec2) {
+    let text_coords = rect.center() + offset;
+    painter.text(
+        text_coords,
+        egui::Align2::CENTER_CENTER,
+        text,
+        egui::FontId {
+            size: 18.,
+            family: egui::FontFamily::Proportional,
+        },
+        Color32::BLACK,
+    );
+}
+
 impl Widget for Cell {
     fn ui(self, ui: &mut Ui) -> egui::Response {
         let Cell {
@@ -44,8 +67,26 @@ impl Widget for Cell {
 
         // 1. Deciding widget size:
         // You can query the `ui` how much space is available,
-        // but in this example we have a fixed size widget based on the height of a standard button:
-        let desired_size = egui::vec2(size, size);
+        let text_direction = match (row, col) {
+            (0, 0) => TextDirection::Left("5"),
+            (1, 0) => TextDirection::Left("4"),
+            (2, 0) => TextDirection::Left("3"),
+            (3, 0) => TextDirection::Left("2"),
+            (4, 0) => TextDirection::Both("1", "A"),
+            (4, 1) => TextDirection::Bottom("B"),
+            (4, 2) => TextDirection::Bottom("C"),
+            (4, 3) => TextDirection::Bottom("D"),
+            (4, 4) => TextDirection::Bottom("E"),
+            _ => TextDirection::None,
+        };
+        let desired_size = match text_direction {
+            TextDirection::Left(_) => egui::vec2(size + TEXT_FIELD_PADDING, size),
+            TextDirection::Bottom(_) => egui::vec2(size, size + TEXT_FIELD_PADDING),
+            TextDirection::Both(_, _) => {
+                egui::vec2(size + TEXT_FIELD_PADDING, size + TEXT_FIELD_PADDING)
+            }
+            TextDirection::None => egui::vec2(size, size),
+        };
 
         // 2. Allocating space:
         // This is where we get a region of the screen assigned.
@@ -63,10 +104,30 @@ impl Widget for Cell {
 
         // 4. Paint!
         // Make sure we need to paint:
-        if ui.is_rect_visible(rect) {
-            // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
-            let stroke: Stroke = (0.5, Color32::BLACK).into();
-            ui.painter().rect(rect, 0., bg_fill, stroke);
+        if !ui.is_rect_visible(rect) {
+            return response;
+        }
+        // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
+        let stroke: Stroke = (0.5, Color32::BLACK).into();
+        ui.painter().rect(rect, 0., bg_fill, stroke);
+
+        // Draw text near cells if necessary
+        match text_direction {
+            TextDirection::None => (),
+            TextDirection::Left(num) => {
+                let offset = egui::Vec2::new(-size / 2. - TEXT_FIELD_PADDING - 5., 0.);
+                draw_text(ui.painter(), &rect, num, offset);
+            }
+            TextDirection::Bottom(ch) => {
+                let offset = egui::Vec2::new(0., size / 2. + TEXT_FIELD_PADDING + 5.);
+                draw_text(ui.painter(), &rect, ch, offset);
+            }
+            TextDirection::Both(num, ch) => {
+                let offset = egui::Vec2::new(-size / 2. - TEXT_FIELD_PADDING - 5., 0.);
+                draw_text(ui.painter(), &rect, num, offset);
+                let offset = egui::Vec2::new(0., size / 2. + TEXT_FIELD_PADDING + 5.);
+                draw_text(ui.painter(), &rect, ch, offset);
+            }
         }
 
         // All done! Return the interaction response so the user can check what happened

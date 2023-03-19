@@ -64,7 +64,7 @@ impl Onitama {
             ui.label(RichText::new("Game information").text_style(egui::TextStyle::Heading));
         });
 
-        ui.add_space(PADDING);
+        ui.add_space(5.);
 
         // StripBuilder is for centering the board
         StripBuilder::new(ui)
