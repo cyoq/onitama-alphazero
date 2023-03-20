@@ -35,11 +35,13 @@ pub enum Figure {
 
 pub struct Onitama {
     images: HashMap<Figure, Image>,
+    game_state: State,
 }
 
 impl Default for Onitama {
     fn default() -> Self {
         Self {
+            game_state: State::new(),
             images: HashMap::new(),
         }
     }
@@ -50,7 +52,10 @@ impl Onitama {
         Onitama::configure_fonts(&cc.egui_ctx);
         let images = Onitama::load_images();
 
-        Self { images }
+        Self {
+            game_state: State::new(),
+            images,
+        }
     }
 
     fn configure_fonts(ctx: &Context) {
@@ -104,7 +109,7 @@ impl Onitama {
             .collect::<HashMap<Figure, Image>>()
     }
 
-    fn board_panel(&self, ui: &mut Ui) {
+    fn board_panel(&mut self, ui: &mut Ui) {
         ui.add_space(PADDING);
         ui.vertical_centered(|ui| {
             ui.label(RichText::new("Game information").text_style(egui::TextStyle::Heading));
@@ -121,7 +126,7 @@ impl Onitama {
                 strip.empty();
                 strip.cell(|ui| {
                     GameBoard {
-                        state: &State::new(),
+                        state: &mut self.game_state,
                         cell_size: 150.,
                         images: &self.images,
                     }
