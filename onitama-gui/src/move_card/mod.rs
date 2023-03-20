@@ -17,6 +17,8 @@ pub struct MoveCard<'a> {
     pub name: &'a str,
     /// A size of the cell
     pub cell_size: f32,
+    /// Stroke fill
+    pub stroke_fill: Color32,
 }
 
 impl<'a> MoveCard<'a> {
@@ -24,11 +26,12 @@ impl<'a> MoveCard<'a> {
         x: i32,
         y: i32,
         bg_fill: Color32,
+        stroke_fill: Color32,
         cell_size: f32,
         painter: &egui::Painter,
         rect: &egui::Rect,
     ) {
-        let stroke: egui::Stroke = (0.5, Color32::BLACK).into();
+        let stroke: egui::Stroke = (0.5, stroke_fill).into();
         // Get physical center of a rectangle
         let center = rect.center();
         // Subtract center cell coords(2, 2) from (x, y) to get the (x, y) offset relative to the center
@@ -49,6 +52,7 @@ impl<'a> Widget for MoveCard<'a> {
             card,
             name,
             cell_size,
+            stroke_fill,
         } = self;
         // Widget code can be broken up in four steps:
         //  1. Decide a size for the widget
@@ -118,6 +122,7 @@ impl<'a> Widget for MoveCard<'a> {
                             col as i32,
                             4 - row as i32, // inverse row from bitmap
                             bg_fill,
+                            stroke_fill,
                             cell_size,
                             &painter,
                             &response.rect,

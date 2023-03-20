@@ -5,8 +5,8 @@ use eframe::{
     App, CreationContext,
 };
 use egui::{
-    Button, CentralPanel, Context, FontData, FontDefinitions, FontFamily, Hyperlink, Label, Layout,
-    RichText, SidePanel, Ui,
+    Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
+    Label, Layout, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
@@ -36,6 +36,7 @@ pub enum Figure {
 pub struct Onitama {
     images: HashMap<Figure, Image>,
     game_state: State,
+    selected_card: Option<usize>,
 }
 
 impl Default for Onitama {
@@ -43,6 +44,7 @@ impl Default for Onitama {
         Self {
             game_state: State::new(),
             images: HashMap::new(),
+            selected_card: None,
         }
     }
 }
@@ -55,6 +57,7 @@ impl Onitama {
         Self {
             game_state: State::new(),
             images,
+            selected_card: None,
         }
     }
 
@@ -136,7 +139,7 @@ impl Onitama {
             });
     }
 
-    fn deck_panel(&self, ui: &mut Ui) {
+    fn deck_panel(&mut self, ui: &mut Ui) {
         let deck = Deck::new([
             ORIGINAL_CARDS[DRAGON.index].clone(),
             ORIGINAL_CARDS[FROG.index].clone(),
@@ -172,7 +175,7 @@ impl Onitama {
                         for i in 0..2 {
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
-                                    move_card_to_ui(ui, blue_player_cards[i], &deck)
+                                    self.move_card_to_ui(ui, blue_player_cards[i], &deck)
                                 });
                             });
                         }
@@ -180,7 +183,7 @@ impl Onitama {
                 });
                 // Middle row with 1 column
                 strip.cell(|ui| {
-                    ui.vertical_centered(|ui| move_card_to_ui(ui, neutral_card, &deck));
+                    ui.vertical_centered(|ui| self.move_card_to_ui(ui, neutral_card, &deck));
                 });
                 // Last row with 2 columns
                 strip.strip(|builder| {
@@ -188,7 +191,7 @@ impl Onitama {
                         for i in 0..2 {
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
-                                    move_card_to_ui(ui, red_player_cards[i], &deck);
+                                    self.move_card_to_ui(ui, red_player_cards[i], &deck);
                                 });
                             });
                         }
@@ -266,15 +269,26 @@ impl Onitama {
             ));
         });
     }
-}
 
-fn move_card_to_ui(ui: &mut Ui, card: &Card, deck: &Deck) {
-    ui.add(MoveCard {
-        mirror: &deck.is_mirrored(card).unwrap_or(false),
-        card: card,
-        name: CARD_NAMES[card.index],
-        cell_size: MOVE_CARD_CELL_SIZE,
-    });
+    fn move_card_to_ui(&mut self, ui: &mut Ui, card: &Card, deck: &Deck) {
+        let mut stroke_fill = Color32::BLACK;
+        if deck.get_card_idx(&card) == self.selected_card {
+            stroke_fill = Color32::RED;
+        }
+
+        let response = ui.add(MoveCard {
+            mirror: &deck.is_mirrored(card).unwrap_or(false),
+            card: card,
+            name: CARD_NAMES[card.index],
+            cell_size: MOVE_CARD_CELL_SIZE,
+            stroke_fill,
+        });
+
+        if response.clicked() {
+            self.selected_card = deck.get_card_idx(&card);
+            tracing::info!("Selected card index: {:?}", self.selected_card);
+        }
+    }
 }
 
 impl App for Onitama {

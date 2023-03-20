@@ -48,6 +48,11 @@ impl Deck {
         &self.cards[NEUTRAL]
     }
 
+    #[inline]
+    pub fn get_card_idx(&self, card: &Card) -> Option<usize> {
+        self.cards.iter().position(|c| c == card)
+    }
+
     /// Rotates cards between the used one and the neutral
     ///
     /// Be aware that the index should only be from 0 to 1,
