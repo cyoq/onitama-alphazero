@@ -5,7 +5,7 @@ use rand::{seq::SliceRandom, thread_rng};
 use crate::common::get_bit;
 
 use super::{
-    card::{Card, CARD_NAMES, ORIGINAL_CARDS},
+    card::{self, Card, CARD_NAMES, ORIGINAL_CARDS},
     player_color::PlayerColor,
 };
 
@@ -51,6 +51,12 @@ impl Deck {
     #[inline]
     pub fn get_card_idx(&self, card: &Card) -> Option<usize> {
         self.cards.iter().position(|c| c == card)
+    }
+
+    #[inline]
+    pub fn get_card(&self, card_idx: usize) -> &Card {
+        assert!(card_idx < 5);
+        &self.cards[card_idx]
     }
 
     /// Rotates cards between the used one and the neutral

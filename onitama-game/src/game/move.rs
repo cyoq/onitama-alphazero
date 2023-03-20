@@ -23,6 +23,12 @@ pub struct Move {
 }
 
 impl Move {
+    pub fn convert_to_2d(value: u32) -> (u32, u32) {
+        let row = value % 5;
+        let col = 5 - value / 5;
+        (row, col)
+    }
+
     /// Converts index from 0 to 24 to the algebraic notation
     pub fn convert_idx_to_notation(idx: u32) -> String {
         let x = 5 - idx / 5;

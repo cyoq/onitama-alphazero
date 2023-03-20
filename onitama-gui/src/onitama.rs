@@ -128,12 +128,12 @@ impl Onitama {
             .horizontal(|mut strip| {
                 strip.empty();
                 strip.cell(|ui| {
-                    GameBoard {
-                        state: &mut self.game_state,
-                        cell_size: 150.,
-                        images: &self.images,
-                        selected_card: &mut self.selected_card,
-                    }
+                    GameBoard::new(
+                        &mut self.game_state,
+                        150.,
+                        &mut self.selected_card,
+                        &self.images,
+                    )
                     .show(ui);
                 });
                 strip.empty();

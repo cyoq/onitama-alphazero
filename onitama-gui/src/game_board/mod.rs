@@ -99,11 +99,30 @@ pub struct GameBoard<'a> {
     pub images: &'a HashMap<Figure, Image>,
     /// Selected card idx
     pub selected_card: &'a mut Option<usize>,
+    /// Hashmap for the cells that are possible moves
+    pub possible_moves: [[bool; 5]; 5],
 }
 
 impl<'a> GameBoard<'a> {
+    pub fn new(
+        state: &'a mut State,
+        cell_size: f32,
+        selected_card: &'a mut Option<usize>,
+        images: &'a HashMap<Figure, Image>,
+    ) -> Self {
+        let possible_moves = [[false; 5]; 5];
+
+        Self {
+            state,
+            cell_size,
+            images,
+            selected_card,
+            possible_moves,
+        }
+    }
+
     pub fn show(&mut self, ui: &mut egui::Ui) {
-        let bg_fill = BG_FILL;
+        let mut bg_fill = BG_FILL;
 
         let mut source_row_col: Option<(u32, u32)> = None;
         let mut drop_row_col: Option<(u32, u32)> = None;
@@ -137,23 +156,53 @@ impl<'a> GameBoard<'a> {
 
                         let response = drop_target(ui, can_accept_what_is_being_dragged, |ui| {
                             let cell_id = Id::new("figure_dnd").with(col).with(row);
+                            if self.possible_moves[row as usize][col as usize] {
+                                bg_fill = Color32::LIGHT_RED;
+                            } else {
+                                bg_fill = BG_FILL;
+                            }
+
                             if image.is_none() || self.selected_card.is_none() {
-                                ui.add(self::cell::Cell::new(
+                                let response = ui.add(self::cell::Cell::new(
                                     row,
                                     col,
                                     bg_fill,
                                     self.cell_size,
                                     image,
                                 ));
+
+                                if response.clicked() {
+                                    tracing::info!("Clicked to clear available moves");
+                                    self.possible_moves = [[false; 5]; 5];
+                                }
                             } else {
                                 drag_source(ui, cell_id, |ui| {
-                                    ui.add(self::cell::Cell::new(
+                                    let response = ui.add(self::cell::Cell::new(
                                         row,
                                         col,
                                         bg_fill,
                                         self.cell_size,
                                         image,
                                     ));
+
+                                    if response.clicked() {
+                                        tracing::info!("Clicked to show available moves");
+                                        if let Some(idx) = self.selected_card {
+                                            self.possible_moves = [[false; 5]; 5];
+                                            tracing::info!("Clicked to show available moves");
+                                            let available_moves =
+                                                self.state.generate_legal_moves_card_idx(
+                                                    PlayerColor::Red,
+                                                    *idx,
+                                                );
+
+                                            for mov in available_moves.iter() {
+                                                let (row, col) = Move::convert_to_2d(mov.to);
+                                                self.possible_moves[row as usize][col as usize] =
+                                                    true;
+                                            }
+                                        }
+                                    }
                                 });
 
                                 if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
@@ -175,12 +224,14 @@ impl<'a> GameBoard<'a> {
                 }
             });
 
+        // Do the dropping here
         if let Some(source_row_col) = source_row_col {
             if let Some(drop_row_col) = drop_row_col {
                 if source_row_col == drop_row_col {
                     return;
                 }
 
+                self.possible_moves = [[false; 5]; 5];
                 if ui.input(|i| i.pointer.any_released()) {
                     tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
                     self.state.make_move(
