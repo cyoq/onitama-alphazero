@@ -135,7 +135,7 @@ impl<'a> GameBoard<'a> {
 
                         let response = drop_target(ui, can_accept_what_is_being_dragged, |ui| {
                             let cell_id = Id::new("figure_dnd").with(col).with(row);
-                            drag_source(ui, cell_id, |ui| {
+                            if let None = image {
                                 ui.add(self::cell::Cell::new(
                                     row,
                                     col,
@@ -143,10 +143,20 @@ impl<'a> GameBoard<'a> {
                                     self.cell_size,
                                     image,
                                 ));
-                            });
+                            } else {
+                                drag_source(ui, cell_id, |ui| {
+                                    ui.add(self::cell::Cell::new(
+                                        row,
+                                        col,
+                                        bg_fill,
+                                        self.cell_size,
+                                        image,
+                                    ));
+                                });
 
-                            if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
-                                source_col_row = Some((col, row));
+                                if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
+                                    source_col_row = Some((col, row));
+                                }
                             }
                         })
                         .response;
