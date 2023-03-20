@@ -53,7 +53,7 @@ pub fn drop_target<R>(
 ) -> InnerResponse<R> {
     let is_being_dragged = ui.memory(|mem| mem.is_anything_being_dragged());
 
-    let margin = Vec2::splat(4.0);
+    let margin = Vec2::splat(0.0);
 
     let outer_rect_bounds = ui.available_rect_before_wrap();
     let inner_rect = outer_rect_bounds.shrink2(margin);
@@ -79,7 +79,7 @@ pub fn drop_target<R>(
     ui.painter().set(
         where_to_put_background,
         epaint::RectShape {
-            rounding: style.rounding,
+            rounding: Rounding::none(),
             fill,
             stroke,
             rect,
@@ -136,7 +136,7 @@ impl<'a> GameBoard<'a> {
                         let response = drop_target(ui, can_accept_what_is_being_dragged, |ui| {
                             let cell_id = Id::new("figure_dnd").with(col).with(row);
                             drag_source(ui, cell_id, |ui| {
-                                let response = ui.add(self::cell::Cell::new(
+                                ui.add(self::cell::Cell::new(
                                     row,
                                     col,
                                     bg_fill,
