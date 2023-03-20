@@ -97,6 +97,8 @@ pub struct GameBoard<'a> {
     pub cell_size: f32,
     /// images to display
     pub images: &'a HashMap<Figure, Image>,
+    /// Selected card idx
+    pub selected_card: &'a mut Option<usize>,
 }
 
 impl<'a> GameBoard<'a> {
@@ -135,7 +137,7 @@ impl<'a> GameBoard<'a> {
 
                         let response = drop_target(ui, can_accept_what_is_being_dragged, |ui| {
                             let cell_id = Id::new("figure_dnd").with(col).with(row);
-                            if let None = image {
+                            if image.is_none() || self.selected_card.is_none() {
                                 ui.add(self::cell::Cell::new(
                                     row,
                                     col,
@@ -190,6 +192,7 @@ impl<'a> GameBoard<'a> {
                         PlayerColor::Red,
                         0,
                     );
+                    *self.selected_card = None;
                 }
             }
         }

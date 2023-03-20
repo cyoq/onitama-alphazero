@@ -132,6 +132,7 @@ impl Onitama {
                         state: &mut self.game_state,
                         cell_size: 150.,
                         images: &self.images,
+                        selected_card: &mut self.selected_card,
                     }
                     .show(ui);
                 });
