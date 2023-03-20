@@ -103,8 +103,8 @@ impl<'a> GameBoard<'a> {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         let bg_fill = BG_FILL;
 
-        let mut source_col_row: Option<(u32, u32)> = None;
-        let mut drop_col_row: Option<(u32, u32)> = None;
+        let mut source_row_col: Option<(u32, u32)> = None;
+        let mut drop_row_col: Option<(u32, u32)> = None;
 
         egui::Grid::new("game_board")
             .min_col_width(0.)
@@ -155,7 +155,7 @@ impl<'a> GameBoard<'a> {
                                 });
 
                                 if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
-                                    source_col_row = Some((col, row));
+                                    source_row_col = Some((row, col));
                                 }
                             }
                         })
@@ -166,21 +166,25 @@ impl<'a> GameBoard<'a> {
                             && can_accept_what_is_being_dragged
                             && response.hovered()
                         {
-                            drop_col_row = Some((col, row));
+                            drop_row_col = Some((row, col));
                         }
                     }
                     ui.end_row();
                 }
             });
 
-        if let Some(source_col_row) = source_col_row {
-            if let Some(drop_col_row) = drop_col_row {
+        if let Some(source_row_col) = source_row_col {
+            if let Some(drop_row_col) = drop_row_col {
+                if source_row_col == drop_row_col {
+                    return;
+                }
+
                 if ui.input(|i| i.pointer.any_released()) {
-                    // do the drop:
+                    tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
                     self.state.make_move(
                         &Move {
-                            from: from_2d_to_1d(source_col_row),
-                            to: from_2d_to_1d(drop_col_row),
+                            from: from_2d_to_1d(source_row_col),
+                            to: from_2d_to_1d(drop_row_col),
                             figure: onitama_game::game::figure::Figure::Pawn,
                         },
                         PlayerColor::Red,
