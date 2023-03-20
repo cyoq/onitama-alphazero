@@ -1,4 +1,5 @@
-use egui::{Color32, Painter, Rect, Stroke, Ui, Vec2, Widget};
+use eframe::epaint;
+use egui::{Color32, Painter, Rect, Rounding, Shape, Stroke, Ui, Vec2, Widget};
 use egui_extras::RetainedImage;
 
 enum TextDirection<'a> {
@@ -79,15 +80,8 @@ impl<'a> Widget for Cell<'a> {
             (4, 4) => TextDirection::Bottom("E"),
             _ => TextDirection::None,
         };
-        let desired_size = match text_direction {
-            TextDirection::Left(_) => egui::vec2(size + TEXT_FIELD_PADDING, size),
-            TextDirection::Bottom(_) => egui::vec2(size, size + TEXT_FIELD_PADDING),
-            TextDirection::Both(_, _) => {
-                egui::vec2(size + TEXT_FIELD_PADDING, size + TEXT_FIELD_PADDING)
-            }
-            TextDirection::None => egui::vec2(size, size),
-        };
 
+        let desired_size = egui::vec2(size, size);
         // 2. Allocating space:
         // This is where we get a region of the screen assigned.
         // We also tell the Ui to sense clicks in the allocated region.
@@ -111,15 +105,18 @@ impl<'a> Widget for Cell<'a> {
         let stroke: Stroke = (0.5, Color32::BLACK).into();
         ui.painter().rect(rect, 0., bg_fill, stroke);
 
-        if let Some(image) = figure {
-            let texture = image.texture_id(ui.ctx());
-            ui.painter().image(
-                texture,
-                rect,
-                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-                Color32::WHITE,
-            );
-        }
+        // let inner_rect = rect.shrink(30.);
+        // let content_ui = ui.child_ui(inner_rect, *ui.layout());
+
+        // if let Some(image) = figure {
+        //     let texture = image.texture_id(ui.ctx());
+        //     content_ui.painter().image(
+        //         texture,
+        //         inner_rect,
+        //         Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+        //         Color32::WHITE,
+        //     );
+        // }
 
         // Draw text near cells if necessary
         match text_direction {

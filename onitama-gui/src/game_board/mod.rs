@@ -1,4 +1,5 @@
 pub mod cell;
+pub mod piece;
 
 use eframe::epaint::ahash::HashMap;
 use egui::*;
@@ -9,6 +10,8 @@ use onitama_game::{
 
 use crate::{image::Image, onitama::Figure};
 
+use self::piece::Piece;
+
 pub const BG_FILL: Color32 = Color32::WHITE;
 pub const BG_TEMPLE: Color32 = Color32::GRAY;
 pub const BG_BLUE: Color32 = Color32::BLUE;
@@ -16,6 +19,7 @@ pub const BG_RED: Color32 = Color32::RED;
 
 pub fn drag_source(ui: &mut Ui, id: Id, body: impl FnOnce(&mut Ui)) {
     let is_being_dragged = ui.memory(|mem| mem.is_being_dragged(id));
+    tracing::info!("Is dragged {}", is_being_dragged);
 
     if !is_being_dragged {
         let response = ui.scope(body).response;
@@ -48,20 +52,26 @@ pub fn drag_source(ui: &mut Ui, id: Id, body: impl FnOnce(&mut Ui)) {
 
 pub fn drop_target<R>(
     ui: &mut Ui,
+    rect: Rect,
     can_accept_what_is_being_dragged: bool,
     body: impl FnOnce(&mut Ui) -> R,
 ) -> InnerResponse<R> {
     let is_being_dragged = ui.memory(|mem| mem.is_anything_being_dragged());
 
-    let margin = Vec2::splat(0.0);
+    let margin = Vec2::splat(10.0);
 
-    let outer_rect_bounds = ui.available_rect_before_wrap();
+    // let outer_rect_bounds = ui.available_rect_before_wrap();
+    let outer_rect_bounds = rect;
+    // tracing::info!("Outer rect bounds: {:?}", outer_rect_bounds);
     let inner_rect = outer_rect_bounds.shrink2(margin);
+    // tracing::info!("Inner rect bounds: {:?}", inner_rect);
     let where_to_put_background = ui.painter().add(Shape::Noop);
     let mut content_ui = ui.child_ui(inner_rect, *ui.layout());
     let ret = body(&mut content_ui);
     let outer_rect = Rect::from_min_max(outer_rect_bounds.min, content_ui.min_rect().max + margin);
-    let (rect, response) = ui.allocate_at_least(outer_rect.size(), Sense::hover());
+    // let (rect, response) = ui.allocate_at_least(outer_rect.size(), Sense::hover());
+    let response = ui.allocate_response(outer_rect.size(), Sense::hover());
+    // tracing::info!(" rect : {:?}", rect);
 
     let style = if is_being_dragged && can_accept_what_is_being_dragged && response.hovered() {
         ui.visuals().widgets.active
@@ -154,62 +164,105 @@ impl<'a> GameBoard<'a> {
                             image = Some(&self.images.get(&Figure::BlueKing).unwrap().image);
                         }
 
-                        let response = drop_target(ui, can_accept_what_is_being_dragged, |ui| {
-                            let cell_id = Id::new("figure_dnd").with(col).with(row);
-                            if self.possible_moves[row as usize][col as usize] {
-                                bg_fill = Color32::LIGHT_RED;
-                            } else {
-                                bg_fill = BG_FILL;
-                            }
+                        let response = ui.add(self::cell::Cell::new(
+                            row,
+                            col,
+                            bg_fill,
+                            self.cell_size,
+                            image,
+                        ));
 
-                            if image.is_none() || self.selected_card.is_none() {
-                                let response = ui.add(self::cell::Cell::new(
-                                    row,
-                                    col,
-                                    bg_fill,
-                                    self.cell_size,
-                                    image,
-                                ));
+                        // let mut cell_ui = ui.child_ui(response.rect.shrink(30.), *ui.layout());
 
-                                if response.clicked() {
-                                    tracing::info!("Clicked to clear available moves");
-                                    self.possible_moves = [[false; 5]; 5];
-                                }
-                            } else {
+                        let response = drop_target(
+                            ui,
+                            response.rect,
+                            can_accept_what_is_being_dragged,
+                            |ui| {
+                                let cell_id = Id::new("figure_dnd").with(col).with(row);
+
+                                // if self.possible_moves[row as usize][col as usize] {
+                                //     bg_fill = Color32::LIGHT_RED;
+                                // } else {
+                                //     bg_fill = BG_FILL;
+                                // }
+
                                 drag_source(ui, cell_id, |ui| {
-                                    let response = ui.add(self::cell::Cell::new(
-                                        row,
-                                        col,
-                                        bg_fill,
-                                        self.cell_size,
-                                        image,
-                                    ));
-
-                                    if response.clicked() {
-                                        tracing::info!("Clicked to show available moves");
-                                        if let Some(idx) = self.selected_card {
-                                            self.possible_moves = [[false; 5]; 5];
-                                            tracing::info!("Clicked to show available moves");
-                                            let available_moves =
-                                                self.state.generate_legal_moves_card_idx(
-                                                    PlayerColor::Red,
-                                                    *idx,
-                                                );
-
-                                            for mov in available_moves.iter() {
-                                                let (row, col) = Move::convert_to_2d(mov.to);
-                                                self.possible_moves[row as usize][col as usize] =
-                                                    true;
-                                            }
+                                    if image.is_some() {
+                                        let response = ui.add(Piece {
+                                            outer_rect: &response.rect,
+                                            image: image.unwrap(),
+                                        });
+                                        if response.clicked() {
+                                            tracing::info!("Clicked piece");
                                         }
                                     }
+                                    // ui.label("hi");
                                 });
 
                                 if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
                                     source_row_col = Some((row, col));
                                 }
-                            }
-                        })
+
+                                // if image.is_none() {
+                                //     let response = ui.add(self::cell::Cell::new(
+                                //         row,
+                                //         col,
+                                //         bg_fill,
+                                //         self.cell_size,
+                                //         image,
+                                //     ));
+
+                                //     if response.clicked() {
+                                //         tracing::info!("Clicked to clear available moves");
+                                //         self.possible_moves = [[false; 5]; 5];
+                                //     }
+                                // } else {
+                                //     let response = ui.add(self::cell::Cell::new(
+                                //         row,
+                                //         col,
+                                //         bg_fill,
+                                //         self.cell_size,
+                                //         image,
+                                //     ));
+                                //     drag_source(ui, cell_id, |ui| {
+                                //         let piece = ui.add(Piece {
+                                //             outer_rect: &response.rect,
+                                //             image: image.unwrap(),
+                                //         });
+                                //     });
+
+                                //     // drag_source(ui, cell_id, |ui| {
+                                //     //     let piece = ui.add(Piece {
+                                //     //         outer_rect: &response.rect,
+                                //     //         image: image.unwrap(),
+                                //     //     });
+                                //     // if response.clicked() {
+                                //     //     tracing::info!("Clicked to show available moves");
+                                //     //     if let Some(idx) = self.selected_card {
+                                //     //         self.possible_moves = [[false; 5]; 5];
+                                //     //         tracing::info!("Clicked to show available moves");
+                                //     //         let available_moves =
+                                //     //             self.state.generate_legal_moves_card_idx(
+                                //     //                 PlayerColor::Red,
+                                //     //                 *idx,
+                                //     //             );
+
+                                //     //         for mov in available_moves.iter() {
+                                //     //             let (row, col) = Move::convert_to_2d(mov.to);
+                                //     //             self.possible_moves[row as usize][col as usize] =
+                                //     //                 true;
+                                //     //         }
+                                //     //     }
+                                //     // }
+                                //     // });
+
+                                //     if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
+                                //         source_row_col = Some((row, col));
+                                //     }
+                                // }
+                            },
+                        )
                         .response;
 
                         let is_being_dragged = ui.memory(|mem| mem.is_anything_being_dragged());
