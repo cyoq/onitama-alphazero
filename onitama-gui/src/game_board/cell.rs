@@ -1,6 +1,4 @@
-use eframe::epaint;
-use egui::{Color32, Painter, Rect, Rounding, Shape, Stroke, Ui, Vec2, Widget};
-use egui_extras::RetainedImage;
+use egui::{Color32, Painter, Rect, Stroke, Ui, Vec2, Widget};
 
 enum TextDirection<'a> {
     Left(&'a str),
@@ -11,36 +9,24 @@ enum TextDirection<'a> {
 
 const TEXT_FIELD_PADDING: f32 = 15.;
 
-pub struct Cell<'a> {
+pub struct Cell {
     pub row: u32,
     pub col: u32,
     pub size: f32,
     pub bg_fill: Color32,
-    pub figure: Option<&'a RetainedImage>,
 }
 
-impl<'a> Cell<'a> {
-    pub fn new(
-        row: u32,
-        col: u32,
-        bg_fill: Color32,
-        size: f32,
-        figure: Option<&'a RetainedImage>,
-    ) -> Self {
+impl Cell {
+    pub fn new(row: u32, col: u32, bg_fill: Color32, size: f32) -> Self {
         Self {
             row,
             col,
             bg_fill,
             size,
-            figure,
         }
     }
 
-    pub fn show<R>(
-        &mut self,
-        ui: &mut Ui,
-        add_contents: impl FnOnce(&mut Ui, Rect) -> R + 'a,
-    ) -> R {
+    pub fn show<R>(&mut self, ui: &mut Ui, add_contents: impl FnOnce(&mut Ui, Rect) -> R) -> R {
         let text_direction = match (self.row, self.col) {
             (0, 0) => TextDirection::Left("5"),
             (1, 0) => TextDirection::Left("4"),
@@ -118,14 +104,13 @@ fn draw_text(painter: &Painter, rect: &Rect, text: &str, offset: Vec2) {
     );
 }
 
-impl<'a> Widget for Cell<'a> {
+impl Widget for Cell {
     fn ui(self, ui: &mut Ui) -> egui::Response {
         let Cell {
             row,
             col,
             bg_fill,
             size,
-            figure,
         } = self;
         // Widget code can be broken up in four steps:
         //  1. Decide a size for the widget

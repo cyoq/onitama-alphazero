@@ -160,18 +160,7 @@ impl<'a> GameBoard<'a> {
                         } else if blue_king == 1 {
                             image = Some(&self.images.get(&Figure::BlueKing).unwrap().image);
                         }
-
-                        // let response = ui.add(self::cell::Cell::new(
-                        //     row,
-                        //     col,
-                        //     bg_fill,
-                        //     self.cell_size,
-                        //     image,
-                        // ));
-
-                        // let mut cell_ui = ui.child_ui(response.rect.shrink(30.), *ui.layout());
-
-                        self::cell::Cell::new(row, col, bg_fill, self.cell_size, image).show(
+                        self::cell::Cell::new(row, col, bg_fill, self.cell_size).show(
                             ui,
                             |ui, rect| {
                                 let response =
