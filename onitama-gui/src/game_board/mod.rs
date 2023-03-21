@@ -24,7 +24,7 @@ pub fn drag_source(ui: &mut Ui, id: Id, body: impl FnOnce(&mut Ui)) {
         let response = ui.scope(body).response;
 
         // Check for drags:
-        let response = ui.interact(response.rect, id, Sense::drag());
+        let response = ui.interact(response.rect, id, Sense::click_and_drag());
         if response.hovered() {
             ui.ctx().set_cursor_icon(CursorIcon::Grab);
         }
@@ -176,15 +176,28 @@ impl<'a> GameBoard<'a> {
 
                                         drag_source(ui, cell_id, |ui| {
                                             if image.is_some() {
-                                                ui.add(Piece {
+                                                let r = ui.add(Piece {
                                                     outer_rect: &rect,
                                                     image: image.unwrap(),
                                                 });
+
+                                                let resp =
+                                                    ui.interact(r.rect, cell_id, Sense::click());
+
+                                                if resp.clicked() {
+                                                    tracing::info!("clicked");
+                                                }
+
+                                                // resp.context_menu(|ui| {
+                                                //     if ui.button("Remove").clicked() {
+                                                //         tracing::info!("Hi1");
+                                                //         ui.close_menu();
+                                                //     }
+                                                // });
                                             }
                                         });
 
                                         if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
-                                            tracing::info!("Dragged");
                                             source_row_col = Some((row, col));
                                         }
                                     })

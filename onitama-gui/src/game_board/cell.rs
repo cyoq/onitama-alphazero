@@ -1,4 +1,4 @@
-use egui::{Color32, Painter, Rect, Stroke, Ui, Vec2, Widget};
+use egui::{Color32, Painter, Rect, Response, Stroke, Ui, Vec2, Widget};
 
 enum TextDirection<'a> {
     Left(&'a str),

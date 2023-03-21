@@ -21,10 +21,10 @@ impl<'a> Widget for Piece<'a> {
         let inner_rect = rect.shrink(20.);
         // let mut ui = ui.child_ui(inner_rect, *ui.layout());
         // let response = ui.allocate_response(inner_rect.size(), Sense::click());
-        let response = ui.allocate_rect(inner_rect, Sense::click());
+        let response = ui.allocate_rect(inner_rect, Sense::focusable_noninteractive());
 
         // Attach some meta-data to the response which can be used by screen readers:
-        response.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::Other));
+        response.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::Button));
 
         // 4. Paint!
         // Make sure we need to paint:
