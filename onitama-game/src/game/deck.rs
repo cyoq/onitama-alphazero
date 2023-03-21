@@ -5,7 +5,7 @@ use rand::{seq::SliceRandom, thread_rng};
 use crate::common::get_bit;
 
 use super::{
-    card::{self, Card, CARD_NAMES, ORIGINAL_CARDS},
+    card::{Card, CARD_NAMES, ORIGINAL_CARDS},
     player_color::PlayerColor,
 };
 
