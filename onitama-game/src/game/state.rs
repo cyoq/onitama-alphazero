@@ -1,4 +1,4 @@
-use crate::common::{clear_bit, get_bit, set_bit};
+use crate::common::{clear_bit, from_2d_to_1d, get_bit, set_bit};
 
 use super::{
     card::{Card, ATTACK_MAPS},
@@ -167,13 +167,87 @@ impl State {
         &self,
         player_color: PlayerColor,
         card_idx: usize,
+        pos: (u32, u32),
     ) -> Vec<Move> {
+        println!("Current deck: {:?}", self.deck);
         let card = self.deck.get_card(card_idx);
-        self.generate_legal_moves(player_color, card)
+        self.generate_legal_moves(card, player_color, pos)
+    }
+
+    pub fn generate_legal_moves(
+        &self,
+        card: &Card,
+        player_color: PlayerColor,
+        pos: (u32, u32),
+    ) -> Vec<Move> {
+        let mut moves = vec![];
+
+        // Save pawns for the specific player
+        let pawns: u32 = self.pawns[player_color as usize];
+        // Save king for the specific player
+        let king: u32 = self.kings[player_color as usize];
+
+        let n = from_2d_to_1d(pos) as usize;
+        // Getting a position bit for a pawn
+        let pawn_bit = get_bit(pawns, n);
+        let king_bit = get_bit(king, n);
+
+        // If bits contain 0 then there is no piece at this position,
+        // No need to process
+        if pawn_bit == 0 && king_bit == 0 {
+            return moves;
+        }
+
+        // Get attack map for the specific player, card and the position
+        let attack_map = ATTACK_MAPS[player_color as usize][card.index][n];
+
+        let map: u32;
+        let figure: Figure;
+        // Generate attacks
+        if pawn_bit == 1 {
+            // 1. apply all pawns to the attack map
+            // 2. mask out all the pawns to remove overlapping moves with the same color figures
+            // 3. mask out the same color king figure if it is overlapping
+            map = ((attack_map | pawns) & !pawns) & !king;
+            figure = Figure::Pawn;
+        } else {
+            // 1. apply a king to the attack map
+            // 2. mask out the same color king figure if it is overlapping
+            // 3. mask out all the pawns to remove overlapping moves of mask and pawns
+            map = ((attack_map | king) & !king) & !pawns;
+            figure = Figure::King;
+        }
+
+        // Generate moves
+        for i in 0..25 {
+            let bit = get_bit(map, i);
+
+            if bit == 0 {
+                continue;
+            }
+
+            moves.push(Move {
+                from: n as u32,
+                to: i as u32,
+                figure,
+            });
+        }
+
+        moves
     }
 
     /// Generates all legal moves for the specific card and the player
-    pub fn generate_legal_moves(&self, player_color: PlayerColor, card: &Card) -> Vec<Move> {
+    pub fn generate_all_legal_moves_card_idx(
+        &self,
+        player_color: PlayerColor,
+        card_idx: usize,
+    ) -> Vec<Move> {
+        let card = self.deck.get_card(card_idx);
+        self.generate_all_legal_moves(player_color, card)
+    }
+
+    /// Generates all legal moves for the specific card and the player
+    pub fn generate_all_legal_moves(&self, player_color: PlayerColor, card: &Card) -> Vec<Move> {
         let mut result: Vec<Move> = Vec::new();
         // Save pawns for the specific player
         let pawns: u32 = self.pawns[player_color as usize];
@@ -286,7 +360,7 @@ mod tests {
             Move::from(([(4, 3), (3, 3)], Figure::Pawn)),
             Move::from(([(4, 4), (3, 4)], Figure::Pawn)),
         ];
-        let mut crab_moves = state.generate_legal_moves(PlayerColor::Red, crab);
+        let mut crab_moves = state.generate_all_legal_moves(PlayerColor::Red, crab);
         crab_moves.sort();
         crab_expected_moves.sort();
         assert_eq!(crab_moves, crab_expected_moves);
@@ -300,7 +374,7 @@ mod tests {
             Move::from(([(4, 2), (3, 3)], Figure::King)),
             Move::from(([(4, 3), (3, 4)], Figure::Pawn)),
         ];
-        let mut rabbit_moves = state.generate_legal_moves(PlayerColor::Red, rabbit);
+        let mut rabbit_moves = state.generate_all_legal_moves(PlayerColor::Red, rabbit);
         rabbit_moves.sort();
         rabbit_expected_moves.sort();
         assert_eq!(rabbit_moves, rabbit_expected_moves);
@@ -324,7 +398,7 @@ mod tests {
             Move::from(([(0, 3), (1, 3)], Figure::Pawn)),
             Move::from(([(0, 4), (1, 4)], Figure::Pawn)),
         ];
-        let mut crab_moves = state.generate_legal_moves(PlayerColor::Blue, crab);
+        let mut crab_moves = state.generate_all_legal_moves(PlayerColor::Blue, crab);
         crab_moves.sort();
         crab_expected_moves.sort();
         assert_eq!(crab_moves, crab_expected_moves);
@@ -338,7 +412,7 @@ mod tests {
             Move::from(([(0, 3), (1, 2)], Figure::Pawn)),
             Move::from(([(0, 4), (1, 3)], Figure::Pawn)),
         ];
-        let mut rabbit_moves = state.generate_legal_moves(PlayerColor::Blue, rabbit);
+        let mut rabbit_moves = state.generate_all_legal_moves(PlayerColor::Blue, rabbit);
         rabbit_moves.sort();
         rabbit_expected_moves.sort();
         assert_eq!(rabbit_moves, rabbit_expected_moves);

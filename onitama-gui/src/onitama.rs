@@ -37,6 +37,7 @@ pub struct Onitama {
     images: HashMap<Figure, Image>,
     game_state: State,
     selected_card: Option<usize>,
+    possible_moves: [[bool; 5]; 5],
 }
 
 impl Default for Onitama {
@@ -45,6 +46,7 @@ impl Default for Onitama {
             game_state: State::new(),
             images: HashMap::new(),
             selected_card: None,
+            possible_moves: [[false; 5]; 5],
         }
     }
 }
@@ -58,6 +60,7 @@ impl Onitama {
             game_state: State::new(),
             images,
             selected_card: None,
+            possible_moves: [[false; 5]; 5],
         }
     }
 
@@ -133,6 +136,7 @@ impl Onitama {
                         150.,
                         &mut self.selected_card,
                         &self.images,
+                        &mut self.possible_moves,
                     )
                     .show(ui);
                 });

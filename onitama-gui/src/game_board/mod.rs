@@ -72,28 +72,28 @@ pub fn drop_target<R>(
     let outer_rect = Rect::from_min_max(outer_rect_bounds.min, content_ui.max_rect().max + margin);
     let (rect, response) = ui.allocate_exact_size(outer_rect.size(), Sense::hover());
 
-    let style = if is_being_dragged && can_accept_what_is_being_dragged && response.hovered() {
-        ui.visuals().widgets.active
-    } else {
-        ui.visuals().widgets.inactive
-    };
+    // let style = if is_being_dragged && can_accept_what_is_being_dragged && response.hovered() {
+    //     ui.visuals().widgets.active
+    // } else {
+    //     ui.visuals().widgets.inactive
+    // };
 
-    let mut fill = style.bg_fill;
-    let mut stroke = style.bg_stroke;
-    if is_being_dragged && !can_accept_what_is_being_dragged {
-        fill = ui.visuals().gray_out(fill);
-        stroke.color = ui.visuals().gray_out(stroke.color);
-    }
+    // let mut fill = style.bg_fill;
+    // let mut stroke = style.bg_stroke;
+    // if is_being_dragged && !can_accept_what_is_being_dragged {
+    //     fill = ui.visuals().gray_out(fill);
+    //     stroke.color = ui.visuals().gray_out(stroke.color);
+    // }
 
-    ui.painter().set(
-        where_to_put_background,
-        epaint::RectShape {
-            rounding: Rounding::none(),
-            fill,
-            stroke,
-            rect,
-        },
-    );
+    // ui.painter().set(
+    //     where_to_put_background,
+    //     epaint::RectShape {
+    //         rounding: Rounding::none(),
+    //         fill,
+    //         stroke,
+    //         rect,
+    //     },
+    // );
 
     InnerResponse::new(ret, response)
 }
@@ -109,7 +109,7 @@ pub struct GameBoard<'a> {
     /// Selected card idx
     pub selected_card: &'a mut Option<usize>,
     /// Hashmap for the cells that are possible moves
-    pub possible_moves: [[bool; 5]; 5],
+    pub possible_moves: &'a mut [[bool; 5]; 5],
 }
 
 impl<'a> GameBoard<'a> {
@@ -118,9 +118,8 @@ impl<'a> GameBoard<'a> {
         cell_size: f32,
         selected_card: &'a mut Option<usize>,
         images: &'a HashMap<Figure, Image>,
+        possible_moves: &'a mut [[bool; 5]; 5],
     ) -> Self {
-        let possible_moves = [[false; 5]; 5];
-
         Self {
             state,
             cell_size,
@@ -131,7 +130,7 @@ impl<'a> GameBoard<'a> {
     }
 
     pub fn show(&mut self, ui: &mut egui::Ui) {
-        let mut bg_fill = BG_FILL;
+        // let mut bg_fill = BG_FILL;
 
         let mut source_row_col: Option<(u32, u32)> = None;
         let mut drop_row_col: Option<(u32, u32)> = None;
@@ -163,6 +162,7 @@ impl<'a> GameBoard<'a> {
                             image = Some(&self.images.get(&Figure::BlueKing).unwrap().image);
                         }
 
+                        let bg_fill;
                         if self.possible_moves[row as usize][col as usize] {
                             bg_fill = Color32::LIGHT_RED;
                         } else {
@@ -194,7 +194,27 @@ impl<'a> GameBoard<'a> {
                                             });
 
                                             if drag_resp.drag_started() {
-                                                tracing::warn!("Clicked a piece!QQ")
+                                                if let Some(idx) = self.selected_card {
+                                                    *self.possible_moves = [[false; 5]; 5];
+                                                    tracing::info!(
+                                                        "Clicked to show available moves"
+                                                    );
+                                                    let available_moves =
+                                                        self.state.generate_legal_moves_card_idx(
+                                                            PlayerColor::Red,
+                                                            *idx,
+                                                            (row, col),
+                                                        );
+                                                    tracing::warn!("{:?}", available_moves);
+
+                                                    for mov in available_moves.iter() {
+                                                        let (row, col) =
+                                                            Move::convert_to_2d(mov.to);
+                                                        self.possible_moves[row as usize]
+                                                            [col as usize] = true;
+                                                    }
+                                                }
+                                                tracing::info!("{:?}", self.possible_moves);
                                             }
                                         }
 
@@ -227,7 +247,7 @@ impl<'a> GameBoard<'a> {
                     return;
                 }
 
-                self.possible_moves = [[false; 5]; 5];
+                *self.possible_moves = [[false; 5]; 5];
                 if ui.input(|i| i.pointer.any_released()) {
                     tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
                     self.state.make_move(

@@ -93,7 +93,7 @@ impl Agent for HumanConsole {
         let mut moves = vec![];
         for card in state.deck.get_player_cards(player_color) {
             println!("All possible moves for card {}", CARD_NAMES[card.index]);
-            for mov in state.generate_legal_moves(player_color, card) {
+            for mov in state.generate_all_legal_moves(player_color, card) {
                 println!("{}", mov);
                 moves.push(mov);
             }
