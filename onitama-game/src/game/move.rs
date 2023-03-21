@@ -24,8 +24,8 @@ pub struct Move {
 
 impl Move {
     pub fn convert_to_2d(value: u32) -> (u32, u32) {
-        let row = value % 5;
-        let col = 5 - value / 5;
+        let col = value % 5;
+        let row = value / 5;
         (row, col)
     }
 

@@ -1,4 +1,7 @@
-use crate::common::{clear_bit, from_2d_to_1d, get_bit, set_bit};
+use crate::{
+    common::{clear_bit, from_2d_to_1d, get_bit, set_bit},
+    game::card::CARD_NAMES,
+};
 
 use super::{
     card::{Card, ATTACK_MAPS},
@@ -169,7 +172,13 @@ impl State {
         card_idx: usize,
         pos: (u32, u32),
     ) -> Vec<Move> {
-        println!("Current deck: {:?}", self.deck);
+        println!(
+            "Current deck: {:?}",
+            self.deck
+                .iter()
+                .map(|x| CARD_NAMES[x.index])
+                .collect::<Vec<&str>>()
+        );
         let card = self.deck.get_card(card_idx);
         self.generate_legal_moves(card, player_color, pos)
     }

@@ -210,6 +210,7 @@ impl<'a> GameBoard<'a> {
                                                     for mov in available_moves.iter() {
                                                         let (row, col) =
                                                             Move::convert_to_2d(mov.to);
+                                                        tracing::info!("({}, {})", row, col);
                                                         self.possible_moves[row as usize]
                                                             [col as usize] = true;
                                                     }

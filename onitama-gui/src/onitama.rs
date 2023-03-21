@@ -38,6 +38,7 @@ pub struct Onitama {
     game_state: State,
     selected_card: Option<usize>,
     possible_moves: [[bool; 5]; 5],
+    deck: Deck,
 }
 
 impl Default for Onitama {
@@ -47,20 +48,30 @@ impl Default for Onitama {
             images: HashMap::new(),
             selected_card: None,
             possible_moves: [[false; 5]; 5],
+            deck: Deck::default(),
         }
     }
 }
 
 impl Onitama {
     pub fn new(cc: &CreationContext) -> Self {
+        let deck = Deck::new([
+            ORIGINAL_CARDS[DRAGON.index].clone(),
+            ORIGINAL_CARDS[FROG.index].clone(),
+            ORIGINAL_CARDS[TIGER.index].clone(),
+            ORIGINAL_CARDS[RABBIT.index].clone(),
+            ORIGINAL_CARDS[HORSE.index].clone(),
+        ]);
+
         Onitama::configure_fonts(&cc.egui_ctx);
         let images = Onitama::load_images();
 
         Self {
-            game_state: State::new(),
+            game_state: State::with_deck(deck.clone()),
             images,
             selected_card: None,
             possible_moves: [[false; 5]; 5],
+            deck,
         }
     }
 
@@ -145,13 +156,14 @@ impl Onitama {
     }
 
     fn deck_panel(&mut self, ui: &mut Ui) {
-        let deck = Deck::new([
-            ORIGINAL_CARDS[DRAGON.index].clone(),
-            ORIGINAL_CARDS[FROG.index].clone(),
-            ORIGINAL_CARDS[TIGER.index].clone(),
-            ORIGINAL_CARDS[RABBIT.index].clone(),
-            ORIGINAL_CARDS[HORSE.index].clone(),
-        ]);
+        // let deck = Deck::new([
+        //     ORIGINAL_CARDS[DRAGON.index].clone(),
+        //     ORIGINAL_CARDS[FROG.index].clone(),
+        //     ORIGINAL_CARDS[TIGER.index].clone(),
+        //     ORIGINAL_CARDS[RABBIT.index].clone(),
+        //     ORIGINAL_CARDS[HORSE.index].clone(),
+        // ]);
+        let deck = self.deck.clone();
 
         let red_player_cards = deck.get_player_cards(PlayerColor::Red);
         let blue_player_cards = deck.get_player_cards(PlayerColor::Blue);
