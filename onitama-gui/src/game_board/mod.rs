@@ -176,17 +176,26 @@ impl<'a> GameBoard<'a> {
                                     drop_target(ui, rect, can_accept_what_is_being_dragged, |ui| {
                                         let cell_id = Id::new("figure_dnd").with(col).with(row);
 
-                                        let drag_resp = drag_source(ui, cell_id, |ui| {
+                                        if self.selected_card.is_none() {
                                             if image.is_some() {
                                                 ui.add(Piece {
                                                     outer_rect: &rect,
                                                     image: image.unwrap(),
                                                 });
                                             }
-                                        });
+                                        } else {
+                                            let drag_resp = drag_source(ui, cell_id, |ui| {
+                                                if image.is_some() {
+                                                    ui.add(Piece {
+                                                        outer_rect: &rect,
+                                                        image: image.unwrap(),
+                                                    });
+                                                }
+                                            });
 
-                                        if drag_resp.drag_started() {
-                                            tracing::warn!("Clicked a piece!QQ")
+                                            if drag_resp.drag_started() {
+                                                tracing::warn!("Clicked a piece!QQ")
+                                            }
                                         }
 
                                         if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
