@@ -160,6 +160,13 @@ impl<'a> GameBoard<'a> {
                         } else if blue_king == 1 {
                             image = Some(&self.images.get(&Figure::BlueKing).unwrap().image);
                         }
+
+                        if self.possible_moves[row as usize][col as usize] {
+                            bg_fill = Color32::LIGHT_RED;
+                        } else {
+                            bg_fill = BG_FILL;
+                        }
+
                         self::cell::Cell::new(row, col, bg_fill, self.cell_size).show(
                             ui,
                             |ui, rect| {
@@ -167,31 +174,17 @@ impl<'a> GameBoard<'a> {
                                     drop_target(ui, rect, can_accept_what_is_being_dragged, |ui| {
                                         let cell_id = Id::new("figure_dnd").with(col).with(row);
 
-                                        // if self.possible_moves[row as usize][col as usize] {
-                                        //     bg_fill = Color32::LIGHT_RED;
-                                        // } else {
-                                        //     bg_fill = BG_FILL;
-                                        // }
-
                                         drag_source(ui, cell_id, |ui| {
                                             if image.is_some() {
-                                                let response = ui.add(Piece {
+                                                ui.add(Piece {
                                                     outer_rect: &rect,
                                                     image: image.unwrap(),
                                                 });
-
-                                                if response.clicked() {
-                                                    tracing::info!("Clicked piece");
-                                                }
                                             }
-                                            // let mut r = ui.label("hi");
-                                            // r = r.interact(Sense::click());
-                                            // if r.clicked() {
-                                            //     tracing::info!("Clicked piece");
-                                            // }
                                         });
 
                                         if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
+                                            tracing::info!("Dragged");
                                             source_row_col = Some((row, col));
                                         }
                                     })
@@ -257,6 +250,7 @@ impl<'a> GameBoard<'a> {
 
                                 let is_being_dragged =
                                     ui.memory(|mem| mem.is_anything_being_dragged());
+
                                 if is_being_dragged
                                     && can_accept_what_is_being_dragged
                                     && response.hovered()

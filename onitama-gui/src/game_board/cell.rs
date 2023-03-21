@@ -9,6 +9,7 @@ enum TextDirection<'a> {
 
 const TEXT_FIELD_PADDING: f32 = 15.;
 
+/// A container that allows to hold objects inside of it.
 pub struct Cell {
     pub row: u32,
     pub col: u32,
