@@ -295,6 +295,10 @@ impl Onitama {
 impl App for Onitama {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         ctx.set_debug_on_hover(true);
+        egui::Window::new("Configuration").show(ctx, |ui| {
+            ctx.inspection_ui(ui);
+        });
+
         SidePanel::new(egui::panel::Side::Left, "board_panel")
             .max_width(BOARD_PANEL_WIDTH)
             .min_width(BOARD_PANEL_WIDTH)
