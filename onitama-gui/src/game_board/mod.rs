@@ -140,7 +140,6 @@ impl<'a> GameBoard<'a> {
             .min_row_height(0.)
             .spacing(egui::vec2(0., 0.))
             .show(ui, |ui| {
-                let can_accept_what_is_being_dragged = true;
                 for row in 0..5 {
                     for col in 0..5 {
                         let mut image = None;
@@ -162,8 +161,11 @@ impl<'a> GameBoard<'a> {
                             image = Some(&self.images.get(&Figure::BlueKing).unwrap().image);
                         }
 
+                        let can_accept_what_is_being_dragged =
+                            self.possible_moves[row as usize][col as usize];
                         let bg_fill;
-                        if self.possible_moves[row as usize][col as usize] {
+
+                        if can_accept_what_is_being_dragged {
                             bg_fill = Color32::LIGHT_RED;
                         } else {
                             bg_fill = BG_FILL;
@@ -195,7 +197,7 @@ impl<'a> GameBoard<'a> {
 
                                             if drag_resp.drag_started() {
                                                 if let Some(idx) = self.selected_card {
-                                                    *self.possible_moves = [[false; 5]; 5];
+                                                    // *self.possible_moves = [[false; 5]; 5];
                                                     tracing::info!(
                                                         "Clicked to show available moves"
                                                     );
@@ -248,7 +250,7 @@ impl<'a> GameBoard<'a> {
                     return;
                 }
 
-                *self.possible_moves = [[false; 5]; 5];
+                // *self.possible_moves = [[false; 5]; 5];
                 if ui.input(|i| i.pointer.any_released()) {
                     tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
                     self.state.make_move(
