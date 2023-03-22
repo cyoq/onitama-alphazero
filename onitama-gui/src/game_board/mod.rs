@@ -132,6 +132,8 @@ impl<'a> GameBoard<'a> {
                 for row in 0..5 {
                     for col in 0..5 {
                         let mut image = None;
+                        // TODO: Need to use color and a piece type
+                        let mut piece_color = None;
                         let coords = from_2d_to_1d((row, col)) as usize;
                         let red_pawn = get_bit(state.pawns[PlayerColor::Red as usize], coords);
                         let red_king = get_bit(state.kings[PlayerColor::Red as usize], coords);
@@ -140,12 +142,16 @@ impl<'a> GameBoard<'a> {
 
                         if red_pawn == 1 {
                             image = Some(&self.images.get(&Figure::RedPawn).unwrap().image);
+                            piece_color = Some(PlayerColor::Red);
                         } else if blue_pawn == 1 {
                             image = Some(&self.images.get(&Figure::BluePawn).unwrap().image);
+                            piece_color = Some(PlayerColor::Blue);
                         } else if red_king == 1 {
                             image = Some(&self.images.get(&Figure::RedKing).unwrap().image);
+                            piece_color = Some(PlayerColor::Red);
                         } else if blue_king == 1 {
                             image = Some(&self.images.get(&Figure::BlueKing).unwrap().image);
+                            piece_color = Some(PlayerColor::Blue);
                         }
 
                         let can_accept_what_is_being_dragged =
@@ -161,6 +167,7 @@ impl<'a> GameBoard<'a> {
                             bg_fill = BG_FILL;
                         }
 
+                        // Clear allowed moves if selected card changes
                         if self.selected_card.changed {
                             *self.allowed_moves = [[false; 5]; 5];
                             self.selected_card.changed = false;
@@ -173,7 +180,10 @@ impl<'a> GameBoard<'a> {
                                     drop_target(ui, rect, can_accept_what_is_being_dragged, |ui| {
                                         let cell_id = Id::new("figure_dnd").with(col).with(row);
 
-                                        if self.selected_card.card_idx.is_none() {
+                                        if self.selected_card.card_idx.is_none()
+                                            || Some(self.game_state.curr_player_color)
+                                                != piece_color
+                                        {
                                             if image.is_some() {
                                                 ui.add(Piece {
                                                     outer_rect: &rect,
