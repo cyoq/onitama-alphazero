@@ -153,7 +153,10 @@ impl<'a> GameBoard<'a> {
                         let bg_fill;
 
                         if can_accept_what_is_being_dragged {
-                            bg_fill = Color32::LIGHT_RED;
+                            bg_fill = match self.game_state.curr_player_color {
+                                PlayerColor::Red => Color32::LIGHT_RED,
+                                PlayerColor::Blue => Color32::LIGHT_BLUE,
+                            };
                         } else {
                             bg_fill = BG_FILL;
                         }
