@@ -9,11 +9,17 @@ use egui::{
     Label, Layout, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
-use onitama_game::game::{
-    card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
-    deck::Deck,
-    player_color::PlayerColor,
-    state::State,
+use onitama_game::{
+    ai::{agent::Agent, human_gui::HumanGui},
+    game::{
+        card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
+        deck::Deck,
+        done_move::DoneMove,
+        game::Game,
+        move_result::MoveResult,
+        player_color::PlayerColor,
+        state::State,
+    },
 };
 
 use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
@@ -78,31 +84,28 @@ pub enum Figure {
     RedPawn,
 }
 
+pub enum Action {
+    RequestCardRotation,
+    NextMove,
+}
+
 pub struct Onitama {
     images: HashMap<Figure, Image>,
-    game_state: State,
+    game_state: Game,
     selected_card: SelectedCard,
     /// Selected piece can be identified by (row, col)
     selected_piece: Option<(u32, u32)>,
     allowed_moves: [[bool; 5]; 5],
-    deck: Deck,
-}
-
-impl Default for Onitama {
-    fn default() -> Self {
-        Self {
-            game_state: State::new(),
-            images: HashMap::new(),
-            selected_card: SelectedCard::default(),
-            selected_piece: None,
-            allowed_moves: [[false; 5]; 5],
-            deck: Deck::default(),
-        }
-    }
+    human_done_move: Option<DoneMove>,
+    move_result: Option<MoveResult>,
 }
 
 impl Onitama {
-    pub fn new(cc: &CreationContext) -> Self {
+    pub fn new(
+        cc: &CreationContext,
+        red_agent: Box<dyn Agent>,
+        blue_agent: Box<dyn Agent>,
+    ) -> Self {
         let deck = Deck::new([
             ORIGINAL_CARDS[DRAGON.index].clone(),
             ORIGINAL_CARDS[FROG.index].clone(),
@@ -115,12 +118,13 @@ impl Onitama {
         let images = Onitama::load_images();
 
         Self {
-            game_state: State::with_deck(deck.clone()),
+            game_state: Game::with_deck(red_agent, blue_agent, deck),
             images,
             selected_card: SelectedCard::default(),
             selected_piece: None,
             allowed_moves: [[false; 5]; 5],
-            deck,
+            human_done_move: None,
+            move_result: None,
         }
     }
 
@@ -175,6 +179,14 @@ impl Onitama {
             .collect::<HashMap<Figure, Image>>()
     }
 
+    pub fn game_loop(&mut self) {
+        // Make check if it is a human agent
+        if let Some(done_move) = self.human_done_move {
+            self.move_result = Some(self.game_state.progress(done_move));
+            self.human_done_move = None;
+        }
+    }
+
     fn board_panel(&mut self, ui: &mut Ui) {
         ui.add_space(PADDING);
         ui.vertical_centered(|ui| {
@@ -191,14 +203,15 @@ impl Onitama {
             .horizontal(|mut strip| {
                 strip.empty();
                 strip.cell(|ui| {
-                    GameBoard::new(
-                        &mut self.game_state,
-                        150.,
-                        &mut self.selected_card,
-                        &mut self.selected_piece,
-                        &self.images,
-                        &mut self.allowed_moves,
-                    )
+                    GameBoard {
+                        game_state: &mut self.game_state,
+                        cell_size: 150.,
+                        selected_card: &mut self.selected_card,
+                        selected_piece: &mut self.selected_piece,
+                        images: &self.images,
+                        allowed_moves: &mut self.allowed_moves,
+                        human_done_move: &mut self.human_done_move,
+                    }
                     .show(ui);
                 });
                 strip.empty();
@@ -206,7 +219,7 @@ impl Onitama {
     }
 
     fn deck_panel(&mut self, ui: &mut Ui) {
-        let deck = self.deck.clone();
+        let deck = self.game_state.state.deck.clone();
 
         let red_player_cards = deck.get_player_cards(PlayerColor::Red);
         let blue_player_cards = deck.get_player_cards(PlayerColor::Blue);
@@ -333,7 +346,10 @@ impl Onitama {
     fn move_card_to_ui(&mut self, ui: &mut Ui, card: &Card, deck: &Deck) {
         let mut stroke_fill = Color32::BLACK;
         if deck.get_card_idx(&card) == self.selected_card.card_idx {
-            stroke_fill = Color32::RED;
+            stroke_fill = match self.game_state.curr_player_color {
+                PlayerColor::Red => Color32::RED,
+                PlayerColor::Blue => Color32::BLUE,
+            }
         }
 
         let response = ui.add(MoveCard {
@@ -357,6 +373,19 @@ impl App for Onitama {
         // egui::Window::new("Configuration").show(ctx, |ui| {
         //     ctx.inspection_ui(ui);
         // });
+
+        if self.move_result.is_none() || !self.move_result.unwrap().is_win() {
+            self.game_loop();
+        }
+
+        if let Some(result) = self.move_result {
+            match result {
+                MoveResult::Capture => tracing::warn!("A capture has happened!"),
+                MoveResult::RedWin => tracing::warn!("Red won!"),
+                MoveResult::BlueWin => tracing::warn!("Blue won!"),
+                MoveResult::InProgress => tracing::warn!("Game is in progress"),
+            }
+        }
 
         SidePanel::new(egui::panel::Side::Left, "board_panel")
             .max_width(BOARD_PANEL_WIDTH)

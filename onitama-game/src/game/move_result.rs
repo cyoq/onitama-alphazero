@@ -5,3 +5,9 @@ pub enum MoveResult {
     BlueWin,
     InProgress,
 }
+
+impl MoveResult {
+    pub fn is_win(&self) -> bool {
+        *self == MoveResult::RedWin || *self == MoveResult::BlueWin
+    }
+}

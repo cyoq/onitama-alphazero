@@ -7,7 +7,7 @@ fn main() {
     let red_agent = HumanConsole;
     let blue_agent = Random;
 
-    let mut game = Game::new(&red_agent, &blue_agent);
+    let mut game = Game::new(Box::new(red_agent), Box::new(blue_agent));
     let mut max_plies = 200;
 
     while progress != MoveResult::BlueWin && progress != MoveResult::RedWin {

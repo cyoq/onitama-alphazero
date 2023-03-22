@@ -5,7 +5,7 @@ use eframe::epaint::ahash::HashMap;
 use egui::*;
 use onitama_game::{
     common::{from_2d_to_1d, get_bit},
-    game::{player_color::PlayerColor, r#move::Move, state::State},
+    game::{done_move::DoneMove, game::Game, player_color::PlayerColor, r#move::Move},
 };
 
 use crate::{
@@ -104,7 +104,7 @@ pub fn drop_target<R>(
 /// A representation of a game board
 pub struct GameBoard<'a> {
     /// State of the current game
-    pub state: &'a mut State,
+    pub game_state: &'a mut Game,
     /// A size of the cell
     pub cell_size: f32,
     /// images to display
@@ -115,32 +115,14 @@ pub struct GameBoard<'a> {
     pub selected_piece: &'a mut Option<(u32, u32)>,
     /// Hashmap for the cells that are possible moves
     pub allowed_moves: &'a mut [[bool; 5]; 5],
+    pub human_done_move: &'a mut Option<DoneMove>,
 }
 
 impl<'a> GameBoard<'a> {
-    pub fn new(
-        state: &'a mut State,
-        cell_size: f32,
-        selected_card: &'a mut SelectedCard,
-        selected_piece: &'a mut Option<(u32, u32)>,
-        images: &'a HashMap<Figure, Image>,
-        possible_moves: &'a mut [[bool; 5]; 5],
-    ) -> Self {
-        Self {
-            state,
-            cell_size,
-            images,
-            selected_card,
-            selected_piece,
-            allowed_moves: possible_moves,
-        }
-    }
-
     pub fn show(&mut self, ui: &mut egui::Ui) {
-        // let mut bg_fill = BG_FILL;
-
         let mut source_row_col: Option<(u32, u32)> = None;
         let mut drop_row_col: Option<(u32, u32)> = None;
+        let state = &self.game_state.state;
 
         egui::Grid::new("game_board")
             .min_col_width(0.)
@@ -151,12 +133,10 @@ impl<'a> GameBoard<'a> {
                     for col in 0..5 {
                         let mut image = None;
                         let coords = from_2d_to_1d((row, col)) as usize;
-                        let red_pawn = get_bit(self.state.pawns[PlayerColor::Red as usize], coords);
-                        let red_king = get_bit(self.state.kings[PlayerColor::Red as usize], coords);
-                        let blue_pawn =
-                            get_bit(self.state.pawns[PlayerColor::Blue as usize], coords);
-                        let blue_king =
-                            get_bit(self.state.kings[PlayerColor::Blue as usize], coords);
+                        let red_pawn = get_bit(state.pawns[PlayerColor::Red as usize], coords);
+                        let red_king = get_bit(state.kings[PlayerColor::Red as usize], coords);
+                        let blue_pawn = get_bit(state.pawns[PlayerColor::Blue as usize], coords);
+                        let blue_king = get_bit(state.kings[PlayerColor::Blue as usize], coords);
 
                         if red_pawn == 1 {
                             image = Some(&self.images.get(&Figure::RedPawn).unwrap().image);
@@ -220,12 +200,13 @@ impl<'a> GameBoard<'a> {
 
                                                     *self.selected_piece = Some((row, col));
 
-                                                    let available_moves =
-                                                        self.state.generate_legal_moves_card_idx(
-                                                            PlayerColor::Red,
+                                                    let available_moves = state
+                                                        .generate_legal_moves_card_idx(
+                                                            self.game_state.curr_player_color,
                                                             idx,
                                                             (row, col),
                                                         );
+
                                                     tracing::debug!(
                                                         "Available moves from state: {:?}",
                                                         available_moves
@@ -234,7 +215,9 @@ impl<'a> GameBoard<'a> {
                                                     for mov in available_moves.iter() {
                                                         let (row, col) =
                                                             Move::convert_to_2d(mov.to);
+
                                                         tracing::info!("({}, {})", row, col);
+
                                                         self.allowed_moves[row as usize]
                                                             [col as usize] = true;
                                                     }
@@ -278,16 +261,39 @@ impl<'a> GameBoard<'a> {
                 if ui.input(|i| i.pointer.any_released()) {
                     *self.allowed_moves = [[false; 5]; 5];
                     *self.selected_piece = None;
+
                     tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
-                    self.state.make_move(
-                        &Move {
+
+                    let used_card_idx = match self.game_state.curr_player_color {
+                        PlayerColor::Red => self
+                            .selected_card
+                            .card_idx
+                            .expect("Card must be selected at this moment!"),
+                        // Subtracting 2, because blue player cards are at 2 and 3 index,
+                        // but card rotation happens with 0 and 1 indexes
+                        PlayerColor::Blue => {
+                            self.selected_card
+                                .card_idx
+                                .expect("Card must be selected at this moment!")
+                                - 2
+                        }
+                    };
+
+                    let figure = self
+                        .game_state
+                        .state
+                        .get_piece_type_at_pos(source_row_col)
+                        .expect("At source position a figure must be present!");
+
+                    *self.human_done_move = Some(DoneMove {
+                        mov: Move {
                             from: from_2d_to_1d(source_row_col),
                             to: from_2d_to_1d(drop_row_col),
-                            figure: onitama_game::game::figure::Figure::Pawn,
+                            figure,
                         },
-                        PlayerColor::Red,
-                        0,
-                    );
+                        used_card_idx,
+                    });
+
                     self.selected_card.set(None);
                 }
             }

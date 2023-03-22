@@ -165,6 +165,22 @@ impl State {
         move_result
     }
 
+    pub fn get_piece_type_at_pos(&self, pos: (u32, u32)) -> Option<Figure> {
+        use PlayerColor::*;
+        let coords_1d = from_2d_to_1d(pos) as usize;
+        let pawn = get_bit(self.pawns[Red as usize], coords_1d)
+            | get_bit(self.pawns[Blue as usize], coords_1d);
+
+        let king = get_bit(self.kings[Red as usize], coords_1d)
+            | get_bit(self.kings[Blue as usize], coords_1d);
+
+        match (pawn, king) {
+            (1, 0) => Some(Figure::Pawn),
+            (0, 1) => Some(Figure::King),
+            _ => None,
+        }
+    }
+
     /// Generates all legal moves for the specific card and the player
     pub fn generate_legal_moves_card_idx(
         &self,
