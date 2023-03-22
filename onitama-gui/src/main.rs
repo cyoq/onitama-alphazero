@@ -8,7 +8,8 @@ pub mod move_card;
 pub mod onitama;
 
 fn main() -> Result<(), eframe::Error> {
-    tracing_subscriber::fmt::init();
+    // tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt::fmt().with_level(true).finish();
 
     run_native(
         "Onitama",

@@ -108,8 +108,10 @@ pub struct GameBoard<'a> {
     pub images: &'a HashMap<Figure, Image>,
     /// Selected card idx
     pub selected_card: &'a mut Option<usize>,
+    /// Selected piece identified by (row, col)
+    pub selected_piece: &'a mut Option<(u32, u32)>,
     /// Hashmap for the cells that are possible moves
-    pub possible_moves: &'a mut [[bool; 5]; 5],
+    pub allowed_moves: &'a mut [[bool; 5]; 5],
 }
 
 impl<'a> GameBoard<'a> {
@@ -117,6 +119,7 @@ impl<'a> GameBoard<'a> {
         state: &'a mut State,
         cell_size: f32,
         selected_card: &'a mut Option<usize>,
+        selected_piece: &'a mut Option<(u32, u32)>,
         images: &'a HashMap<Figure, Image>,
         possible_moves: &'a mut [[bool; 5]; 5],
     ) -> Self {
@@ -125,7 +128,8 @@ impl<'a> GameBoard<'a> {
             cell_size,
             images,
             selected_card,
-            possible_moves,
+            selected_piece,
+            allowed_moves: possible_moves,
         }
     }
 
@@ -162,7 +166,7 @@ impl<'a> GameBoard<'a> {
                         }
 
                         let can_accept_what_is_being_dragged =
-                            self.possible_moves[row as usize][col as usize];
+                            self.allowed_moves[row as usize][col as usize];
                         let bg_fill;
 
                         if can_accept_what_is_being_dragged {
@@ -197,27 +201,40 @@ impl<'a> GameBoard<'a> {
 
                                             if drag_resp.drag_started() {
                                                 if let Some(idx) = self.selected_card {
-                                                    // *self.possible_moves = [[false; 5]; 5];
-                                                    tracing::info!(
+                                                    // Clear set possible moves if other piece is selected:
+                                                    if *self.selected_piece != Some((row, col)) {
+                                                        *self.allowed_moves = [[false; 5]; 5];
+                                                    }
+
+                                                    tracing::debug!(
                                                         "Clicked to show available moves"
                                                     );
+
+                                                    *self.selected_piece = Some((row, col));
+
                                                     let available_moves =
                                                         self.state.generate_legal_moves_card_idx(
                                                             PlayerColor::Red,
                                                             *idx,
                                                             (row, col),
                                                         );
-                                                    tracing::warn!("{:?}", available_moves);
+                                                    tracing::debug!(
+                                                        "Available moves from state: {:?}",
+                                                        available_moves
+                                                    );
 
                                                     for mov in available_moves.iter() {
                                                         let (row, col) =
                                                             Move::convert_to_2d(mov.to);
                                                         tracing::info!("({}, {})", row, col);
-                                                        self.possible_moves[row as usize]
+                                                        self.allowed_moves[row as usize]
                                                             [col as usize] = true;
                                                     }
                                                 }
-                                                tracing::info!("{:?}", self.possible_moves);
+                                                tracing::debug!(
+                                                    "Allowed moves 2D array: {:?}",
+                                                    self.allowed_moves
+                                                );
                                             }
                                         }
 
@@ -250,8 +267,9 @@ impl<'a> GameBoard<'a> {
                     return;
                 }
 
-                // *self.possible_moves = [[false; 5]; 5];
                 if ui.input(|i| i.pointer.any_released()) {
+                    *self.allowed_moves = [[false; 5]; 5];
+                    *self.selected_piece = None;
                     tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
                     self.state.make_move(
                         &Move {

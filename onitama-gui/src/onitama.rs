@@ -37,7 +37,9 @@ pub struct Onitama {
     images: HashMap<Figure, Image>,
     game_state: State,
     selected_card: Option<usize>,
-    possible_moves: [[bool; 5]; 5],
+    /// Selected piece can be identified by (row, col)
+    selected_piece: Option<(u32, u32)>,
+    allowed_moves: [[bool; 5]; 5],
     deck: Deck,
 }
 
@@ -47,7 +49,8 @@ impl Default for Onitama {
             game_state: State::new(),
             images: HashMap::new(),
             selected_card: None,
-            possible_moves: [[false; 5]; 5],
+            selected_piece: None,
+            allowed_moves: [[false; 5]; 5],
             deck: Deck::default(),
         }
     }
@@ -70,7 +73,8 @@ impl Onitama {
             game_state: State::with_deck(deck.clone()),
             images,
             selected_card: None,
-            possible_moves: [[false; 5]; 5],
+            selected_piece: None,
+            allowed_moves: [[false; 5]; 5],
             deck,
         }
     }
@@ -146,8 +150,9 @@ impl Onitama {
                         &mut self.game_state,
                         150.,
                         &mut self.selected_card,
+                        &mut self.selected_piece,
                         &self.images,
-                        &mut self.possible_moves,
+                        &mut self.allowed_moves,
                     )
                     .show(ui);
                 });
