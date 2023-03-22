@@ -16,9 +16,11 @@ use crate::{
 use self::piece::Piece;
 
 pub const BG_FILL: Color32 = Color32::WHITE;
-pub const BG_TEMPLE: Color32 = Color32::GRAY;
+pub const BG_TEMPLE: Color32 = Color32::LIGHT_GRAY;
 pub const BG_BLUE: Color32 = Color32::BLUE;
 pub const BG_RED: Color32 = Color32::RED;
+pub const RED_TEMPLE: (u32, u32) = (0, 2);
+pub const BLUE_TEMPLE: (u32, u32) = (4, 2);
 
 pub fn drag_source(ui: &mut Ui, id: Id, body: impl FnOnce(&mut Ui)) -> Response {
     let is_being_dragged = ui.memory(|mem| mem.is_being_dragged(id));
@@ -134,16 +136,17 @@ impl<'a> GameBoard<'a> {
 
                         let can_accept_what_is_being_dragged =
                             self.allowed_moves[row as usize][col as usize];
-                        let bg_fill;
 
-                        if can_accept_what_is_being_dragged {
-                            bg_fill = match self.game_state.curr_player_color {
+                        let bg_fill = if can_accept_what_is_being_dragged {
+                            match self.game_state.curr_player_color {
                                 PlayerColor::Red => Color32::LIGHT_RED,
                                 PlayerColor::Blue => Color32::LIGHT_BLUE,
-                            };
+                            }
+                        } else if (row, col) == BLUE_TEMPLE || (row, col) == RED_TEMPLE {
+                            BG_TEMPLE
                         } else {
-                            bg_fill = BG_FILL;
-                        }
+                            BG_FILL
+                        };
 
                         // Clear allowed moves if selected card changes
                         if self.selected_card.changed {
