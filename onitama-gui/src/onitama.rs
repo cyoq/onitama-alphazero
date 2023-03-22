@@ -81,6 +81,12 @@ pub enum Figure {
     RedPawn,
 }
 
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum PlayerType {
+    Human,
+    Ai,
+}
+
 pub struct Onitama {
     debug: bool,
     images: HashMap<Figure, Image>,
@@ -92,6 +98,7 @@ pub struct Onitama {
     human_done_move: Option<DoneMove>,
     move_result: Option<MoveResult>,
     end_game: bool,
+    player_types: [PlayerType; 2],
 }
 
 impl Onitama {
@@ -100,6 +107,7 @@ impl Onitama {
         debug: bool,
         red_agent: Box<dyn Agent>,
         blue_agent: Box<dyn Agent>,
+        player_types: [PlayerType; 2],
     ) -> Self {
         let deck = Deck::new([
             ORIGINAL_CARDS[DRAGON.index].clone(),
@@ -122,6 +130,7 @@ impl Onitama {
             human_done_move: None,
             move_result: None,
             end_game: false,
+            player_types,
         }
     }
 
@@ -177,10 +186,18 @@ impl Onitama {
     }
 
     pub fn game_loop(&mut self) {
-        // Make check if it is a human agent
-        if let Some(done_move) = self.human_done_move {
-            self.move_result = Some(self.game_state.progress(done_move));
-            self.human_done_move = None;
+        // TODO: Make a check if it is a human agent
+        match self.player_types[self.game_state.curr_agent_idx] {
+            PlayerType::Human => {
+                if let Some(done_move) = self.human_done_move {
+                    self.move_result = Some(self.game_state.progress(done_move));
+                    self.human_done_move = None;
+                }
+            }
+            PlayerType::Ai => {
+                let mov = self.game_state.agent_generate_move();
+                self.move_result = Some(self.game_state.progress(mov));
+            }
         }
     }
 
@@ -380,17 +397,13 @@ impl Onitama {
             stroke_fill,
         });
 
-        if response.clicked() {
-            if enabled {
-                self.selected_card.update(card, deck);
-                tracing::info!("Selected card index: {:?}", self.selected_card);
-            }
+        if response.clicked() && enabled {
+            self.selected_card.update(card, deck);
+            tracing::debug!("Selected card index: {:?}", self.selected_card);
         }
 
-        if response.hovered() {
-            if enabled {
-                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-            }
+        if response.hovered() && enabled {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
         }
     }
 }

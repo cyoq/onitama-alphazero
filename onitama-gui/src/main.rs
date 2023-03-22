@@ -1,7 +1,7 @@
 use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
-use onitama::Onitama;
-use onitama_game::ai::human_gui::HumanGui;
+use onitama::{Onitama, PlayerType};
+use onitama_game::ai::{human_gui::HumanGui, random::Random};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -17,7 +17,7 @@ fn main() -> Result<(), eframe::Error> {
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let red_agent = HumanGui;
-    let blue_agent = HumanGui;
+    let blue_agent = Random;
 
     run_native(
         "Onitama",
@@ -32,6 +32,7 @@ fn main() -> Result<(), eframe::Error> {
                 false,
                 Box::new(red_agent),
                 Box::new(blue_agent),
+                [PlayerType::Human, PlayerType::Ai],
             ))
         }),
     )
