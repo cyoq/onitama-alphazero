@@ -68,35 +68,12 @@ pub fn drop_target<R>(
     // let outer_rect_bounds = ui.available_rect_before_wrap();
     let outer_rect_bounds = rect;
     let inner_rect = outer_rect_bounds.shrink2(margin);
-    let where_to_put_background = ui.painter().add(Shape::Noop);
+    // let where_to_put_background = ui.painter().add(Shape::Noop);
     let mut content_ui = ui.child_ui(inner_rect, *ui.layout());
     let ret = body(&mut content_ui);
     // Changed from min_rect to max rect to get the full content coverage
     let outer_rect = Rect::from_min_max(outer_rect_bounds.min, content_ui.max_rect().max + margin);
     let (rect, response) = ui.allocate_exact_size(outer_rect.size(), Sense::hover());
-
-    // let style = if is_being_dragged && can_accept_what_is_being_dragged && response.hovered() {
-    //     ui.visuals().widgets.active
-    // } else {
-    //     ui.visuals().widgets.inactive
-    // };
-
-    // let mut fill = style.bg_fill;
-    // let mut stroke = style.bg_stroke;
-    // if is_being_dragged && !can_accept_what_is_being_dragged {
-    //     fill = ui.visuals().gray_out(fill);
-    //     stroke.color = ui.visuals().gray_out(stroke.color);
-    // }
-
-    // ui.painter().set(
-    //     where_to_put_background,
-    //     epaint::RectShape {
-    //         rounding: Rounding::none(),
-    //         fill,
-    //         stroke,
-    //         rect,
-    //     },
-    // );
 
     InnerResponse::new(ret, response)
 }
@@ -116,6 +93,7 @@ pub struct GameBoard<'a> {
     /// Hashmap for the cells that are possible moves
     pub allowed_moves: &'a mut [[bool; 5]; 5],
     pub human_done_move: &'a mut Option<DoneMove>,
+    pub end_game: &'a bool,
 }
 
 impl<'a> GameBoard<'a> {
@@ -183,6 +161,7 @@ impl<'a> GameBoard<'a> {
                                         if self.selected_card.card_idx.is_none()
                                             || Some(self.game_state.curr_player_color)
                                                 != piece_color
+                                            || *self.end_game
                                         {
                                             if image.is_some() {
                                                 ui.add(Piece {

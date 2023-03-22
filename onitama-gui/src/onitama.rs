@@ -91,6 +91,7 @@ pub struct Onitama {
     allowed_moves: [[bool; 5]; 5],
     human_done_move: Option<DoneMove>,
     move_result: Option<MoveResult>,
+    end_game: bool,
 }
 
 impl Onitama {
@@ -120,6 +121,7 @@ impl Onitama {
             allowed_moves: [[false; 5]; 5],
             human_done_move: None,
             move_result: None,
+            end_game: false,
         }
     }
 
@@ -206,6 +208,7 @@ impl Onitama {
                         images: &self.images,
                         allowed_moves: &mut self.allowed_moves,
                         human_done_move: &mut self.human_done_move,
+                        end_game: &self.end_game,
                     }
                     .show(ui);
                 });
@@ -348,6 +351,9 @@ impl Onitama {
             }
         }
 
+        let enabled =
+            deck.get_card_owner(card) == Some(self.game_state.curr_player_color) && !self.end_game;
+
         let response = ui.add(MoveCard {
             mirror: &deck.is_mirrored(card).unwrap_or(false),
             card: card,
@@ -357,14 +363,14 @@ impl Onitama {
         });
 
         if response.clicked() {
-            if deck.get_card_owner(card) == Some(self.game_state.curr_player_color) {
+            if enabled {
                 self.selected_card.update(card, deck);
                 tracing::info!("Selected card index: {:?}", self.selected_card);
             }
         }
 
         if response.hovered() {
-            if deck.get_card_owner(card) == Some(self.game_state.curr_player_color) {
+            if enabled {
                 ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
             }
         }
@@ -380,15 +386,21 @@ impl App for Onitama {
             });
         }
 
-        if self.move_result.is_none() || !self.move_result.unwrap().is_win() {
+        if self.move_result.is_none() || !self.move_result.unwrap().is_win() && !self.end_game {
             self.game_loop();
         }
 
         if let Some(result) = self.move_result {
             match result {
                 MoveResult::Capture => tracing::warn!("A capture has happened!"),
-                MoveResult::RedWin => tracing::warn!("Red won!"),
-                MoveResult::BlueWin => tracing::warn!("Blue won!"),
+                MoveResult::RedWin => {
+                    self.end_game = true;
+                    tracing::warn!("Red won!")
+                }
+                MoveResult::BlueWin => {
+                    self.end_game = true;
+                    tracing::warn!("Blue won!")
+                }
                 MoveResult::InProgress => tracing::warn!("Game is in progress"),
             }
         }
