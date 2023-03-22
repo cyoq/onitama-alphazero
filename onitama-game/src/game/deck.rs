@@ -59,6 +59,18 @@ impl Deck {
         &self.cards[card_idx]
     }
 
+    #[inline]
+    pub fn get_card_owner(&self, card: &Card) -> Option<PlayerColor> {
+        match self.cards.iter().position(|c| c == card) {
+            Some(pos) => match pos {
+                0 | 1 => Some(PlayerColor::Red),
+                2 | 3 => Some(PlayerColor::Blue),
+                _ => None,
+            },
+            None => None,
+        }
+    }
+
     /// Rotates cards between the used one and the neutral
     ///
     /// Be aware that the index should only be from 0 to 1,

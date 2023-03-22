@@ -243,7 +243,7 @@ impl Onitama {
                         for i in 0..2 {
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
-                                    self.move_card_to_ui(ui, blue_player_cards[i], &deck)
+                                    self.move_card_to_ui(ui, blue_player_cards[i])
                                 });
                             });
                         }
@@ -251,7 +251,7 @@ impl Onitama {
                 });
                 // Middle row with 1 column
                 strip.cell(|ui| {
-                    ui.vertical_centered(|ui| self.move_card_to_ui(ui, neutral_card, &deck));
+                    ui.vertical_centered(|ui| self.move_card_to_ui(ui, neutral_card));
                 });
                 // Last row with 2 columns
                 strip.strip(|builder| {
@@ -259,7 +259,7 @@ impl Onitama {
                         for i in 0..2 {
                             strip.cell(|ui| {
                                 ui.vertical_centered(|ui| {
-                                    self.move_card_to_ui(ui, red_player_cards[i], &deck);
+                                    self.move_card_to_ui(ui, red_player_cards[i]);
                                 });
                             });
                         }
@@ -338,7 +338,8 @@ impl Onitama {
         });
     }
 
-    fn move_card_to_ui(&mut self, ui: &mut Ui, card: &Card, deck: &Deck) {
+    fn move_card_to_ui(&mut self, ui: &mut Ui, card: &Card) {
+        let deck = &self.game_state.state.deck;
         let mut stroke_fill = Color32::BLACK;
         if deck.get_card_idx(&card) == self.selected_card.card_idx {
             stroke_fill = match self.game_state.curr_player_color {
@@ -356,8 +357,16 @@ impl Onitama {
         });
 
         if response.clicked() {
-            self.selected_card.update(card, deck);
-            tracing::info!("Selected card index: {:?}", self.selected_card);
+            if deck.get_card_owner(card) == Some(self.game_state.curr_player_color) {
+                self.selected_card.update(card, deck);
+                tracing::info!("Selected card index: {:?}", self.selected_card);
+            }
+        }
+
+        if response.hovered() {
+            if deck.get_card_owner(card) == Some(self.game_state.curr_player_color) {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+            }
         }
     }
 }

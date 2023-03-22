@@ -77,9 +77,6 @@ impl<'a> Widget for MoveCard<'a> {
             response.mark_changed(); // report back that the value changed
         }
 
-        if response.hovered() {
-            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-        }
 
         // Attach some meta-data to the response which can be used by screen readers:
         response.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::Other));
