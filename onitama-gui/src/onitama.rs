@@ -1,16 +1,14 @@
 use std::path::PathBuf;
 
-use eframe::{
-    epaint::ahash::{HashMap, HashMapExt},
-    App, CreationContext,
-};
+use eframe::epaint::ahash::HashMapExt;
+use eframe::{epaint::ahash::HashMap, App, CreationContext};
 use egui::{
     Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
     Label, Layout, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::{
-    ai::{agent::Agent, human_gui::HumanGui},
+    ai::agent::Agent,
     game::{
         card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
         deck::Deck,
@@ -18,7 +16,6 @@ use onitama_game::{
         game::Game,
         move_result::MoveResult,
         player_color::PlayerColor,
-        state::State,
     },
 };
 
@@ -84,12 +81,8 @@ pub enum Figure {
     RedPawn,
 }
 
-pub enum Action {
-    RequestCardRotation,
-    NextMove,
-}
-
 pub struct Onitama {
+    debug: bool,
     images: HashMap<Figure, Image>,
     game_state: Game,
     selected_card: SelectedCard,
@@ -103,6 +96,7 @@ pub struct Onitama {
 impl Onitama {
     pub fn new(
         cc: &CreationContext,
+        debug: bool,
         red_agent: Box<dyn Agent>,
         blue_agent: Box<dyn Agent>,
     ) -> Self {
@@ -118,6 +112,7 @@ impl Onitama {
         let images = Onitama::load_images();
 
         Self {
+            debug,
             game_state: Game::with_deck(red_agent, blue_agent, deck),
             images,
             selected_card: SelectedCard::default(),
@@ -369,10 +364,12 @@ impl Onitama {
 
 impl App for Onitama {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        // ctx.set_debug_on_hover(true);
-        // egui::Window::new("Configuration").show(ctx, |ui| {
-        //     ctx.inspection_ui(ui);
-        // });
+        if self.debug {
+            ctx.set_debug_on_hover(true);
+            egui::Window::new("Configuration").show(ctx, |ui| {
+                ctx.inspection_ui(ui);
+            });
+        }
 
         if self.move_result.is_none() || !self.move_result.unwrap().is_win() {
             self.game_loop();

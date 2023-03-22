@@ -22,7 +22,12 @@ fn main() -> Result<(), eframe::Error> {
         },
         Box::new(|cc| {
             cc.egui_ctx.set_visuals(Visuals::light());
-            Box::new(Onitama::new(cc, Box::new(red_agent), Box::new(blue_agent)))
+            Box::new(Onitama::new(
+                cc,
+                false,
+                Box::new(red_agent),
+                Box::new(blue_agent),
+            ))
         }),
     )
 }
