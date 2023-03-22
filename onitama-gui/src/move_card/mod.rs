@@ -119,7 +119,7 @@ impl<'a> Widget for MoveCard<'a> {
                         }
 
                         MoveCard::paint_cell(
-                            col as i32,
+                            4 - col as i32, // inverse column
                             4 - row as i32, // inverse row from bitmap
                             bg_fill,
                             stroke_fill,
