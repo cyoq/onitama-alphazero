@@ -24,6 +24,51 @@ const PADDING: f32 = 15.;
 const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
                                       // const UTILITY_PANEL_HEIGHT: f32 = 500.;
                                       // const HISTORY_PANEL_HEIGHT: f32 = 340.;
+#[derive(Debug)]
+pub struct SelectedCard {
+    pub card_idx: Option<usize>,
+    pub changed: bool,
+}
+
+impl Default for SelectedCard {
+    fn default() -> Self {
+        Self {
+            card_idx: None,
+            changed: false,
+        }
+    }
+}
+
+impl SelectedCard {
+    pub fn set(&mut self, idx: Option<usize>) {
+        self.card_idx = idx;
+        self.changed = true;
+    }
+
+    pub fn update(&mut self, selected_card: &Card, deck: &Deck) {
+        let idx = deck.get_card_idx(selected_card);
+        match idx {
+            Some(idx) => {
+                self.card_idx = match self.card_idx {
+                    Some(cidx) => {
+                        if cidx != idx {
+                            self.changed = true;
+                            Some(idx)
+                        } else {
+                            self.changed = false;
+                            Some(cidx)
+                        }
+                    }
+                    None => {
+                        self.changed = true;
+                        Some(idx)
+                    }
+                }
+            }
+            None => (),
+        }
+    }
+}
 
 #[derive(PartialEq, Eq, Hash, Copy, Clone)]
 pub enum Figure {
@@ -36,7 +81,7 @@ pub enum Figure {
 pub struct Onitama {
     images: HashMap<Figure, Image>,
     game_state: State,
-    selected_card: Option<usize>,
+    selected_card: SelectedCard,
     /// Selected piece can be identified by (row, col)
     selected_piece: Option<(u32, u32)>,
     allowed_moves: [[bool; 5]; 5],
@@ -48,7 +93,7 @@ impl Default for Onitama {
         Self {
             game_state: State::new(),
             images: HashMap::new(),
-            selected_card: None,
+            selected_card: SelectedCard::default(),
             selected_piece: None,
             allowed_moves: [[false; 5]; 5],
             deck: Deck::default(),
@@ -72,7 +117,7 @@ impl Onitama {
         Self {
             game_state: State::with_deck(deck.clone()),
             images,
-            selected_card: None,
+            selected_card: SelectedCard::default(),
             selected_piece: None,
             allowed_moves: [[false; 5]; 5],
             deck,
@@ -161,13 +206,6 @@ impl Onitama {
     }
 
     fn deck_panel(&mut self, ui: &mut Ui) {
-        // let deck = Deck::new([
-        //     ORIGINAL_CARDS[DRAGON.index].clone(),
-        //     ORIGINAL_CARDS[FROG.index].clone(),
-        //     ORIGINAL_CARDS[TIGER.index].clone(),
-        //     ORIGINAL_CARDS[RABBIT.index].clone(),
-        //     ORIGINAL_CARDS[HORSE.index].clone(),
-        // ]);
         let deck = self.deck.clone();
 
         let red_player_cards = deck.get_player_cards(PlayerColor::Red);
@@ -294,7 +332,7 @@ impl Onitama {
 
     fn move_card_to_ui(&mut self, ui: &mut Ui, card: &Card, deck: &Deck) {
         let mut stroke_fill = Color32::BLACK;
-        if deck.get_card_idx(&card) == self.selected_card {
+        if deck.get_card_idx(&card) == self.selected_card.card_idx {
             stroke_fill = Color32::RED;
         }
 
@@ -307,7 +345,7 @@ impl Onitama {
         });
 
         if response.clicked() {
-            self.selected_card = deck.get_card_idx(&card);
+            self.selected_card.update(card, deck);
             tracing::info!("Selected card index: {:?}", self.selected_card);
         }
     }

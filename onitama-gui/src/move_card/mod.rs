@@ -73,7 +73,7 @@ impl<'a> Widget for MoveCard<'a> {
 
         // 3. Interact: Time to check for clicks!
         if response.clicked() {
-            tracing::info!("Clicked on a move card {}", name);
+            tracing::debug!("Clicked on a move card {}", name);
             response.mark_changed(); // report back that the value changed
         }
 

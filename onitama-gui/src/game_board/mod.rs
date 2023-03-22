@@ -8,7 +8,10 @@ use onitama_game::{
     game::{player_color::PlayerColor, r#move::Move, state::State},
 };
 
-use crate::{image::Image, onitama::Figure};
+use crate::{
+    image::Image,
+    onitama::{Figure, SelectedCard},
+};
 
 use self::piece::Piece;
 
@@ -107,7 +110,7 @@ pub struct GameBoard<'a> {
     /// images to display
     pub images: &'a HashMap<Figure, Image>,
     /// Selected card idx
-    pub selected_card: &'a mut Option<usize>,
+    pub selected_card: &'a mut SelectedCard,
     /// Selected piece identified by (row, col)
     pub selected_piece: &'a mut Option<(u32, u32)>,
     /// Hashmap for the cells that are possible moves
@@ -118,7 +121,7 @@ impl<'a> GameBoard<'a> {
     pub fn new(
         state: &'a mut State,
         cell_size: f32,
-        selected_card: &'a mut Option<usize>,
+        selected_card: &'a mut SelectedCard,
         selected_piece: &'a mut Option<(u32, u32)>,
         images: &'a HashMap<Figure, Image>,
         possible_moves: &'a mut [[bool; 5]; 5],
@@ -175,6 +178,11 @@ impl<'a> GameBoard<'a> {
                             bg_fill = BG_FILL;
                         }
 
+                        if self.selected_card.changed {
+                            *self.allowed_moves = [[false; 5]; 5];
+                            self.selected_card.changed = false;
+                        }
+
                         self::cell::Cell::new(row, col, bg_fill, self.cell_size).show(
                             ui,
                             |ui, rect| {
@@ -182,7 +190,7 @@ impl<'a> GameBoard<'a> {
                                     drop_target(ui, rect, can_accept_what_is_being_dragged, |ui| {
                                         let cell_id = Id::new("figure_dnd").with(col).with(row);
 
-                                        if self.selected_card.is_none() {
+                                        if self.selected_card.card_idx.is_none() {
                                             if image.is_some() {
                                                 ui.add(Piece {
                                                     outer_rect: &rect,
@@ -200,7 +208,7 @@ impl<'a> GameBoard<'a> {
                                             });
 
                                             if drag_resp.drag_started() {
-                                                if let Some(idx) = self.selected_card {
+                                                if let Some(idx) = self.selected_card.card_idx {
                                                     // Clear set possible moves if other piece is selected:
                                                     if *self.selected_piece != Some((row, col)) {
                                                         *self.allowed_moves = [[false; 5]; 5];
@@ -215,7 +223,7 @@ impl<'a> GameBoard<'a> {
                                                     let available_moves =
                                                         self.state.generate_legal_moves_card_idx(
                                                             PlayerColor::Red,
-                                                            *idx,
+                                                            idx,
                                                             (row, col),
                                                         );
                                                     tracing::debug!(
@@ -280,7 +288,7 @@ impl<'a> GameBoard<'a> {
                         PlayerColor::Red,
                         0,
                     );
-                    *self.selected_card = None;
+                    self.selected_card.set(None);
                 }
             }
         }

@@ -30,7 +30,7 @@ impl Deck {
     /// Return if the card should be mirrored. Mirroring is default to the blue player
     pub fn is_mirrored(&self, card: &Card) -> Option<bool> {
         match self.cards.iter().position(|c| c == card) {
-            Some(pos) => Some(pos == 2 || pos == 3), // blue player cards positions
+            Some(pos) => Some(pos == BLUE_CARD1 || pos == BLUE_CARD2), // blue player cards positions
             None => None,
         }
     }
