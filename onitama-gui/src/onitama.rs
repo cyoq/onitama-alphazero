@@ -271,7 +271,7 @@ impl Onitama {
             });
     }
 
-    fn utility_panel(&self, ui: &mut Ui) {
+    fn utility_panel(&mut self, ui: &mut Ui) {
         ui.with_layout(
             egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
             |ui| {
@@ -282,12 +282,20 @@ impl Onitama {
         );
     }
 
-    fn utility_widget(&self, ui: &mut Ui) {
+    fn utility_widget(&mut self, ui: &mut Ui) {
         // Add button on the left for starting a new game
         ui.with_layout(Layout::left_to_right(egui::Align::Min), |ui| {
-            ui.add(Button::new(
+            let start_game = ui.add(Button::new(
                 RichText::new("Start a new game").text_style(egui::TextStyle::Body),
             ));
+
+            if start_game.clicked() {
+                tracing::debug!(
+                    "Clicked to clear the game. Is end game: {:?}",
+                    self.end_game
+                );
+                self.clear_game();
+            }
 
             ui.add(Button::new(
                 RichText::new("Make a new setup").text_style(egui::TextStyle::Body),
@@ -331,6 +339,16 @@ impl Onitama {
             ui.add_space(10.);
         });
         ui.add_space(PADDING);
+    }
+
+    fn clear_game(&mut self) {
+        self.game_state.clear();
+        self.selected_card = SelectedCard::default();
+        self.selected_piece = None;
+        self.allowed_moves = [[false; 5]; 5];
+        self.human_done_move = None;
+        self.move_result = None;
+        self.end_game = false;
     }
 
     fn history_widget(&self, ui: &mut Ui) {

@@ -38,10 +38,9 @@ impl Game {
     pub fn with_deck(red_agent: Box<dyn Agent>, blue_agent: Box<dyn Agent>, deck: Deck) -> Self {
         let state = State::with_deck(deck);
         let player_color = state.deck.neutral_card().player_color;
-        let current_player_idx = if player_color == PlayerColor::Red {
-            0
-        } else {
-            1
+        let current_player_idx = match player_color {
+            PlayerColor::Red => 0,
+            PlayerColor::Blue => 1,
         };
 
         Self {
@@ -51,6 +50,21 @@ impl Game {
             curr_agent_idx: current_player_idx,
             curr_player_color: player_color,
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.state = match self.history.first() {
+            Some(s) => s.clone(),
+            None => State::with_deck(self.state.deck.clone()),
+        };
+
+        self.history.clear();
+
+        self.curr_player_color = self.state.deck.neutral_card().player_color;
+        self.curr_agent_idx = match self.curr_player_color {
+            PlayerColor::Red => 0,
+            PlayerColor::Blue => 1,
+        };
     }
 
     pub fn agent_generate_move(&self) -> DoneMove {
