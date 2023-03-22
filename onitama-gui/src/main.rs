@@ -2,6 +2,8 @@ use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
 use onitama::Onitama;
 use onitama_game::ai::human_gui::HumanGui;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 pub mod game_board;
 pub mod image;
@@ -9,7 +11,10 @@ pub mod move_card;
 pub mod onitama;
 
 fn main() -> Result<(), eframe::Error> {
-    tracing_subscriber::fmt::init();
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::DEBUG)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let red_agent = HumanGui;
     let blue_agent = HumanGui;
