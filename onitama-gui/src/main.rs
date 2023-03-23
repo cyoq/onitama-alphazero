@@ -9,6 +9,7 @@ pub mod game_board;
 pub mod image;
 pub mod move_card;
 pub mod onitama;
+pub mod selected_card;
 
 fn main() -> Result<(), eframe::Error> {
     let subscriber = FmtSubscriber::builder()

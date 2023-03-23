@@ -8,10 +8,7 @@ use onitama_game::{
     game::{done_move::DoneMove, game::Game, player_color::PlayerColor, r#move::Move},
 };
 
-use crate::{
-    image::Image,
-    onitama::{Figure, SelectedCard},
-};
+use crate::{image::Image, onitama::Figure, selected_card::SelectedCard};
 
 use self::piece::Piece;
 
