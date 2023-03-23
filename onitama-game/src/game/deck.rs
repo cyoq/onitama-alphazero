@@ -63,8 +63,8 @@ impl Deck {
     pub fn get_card_owner(&self, card: &Card) -> Option<PlayerColor> {
         match self.cards.iter().position(|c| c == card) {
             Some(pos) => match pos {
-                0 | 1 => Some(PlayerColor::Red),
-                2 | 3 => Some(PlayerColor::Blue),
+                RED_CARD1 | RED_CARD2 => Some(PlayerColor::Red),
+                BLUE_CARD1 | BLUE_CARD2 => Some(PlayerColor::Blue),
                 _ => None,
             },
             None => None,
@@ -140,7 +140,7 @@ impl Default for Deck {
         Self {
             cards: shuffled[0..5]
                 .try_into()
-                .expect("Deck should have 5 random cards"),
+                .expect("Deck must have 5 random cards"),
         }
     }
 }

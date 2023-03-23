@@ -7,6 +7,7 @@ pub enum MoveResult {
 }
 
 impl MoveResult {
+    #[inline]
     pub fn is_win(&self) -> bool {
         *self == MoveResult::RedWin || *self == MoveResult::BlueWin
     }
