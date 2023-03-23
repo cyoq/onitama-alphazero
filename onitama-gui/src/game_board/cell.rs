@@ -1,4 +1,4 @@
-use egui::{Color32, Painter, Rect, Stroke, Ui, Vec2, Widget};
+use egui::{Color32, Painter, Rect, Stroke, Ui, Vec2};
 
 enum TextDirection<'a> {
     Left(&'a str),
@@ -49,16 +49,13 @@ impl Cell {
 
         // 3. Interact: Time to check for clicks!
         if response.clicked() {
-            tracing::info!("Cell at ({},{})", self.row, self.col);
+            tracing::debug!("Cell at ({},{})", self.row, self.col);
             response.mark_changed(); // report back that the value changed
         }
 
         // Attach some meta-data to the response which can be used by screen readers:
         response.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::Button));
 
-        // 4. Paint!
-        // Make sure we need to paint:
-        if ui.is_rect_visible(rect) {}
         // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
         let stroke: Stroke = (0.5, Color32::BLACK).into();
         ui.painter().rect(rect, 0., self.bg_fill, stroke);
@@ -103,82 +100,4 @@ fn draw_text(painter: &Painter, rect: &Rect, text: &str, offset: Vec2) {
         },
         Color32::BLACK,
     );
-}
-
-impl Widget for Cell {
-    fn ui(self, ui: &mut Ui) -> egui::Response {
-        let Cell {
-            row,
-            col,
-            bg_fill,
-            size,
-        } = self;
-        // Widget code can be broken up in four steps:
-        //  1. Decide a size for the widget
-        //  2. Allocate space for it
-        //  3. Handle interactions with the widget (if any)
-        //  4. Paint the widget
-
-        // 1. Deciding widget size:
-        // You can query the `ui` how much space is available,
-        let text_direction = match (row, col) {
-            (0, 0) => TextDirection::Left("5"),
-            (1, 0) => TextDirection::Left("4"),
-            (2, 0) => TextDirection::Left("3"),
-            (3, 0) => TextDirection::Left("2"),
-            (4, 0) => TextDirection::Both("1", "A"),
-            (4, 1) => TextDirection::Bottom("B"),
-            (4, 2) => TextDirection::Bottom("C"),
-            (4, 3) => TextDirection::Bottom("D"),
-            (4, 4) => TextDirection::Bottom("E"),
-            _ => TextDirection::None,
-        };
-
-        let desired_size = egui::vec2(size, size);
-        // 2. Allocating space:
-        // This is where we get a region of the screen assigned.
-        // We also tell the Ui to sense clicks in the allocated region.
-        let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
-
-        // 3. Interact: Time to check for clicks!
-        if response.clicked() {
-            tracing::info!("Cell at ({},{})", row, col);
-            response.mark_changed(); // report back that the value changed
-        }
-
-        // Attach some meta-data to the response which can be used by screen readers:
-        response.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::Button));
-
-        // 4. Paint!
-        // Make sure we need to paint:
-        if !ui.is_rect_visible(rect) {
-            return response;
-        }
-        // All coordinates are in absolute screen coordinates so we use `rect` to place the elements.
-        let stroke: Stroke = (0.5, Color32::BLACK).into();
-        ui.painter().rect(rect, 0., bg_fill, stroke);
-
-        // Draw text near cells if necessary
-        match text_direction {
-            TextDirection::None => (),
-            TextDirection::Left(num) => {
-                let offset = egui::Vec2::new(-size / 2. - TEXT_FIELD_PADDING - 5., 0.);
-                draw_text(ui.painter(), &rect, num, offset);
-            }
-            TextDirection::Bottom(ch) => {
-                let offset = egui::Vec2::new(0., size / 2. + TEXT_FIELD_PADDING + 5.);
-                draw_text(ui.painter(), &rect, ch, offset);
-            }
-            TextDirection::Both(num, ch) => {
-                let offset = egui::Vec2::new(-size / 2. - TEXT_FIELD_PADDING - 5., 0.);
-                draw_text(ui.painter(), &rect, num, offset);
-                let offset = egui::Vec2::new(0., size / 2. + TEXT_FIELD_PADDING + 5.);
-                draw_text(ui.painter(), &rect, ch, offset);
-            }
-        }
-
-        // All done! Return the interaction response so the user can check what happened
-        // (hovered, clicked, ...) and maybe show a tooltip:
-        response
-    }
 }
