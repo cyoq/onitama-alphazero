@@ -179,7 +179,8 @@ impl Onitama {
             ui.label(
                 RichText::new(text)
                     .text_style(egui::TextStyle::Heading)
-                    .color(*color),
+                    .color(*color)
+                    .size(20.),
             );
         });
 
@@ -233,7 +234,8 @@ impl Onitama {
                         ui.label(
                             RichText::new(text)
                                 .text_style(egui::TextStyle::Heading)
-                                .color(*color),
+                                .color(*color)
+                                .size(20.),
                         );
                     });
                 });
