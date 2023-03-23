@@ -60,11 +60,8 @@ pub fn drag_source(ui: &mut Ui, id: Id, body: impl FnOnce(&mut Ui)) -> Response 
 pub fn drop_target<R>(
     ui: &mut Ui,
     rect: Rect,
-    can_accept_what_is_being_dragged: bool,
     body: impl FnOnce(&mut Ui) -> R,
 ) -> InnerResponse<R> {
-    let is_being_dragged = ui.memory(|mem| mem.is_anything_being_dragged());
-
     let margin = Vec2::splat(16.0);
 
     // not needed since we have a fixed size of a rect
@@ -76,7 +73,7 @@ pub fn drop_target<R>(
     let ret = body(&mut content_ui);
     // Changed from min_rect to max rect to get the full content coverage
     let outer_rect = Rect::from_min_max(outer_rect_bounds.min, content_ui.max_rect().max + margin);
-    let (rect, response) = ui.allocate_exact_size(outer_rect.size(), Sense::hover());
+    let response = ui.allocate_response(outer_rect.size(), Sense::hover());
 
     InnerResponse::new(ret, response)
 }
@@ -161,78 +158,73 @@ impl<'a> GameBoard<'a> {
                         self::cell::Cell::new(row, col, bg_fill, self.cell_size).show(
                             ui,
                             |ui, rect| {
-                                let response =
-                                    drop_target(ui, rect, can_accept_what_is_being_dragged, |ui| {
-                                        let cell_id = Id::new("figure_dnd").with(col).with(row);
+                                let response = drop_target(ui, rect, |ui| {
+                                    let cell_id = Id::new("figure_dnd").with(col).with(row);
 
-                                        if self.selected_card.card_idx.is_none()
-                                            || Some(self.game_state.curr_player_color)
-                                                != piece_color
-                                            || *self.end_game
-                                        {
+                                    if self.selected_card.card_idx.is_none()
+                                        || Some(self.game_state.curr_player_color) != piece_color
+                                        || *self.end_game
+                                    {
+                                        if image.is_some() {
+                                            ui.add(Piece {
+                                                outer_rect: &rect,
+                                                image: image.unwrap(),
+                                            });
+                                        }
+                                    } else {
+                                        let drag_resp = drag_source(ui, cell_id, |ui| {
                                             if image.is_some() {
                                                 ui.add(Piece {
                                                     outer_rect: &rect,
                                                     image: image.unwrap(),
                                                 });
                                             }
-                                        } else {
-                                            let drag_resp = drag_source(ui, cell_id, |ui| {
-                                                if image.is_some() {
-                                                    ui.add(Piece {
-                                                        outer_rect: &rect,
-                                                        image: image.unwrap(),
-                                                    });
+                                        });
+
+                                        if drag_resp.drag_started() {
+                                            if let Some(idx) = self.selected_card.card_idx {
+                                                // Clear set possible moves if other piece is selected:
+                                                if *self.selected_piece != Some((row, col)) {
+                                                    *self.allowed_moves = [[false; 5]; 5];
                                                 }
-                                            });
 
-                                            if drag_resp.drag_started() {
-                                                if let Some(idx) = self.selected_card.card_idx {
-                                                    // Clear set possible moves if other piece is selected:
-                                                    if *self.selected_piece != Some((row, col)) {
-                                                        *self.allowed_moves = [[false; 5]; 5];
-                                                    }
+                                                tracing::debug!("Clicked to show available moves");
 
-                                                    tracing::debug!(
-                                                        "Clicked to show available moves"
+                                                *self.selected_piece = Some((row, col));
+
+                                                let available_moves = state
+                                                    .generate_legal_moves_card_idx(
+                                                        self.game_state.curr_player_color,
+                                                        idx,
+                                                        (row, col),
                                                     );
 
-                                                    *self.selected_piece = Some((row, col));
-
-                                                    let available_moves = state
-                                                        .generate_legal_moves_card_idx(
-                                                            self.game_state.curr_player_color,
-                                                            idx,
-                                                            (row, col),
-                                                        );
-
-                                                    tracing::debug!(
-                                                        "Available moves from state: {:?}",
-                                                        available_moves
-                                                    );
-
-                                                    for mov in available_moves.iter() {
-                                                        let (row, col) =
-                                                            Move::convert_to_2d(mov.to);
-
-                                                        tracing::info!("({}, {})", row, col);
-
-                                                        self.allowed_moves[row as usize]
-                                                            [col as usize] = true;
-                                                    }
-                                                }
                                                 tracing::debug!(
-                                                    "Allowed moves 2D array: {:?}",
-                                                    self.allowed_moves
+                                                    "Available moves from state: {:?}",
+                                                    available_moves
                                                 );
-                                            }
-                                        }
 
-                                        if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
-                                            source_row_col = Some((row, col));
+                                                for mov in available_moves.iter() {
+                                                    let (row, col) = Move::convert_to_2d(mov.to);
+
+                                                    tracing::info!("({}, {})", row, col);
+
+                                                    self.allowed_moves[row as usize]
+                                                        [col as usize] = true;
+                                                }
+                                            }
+                                            tracing::debug!(
+                                                "Allowed moves 2D array: {:?}",
+                                                self.allowed_moves
+                                            );
                                         }
-                                    })
-                                    .response;
+                                    }
+
+                                    if ui.memory(|mem| mem.is_being_dragged(cell_id)) {
+                                        source_row_col = Some((row, col));
+                                    }
+                                })
+                                .response;
 
                                 let is_being_dragged =
                                     ui.memory(|mem| mem.is_anything_being_dragged());
