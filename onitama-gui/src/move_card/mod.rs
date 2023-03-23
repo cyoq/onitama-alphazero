@@ -5,6 +5,7 @@ use onitama_game::{
 };
 
 pub const BG_FILL: Color32 = Color32::WHITE;
+pub const BG_MOVE: Color32 = Color32::LIGHT_GREEN;
 pub const BG_CENTER: Color32 = Color32::GRAY;
 
 /// A representation of a move card
@@ -77,7 +78,6 @@ impl<'a> Widget for MoveCard<'a> {
             response.mark_changed(); // report back that the value changed
         }
 
-
         // Attach some meta-data to the response which can be used by screen readers:
         response.widget_info(|| egui::WidgetInfo::new(egui::WidgetType::Other));
 
@@ -88,6 +88,11 @@ impl<'a> Widget for MoveCard<'a> {
         }
 
         let mut bg_fill = BG_FILL;
+        let positions = if !*mirror {
+            card.positions
+        } else {
+            card.mirror
+        };
         egui::Grid::new(format!("card_board_{}", name))
             .min_col_width(0.)
             .min_row_height(0.)
@@ -96,20 +101,12 @@ impl<'a> Widget for MoveCard<'a> {
                 for row in 0..5 {
                     for col in 0..5 {
                         let coords = from_2d_to_1d((row, col));
-                        let pos = get_bit(
-                            if !*mirror {
-                                card.positions
-                            } else {
-                                card.mirror
-                            },
-                            coords as usize,
-                        );
+                        let pos = get_bit(positions, coords as usize);
 
-                        if pos == 1 {
-                            bg_fill = Color32::LIGHT_GREEN;
-                        } else {
-                            bg_fill = BG_FILL;
-                        }
+                        bg_fill = match pos {
+                            1 => BG_MOVE,
+                            _ => BG_FILL,
+                        };
 
                         if (row, col) == (2, 2) {
                             bg_fill = BG_CENTER;
@@ -128,8 +125,11 @@ impl<'a> Widget for MoveCard<'a> {
                     ui.end_row();
                 }
             });
+
+        // put text down the center for 2.5 cells
         let text_coords =
             response.rect.center() + egui::Vec2::new(0., 2. * cell_size + cell_size / 2.);
+
         painter.text(
             text_coords,
             egui::Align2::CENTER_CENTER,

@@ -19,8 +19,6 @@ impl<'a> Widget for Piece<'a> {
         //  4. Paint the widget
 
         let inner_rect = rect.shrink(20.);
-        // let mut ui = ui.child_ui(inner_rect, *ui.layout());
-        // let response = ui.allocate_response(inner_rect.size(), Sense::click());
         let response = ui.allocate_rect(inner_rect, Sense::click());
 
         // Attach some meta-data to the response which can be used by screen readers:
