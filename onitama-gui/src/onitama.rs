@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use eframe::epaint::ahash::HashMapExt;
 use eframe::{epaint::ahash::HashMap, App, CreationContext};
 use egui::{
     Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
