@@ -1,7 +1,8 @@
 use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
-use onitama::{Onitama, PlayerType};
+use onitama::Onitama;
 use onitama_game::ai::{human_gui::HumanGui, random::Random};
+use player::{Player, PlayerType};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -9,6 +10,7 @@ pub mod game_board;
 pub mod image;
 pub mod move_card;
 pub mod onitama;
+pub mod player;
 pub mod selected_card;
 
 fn main() -> Result<(), eframe::Error> {
@@ -17,8 +19,14 @@ fn main() -> Result<(), eframe::Error> {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let red_agent = HumanGui;
-    let blue_agent = Random;
+    let red_player = Player {
+        typ: PlayerType::Human,
+        agent: Box::new(HumanGui),
+    };
+    let blue_player = Player {
+        typ: PlayerType::Ai,
+        agent: Box::new(Random),
+    };
 
     run_native(
         "Onitama",
@@ -28,13 +36,7 @@ fn main() -> Result<(), eframe::Error> {
         },
         Box::new(|cc| {
             cc.egui_ctx.set_visuals(Visuals::light());
-            Box::new(Onitama::new(
-                cc,
-                false,
-                Box::new(red_agent),
-                Box::new(blue_agent),
-                [PlayerType::Human, PlayerType::Ai],
-            ))
+            Box::new(Onitama::new(cc, false, red_player, blue_player))
         }),
     )
 }

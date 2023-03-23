@@ -8,18 +8,16 @@ use egui::{
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::piece::{Piece, PieceKind};
 use onitama_game::game::r#move::Move;
-use onitama_game::{
-    ai::agent::Agent,
-    game::{
-        card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
-        deck::Deck,
-        done_move::DoneMove,
-        game::Game,
-        move_result::MoveResult,
-        player_color::PlayerColor,
-    },
+use onitama_game::game::{
+    card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
+    deck::Deck,
+    done_move::DoneMove,
+    game::Game,
+    move_result::MoveResult,
+    player_color::PlayerColor,
 };
 
+use crate::player::{Player, PlayerType};
 use crate::selected_card::SelectedCard;
 use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
 
@@ -27,12 +25,6 @@ const UTILITY_PANEL_WIDTH: f32 = 370.;
 const BOARD_PANEL_WIDTH: f32 = 930.;
 const PADDING: f32 = 15.;
 const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
-
-#[derive(PartialEq, Eq, Copy, Clone)]
-pub enum PlayerType {
-    Human,
-    Ai,
-}
 
 pub struct Onitama {
     debug: bool,
@@ -47,17 +39,12 @@ pub struct Onitama {
     human_done_move: Option<DoneMove>,
     move_result: Option<MoveResult>,
     end_game: bool,
-    player_types: [PlayerType; 2],
+    // TODO: Later on the Application must own the player and not the Game
+    players: [PlayerType; 2],
 }
 
 impl Onitama {
-    pub fn new(
-        cc: &CreationContext,
-        debug: bool,
-        red_agent: Box<dyn Agent>,
-        blue_agent: Box<dyn Agent>,
-        player_types: [PlayerType; 2],
-    ) -> Self {
+    pub fn new(cc: &CreationContext, debug: bool, red_player: Player, blue_player: Player) -> Self {
         let deck = Deck::new([
             ORIGINAL_CARDS[DRAGON.index].clone(),
             ORIGINAL_CARDS[FROG.index].clone(),
@@ -71,7 +58,8 @@ impl Onitama {
 
         Self {
             debug,
-            game_state: Game::with_deck(red_agent, blue_agent, deck),
+            players: [red_player.typ, blue_player.typ],
+            game_state: Game::with_deck(red_player.agent, blue_player.agent, deck),
             images,
             selected_card: SelectedCard::default(),
             selected_piece: None,
@@ -80,7 +68,6 @@ impl Onitama {
             human_done_move: None,
             move_result: None,
             end_game: false,
-            player_types,
         }
     }
 
@@ -137,7 +124,7 @@ impl Onitama {
 
     pub fn game_loop(&mut self) {
         // TODO: Make a check if it is a human agent
-        match self.player_types[self.game_state.curr_agent_idx] {
+        match self.players[self.game_state.curr_agent_idx] {
             PlayerType::Human => {
                 if let Some(done_move) = self.human_done_move {
                     self.move_result = Some(self.game_state.progress(done_move));
