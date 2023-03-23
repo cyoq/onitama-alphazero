@@ -89,6 +89,10 @@ impl HumanConsole {
 }
 
 impl Agent for HumanConsole {
+    fn name(&self) -> &'static str {
+        "Human in Console"
+    }
+
     fn generate_move(&self, state: &State, player_color: PlayerColor) -> DoneMove {
         let mut moves = vec![];
         for card in state.deck.get_player_cards(player_color) {

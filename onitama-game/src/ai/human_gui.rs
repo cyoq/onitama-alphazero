@@ -9,4 +9,8 @@ impl Agent for HumanGui {
         // Human agent will be playing by using the GUI
         unimplemented!();
     }
+
+    fn name(&self) -> &'static str {
+        "Human"
+    }
 }

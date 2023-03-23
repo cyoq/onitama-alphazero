@@ -21,4 +21,8 @@ impl Agent for Random {
             used_card_idx: card_idx,
         }
     }
+
+    fn name(&self) -> &'static str {
+        "Random AI"
+    }
 }
