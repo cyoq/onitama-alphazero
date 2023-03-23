@@ -19,6 +19,7 @@ pub const BG_FILL: Color32 = Color32::WHITE;
 pub const BG_TEMPLE: Color32 = Color32::LIGHT_GRAY;
 pub const BG_BLUE: Color32 = Color32::BLUE;
 pub const BG_RED: Color32 = Color32::RED;
+pub const BG_LAST_PLAYED_MOVE: Color32 = Color32::LIGHT_YELLOW;
 pub const RED_TEMPLE: (u32, u32) = (0, 2);
 pub const BLUE_TEMPLE: (u32, u32) = (4, 2);
 
@@ -95,6 +96,7 @@ pub struct GameBoard<'a> {
     /// Hashmap for the cells that are possible moves
     pub allowed_moves: &'a mut [[bool; 5]; 5],
     pub human_done_move: &'a mut Option<DoneMove>,
+    pub last_played_move: &'a mut Option<(u32, u32)>,
     pub end_game: &'a bool,
 }
 
@@ -142,6 +144,8 @@ impl<'a> GameBoard<'a> {
                                 PlayerColor::Red => Color32::LIGHT_RED,
                                 PlayerColor::Blue => Color32::LIGHT_BLUE,
                             }
+                        } else if Some((row, col)) == *self.last_played_move {
+                            BG_LAST_PLAYED_MOVE
                         } else if (row, col) == BLUE_TEMPLE || (row, col) == RED_TEMPLE {
                             BG_TEMPLE
                         } else {
@@ -256,6 +260,7 @@ impl<'a> GameBoard<'a> {
                 if ui.input(|i| i.pointer.any_released()) {
                     *self.allowed_moves = [[false; 5]; 5];
                     *self.selected_piece = None;
+                    *self.last_played_move = Some(drop_row_col);
 
                     tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
 

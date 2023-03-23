@@ -7,6 +7,7 @@ use egui::{
     Label, Layout, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
+use onitama_game::game::r#move::Move;
 use onitama_game::{
     ai::agent::Agent,
     game::{
@@ -94,6 +95,8 @@ pub struct Onitama {
     selected_card: SelectedCard,
     /// Selected piece can be identified by (row, col)
     selected_piece: Option<(u32, u32)>,
+    /// Needed to color the cell with the last played move
+    last_played_move: Option<(u32, u32)>,
     allowed_moves: [[bool; 5]; 5],
     human_done_move: Option<DoneMove>,
     move_result: Option<MoveResult>,
@@ -126,6 +129,7 @@ impl Onitama {
             images,
             selected_card: SelectedCard::default(),
             selected_piece: None,
+            last_played_move: None,
             allowed_moves: [[false; 5]; 5],
             human_done_move: None,
             move_result: None,
@@ -196,6 +200,7 @@ impl Onitama {
             }
             PlayerType::Ai => {
                 let mov = self.game_state.agent_generate_move();
+                self.last_played_move = Some(Move::convert_to_2d(mov.mov.to));
                 self.move_result = Some(self.game_state.progress(mov));
             }
         }
@@ -222,6 +227,7 @@ impl Onitama {
                         cell_size: 150.,
                         selected_card: &mut self.selected_card,
                         selected_piece: &mut self.selected_piece,
+                        last_played_move: &mut self.last_played_move,
                         images: &self.images,
                         allowed_moves: &mut self.allowed_moves,
                         human_done_move: &mut self.human_done_move,
@@ -364,6 +370,7 @@ impl Onitama {
         self.selected_piece = None;
         self.allowed_moves = [[false; 5]; 5];
         self.human_done_move = None;
+        self.last_played_move = None;
         self.move_result = None;
         self.end_game = false;
     }
