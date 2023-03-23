@@ -1,16 +1,18 @@
 pub mod cell;
-pub mod piece;
+pub mod figure;
 
 use eframe::epaint::ahash::HashMap;
 use egui::*;
 use onitama_game::{
     common::{from_2d_to_1d, get_bit},
-    game::{done_move::DoneMove, game::Game, player_color::PlayerColor, r#move::Move},
+    game::{
+        done_move::DoneMove, game::Game, piece::Piece, player_color::PlayerColor, r#move::Move,
+    },
 };
 
-use crate::{image::Image, onitama::Figure, selected_card::SelectedCard};
+use crate::{image::Image, selected_card::SelectedCard};
 
-use self::piece::Piece;
+use self::figure::Figure;
 
 pub const BG_FILL: Color32 = Color32::WHITE;
 pub const BG_TEMPLE: Color32 = Color32::LIGHT_GRAY;
@@ -82,7 +84,7 @@ pub struct GameBoard<'a> {
     /// A size of the cell
     pub cell_size: f32,
     /// images to display
-    pub images: &'a HashMap<Figure, Image>,
+    pub images: &'a HashMap<Piece, Image>,
     /// Selected card idx
     pub selected_card: &'a mut SelectedCard,
     /// Selected piece identified by (row, col)
@@ -117,16 +119,16 @@ impl<'a> GameBoard<'a> {
                         let blue_king = get_bit(state.kings[PlayerColor::Blue as usize], coords);
 
                         if red_pawn == 1 {
-                            image = Some(self.images.get(&Figure::RedPawn).unwrap().image());
+                            image = Some(self.images.get(&Piece::red_pawn()).unwrap().image());
                             piece_color = Some(PlayerColor::Red);
                         } else if blue_pawn == 1 {
-                            image = Some(self.images.get(&Figure::BluePawn).unwrap().image());
+                            image = Some(self.images.get(&Piece::blue_pawn()).unwrap().image());
                             piece_color = Some(PlayerColor::Blue);
                         } else if red_king == 1 {
-                            image = Some(self.images.get(&Figure::RedKing).unwrap().image());
+                            image = Some(self.images.get(&Piece::red_king()).unwrap().image());
                             piece_color = Some(PlayerColor::Red);
                         } else if blue_king == 1 {
-                            image = Some(self.images.get(&Figure::BlueKing).unwrap().image());
+                            image = Some(self.images.get(&Piece::blue_king()).unwrap().image());
                             piece_color = Some(PlayerColor::Blue);
                         }
 
@@ -163,7 +165,7 @@ impl<'a> GameBoard<'a> {
                                         || *self.end_game
                                     {
                                         if image.is_some() {
-                                            ui.add(Piece {
+                                            ui.add(Figure {
                                                 outer_rect: &rect,
                                                 image: image.unwrap(),
                                             });
@@ -171,7 +173,7 @@ impl<'a> GameBoard<'a> {
                                     } else {
                                         let drag_resp = drag_source(ui, cell_id, |ui| {
                                             if image.is_some() {
-                                                ui.add(Piece {
+                                                ui.add(Figure {
                                                     outer_rect: &rect,
                                                     image: image.unwrap(),
                                                 });
@@ -268,7 +270,7 @@ impl<'a> GameBoard<'a> {
                         }
                     };
 
-                    let figure = self
+                    let piece = self
                         .game_state
                         .state
                         .get_piece_type_at_pos(source_row_col)
@@ -278,7 +280,7 @@ impl<'a> GameBoard<'a> {
                         mov: Move {
                             from: from_2d_to_1d(source_row_col),
                             to: from_2d_to_1d(drop_row_col),
-                            figure,
+                            piece,
                         },
                         used_card_idx,
                     });

@@ -3,7 +3,7 @@ use std::io::{self, stdout, Write};
 use crate::{
     common::get_bit,
     game::{
-        card::CARD_NAMES, done_move::DoneMove, figure::Figure, player_color::PlayerColor,
+        card::CARD_NAMES, done_move::DoneMove, piece::PieceKind, player_color::PlayerColor,
         r#move::Move, state::State,
     },
 };
@@ -120,14 +120,14 @@ impl Agent for HumanConsole {
             break;
         }
 
-        let figure = if get_bit(state.pawns[player_color as usize], from as usize) == 1 {
-            Figure::Pawn
+        let piece = if get_bit(state.pawns[player_color as usize], from as usize) == 1 {
+            PieceKind::Pawn
         } else {
-            Figure::King
+            PieceKind::King
         };
 
         DoneMove {
-            mov: Move { from, to, figure },
+            mov: Move { from, to, piece },
             used_card_idx: card_idx as usize,
         }
     }

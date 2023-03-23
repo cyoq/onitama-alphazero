@@ -6,8 +6,8 @@ use crate::{
 use super::{
     card::{Card, ATTACK_MAPS},
     deck::Deck,
-    figure::Figure,
     move_result::MoveResult,
+    piece::PieceKind,
     player_color::PlayerColor,
     r#move::Move,
 };
@@ -114,13 +114,13 @@ impl State {
     ) -> MoveResult {
         let from = mov.from as usize;
         let to = mov.to as usize;
-        let figure = mov.figure;
+        let piece = mov.piece;
         let mut move_result = MoveResult::InProgress;
 
         // Clear 'from' position
-        match figure {
-            Figure::Pawn => clear_bit(&mut self.pawns[player_color as usize], from),
-            Figure::King => clear_bit(&mut self.kings[player_color as usize], from),
+        match piece {
+            PieceKind::Pawn => clear_bit(&mut self.pawns[player_color as usize], from),
+            PieceKind::King => clear_bit(&mut self.kings[player_color as usize], from),
         }
 
         // Check if there is a capture of an enemy piece
@@ -145,13 +145,13 @@ impl State {
         }
 
         // Set a piece to the 'to' position
-        match figure {
-            Figure::Pawn => set_bit(&mut self.pawns[player_color as usize], to),
-            Figure::King => set_bit(&mut self.kings[player_color as usize], to),
+        match piece {
+            PieceKind::Pawn => set_bit(&mut self.pawns[player_color as usize], to),
+            PieceKind::King => set_bit(&mut self.kings[player_color as usize], to),
         }
 
         // If it is a king, check if it is coming to the temple
-        if figure == Figure::King {
+        if piece == PieceKind::King {
             match (player_color, to) {
                 (PlayerColor::Red, BLUE_TEMPLE) => move_result = MoveResult::RedWin,
                 (PlayerColor::Blue, RED_TEMPLE) => move_result = MoveResult::BlueWin,
@@ -165,7 +165,7 @@ impl State {
         move_result
     }
 
-    pub fn get_piece_type_at_pos(&self, pos: (u32, u32)) -> Option<Figure> {
+    pub fn get_piece_type_at_pos(&self, pos: (u32, u32)) -> Option<PieceKind> {
         use PlayerColor::*;
         let coords_1d = from_2d_to_1d(pos) as usize;
         let pawn = get_bit(self.pawns[Red as usize], coords_1d)
@@ -175,8 +175,8 @@ impl State {
             | get_bit(self.kings[Blue as usize], coords_1d);
 
         match (pawn, king) {
-            (1, 0) => Some(Figure::Pawn),
-            (0, 1) => Some(Figure::King),
+            (1, 0) => Some(PieceKind::Pawn),
+            (0, 1) => Some(PieceKind::King),
             _ => None,
         }
     }
@@ -227,20 +227,20 @@ impl State {
         let attack_map = ATTACK_MAPS[player_color as usize][card.index][n];
 
         let map: u32;
-        let figure: Figure;
+        let piece: PieceKind;
         // Generate attacks
         if pawn_bit == 1 {
             // 1. apply all pawns to the attack map
             // 2. mask out all the pawns to remove overlapping moves with the same color figures
             // 3. mask out the same color king figure if it is overlapping
             map = ((attack_map | pawns) & !pawns) & !king;
-            figure = Figure::Pawn;
+            piece = PieceKind::Pawn;
         } else {
             // 1. apply a king to the attack map
             // 2. mask out the same color king figure if it is overlapping
             // 3. mask out all the pawns to remove overlapping moves of mask and pawns
             map = ((attack_map | king) & !king) & !pawns;
-            figure = Figure::King;
+            piece = PieceKind::King;
         }
 
         // Generate moves
@@ -254,7 +254,7 @@ impl State {
             moves.push(Move {
                 from: n as u32,
                 to: i as u32,
-                figure,
+                piece,
             });
         }
 
@@ -294,20 +294,20 @@ impl State {
             let attack_map = ATTACK_MAPS[player_color as usize][card.index][n];
 
             let map: u32;
-            let figure: Figure;
+            let figure: PieceKind;
             // Generate attacks
             if pawn_bit == 1 {
                 // 1. apply all pawns to the attack map
                 // 2. mask out all the pawns to remove overlapping moves with the same color figures
                 // 3. mask out the same color king figure if it is overlapping
                 map = ((attack_map | pawns) & !pawns) & !king;
-                figure = Figure::Pawn;
+                figure = PieceKind::Pawn;
             } else {
                 // 1. apply a king to the attack map
                 // 2. mask out the same color king figure if it is overlapping
                 // 3. mask out all the pawns to remove overlapping moves of mask and pawns
                 map = ((attack_map | king) & !king) & !pawns;
-                figure = Figure::King;
+                figure = PieceKind::King;
             }
 
             // Generate moves
@@ -321,7 +321,7 @@ impl State {
                 result.push(Move {
                     from: n as u32,
                     to: i as u32,
-                    figure,
+                    piece: figure,
                 });
             }
         }
@@ -337,8 +337,8 @@ mod tests {
         game::{
             card::{CRAB, DRAGON, FROG, RABBIT, TIGER},
             deck::Deck,
-            figure::Figure,
             move_result::MoveResult,
+            piece::PieceKind,
             player_color::PlayerColor,
             r#move::Move,
         },
@@ -379,11 +379,11 @@ mod tests {
         let mut crab_expected_moves = vec![
             // All legal moves for the crab at starting position
             // All moves go forward for red
-            Move::from(([(4, 0), (3, 0)], Figure::Pawn)),
-            Move::from(([(4, 1), (3, 1)], Figure::Pawn)),
-            Move::from(([(4, 2), (3, 2)], Figure::King)),
-            Move::from(([(4, 3), (3, 3)], Figure::Pawn)),
-            Move::from(([(4, 4), (3, 4)], Figure::Pawn)),
+            Move::from(([(4, 0), (3, 0)], PieceKind::Pawn)),
+            Move::from(([(4, 1), (3, 1)], PieceKind::Pawn)),
+            Move::from(([(4, 2), (3, 2)], PieceKind::King)),
+            Move::from(([(4, 3), (3, 3)], PieceKind::Pawn)),
+            Move::from(([(4, 4), (3, 4)], PieceKind::Pawn)),
         ];
         let mut crab_moves = state.generate_all_legal_moves(PlayerColor::Red, crab);
         crab_moves.sort();
@@ -394,10 +394,10 @@ mod tests {
         let mut rabbit_expected_moves = vec![
             // All legal moves for the rabbit at starting position
             // All moves go diagonally
-            Move::from(([(4, 0), (3, 1)], Figure::Pawn)),
-            Move::from(([(4, 1), (3, 2)], Figure::Pawn)),
-            Move::from(([(4, 2), (3, 3)], Figure::King)),
-            Move::from(([(4, 3), (3, 4)], Figure::Pawn)),
+            Move::from(([(4, 0), (3, 1)], PieceKind::Pawn)),
+            Move::from(([(4, 1), (3, 2)], PieceKind::Pawn)),
+            Move::from(([(4, 2), (3, 3)], PieceKind::King)),
+            Move::from(([(4, 3), (3, 4)], PieceKind::Pawn)),
         ];
         let mut rabbit_moves = state.generate_all_legal_moves(PlayerColor::Red, rabbit);
         rabbit_moves.sort();
@@ -417,11 +417,11 @@ mod tests {
         let mut crab_expected_moves = vec![
             // All legal moves for the crab at starting position
             // All moves go forward for red
-            Move::from(([(0, 0), (1, 0)], Figure::Pawn)),
-            Move::from(([(0, 1), (1, 1)], Figure::Pawn)),
-            Move::from(([(0, 2), (1, 2)], Figure::King)),
-            Move::from(([(0, 3), (1, 3)], Figure::Pawn)),
-            Move::from(([(0, 4), (1, 4)], Figure::Pawn)),
+            Move::from(([(0, 0), (1, 0)], PieceKind::Pawn)),
+            Move::from(([(0, 1), (1, 1)], PieceKind::Pawn)),
+            Move::from(([(0, 2), (1, 2)], PieceKind::King)),
+            Move::from(([(0, 3), (1, 3)], PieceKind::Pawn)),
+            Move::from(([(0, 4), (1, 4)], PieceKind::Pawn)),
         ];
         let mut crab_moves = state.generate_all_legal_moves(PlayerColor::Blue, crab);
         crab_moves.sort();
@@ -432,10 +432,10 @@ mod tests {
         let mut rabbit_expected_moves = vec![
             // All legal moves for the rabbit at starting position
             // All moves go diagonally
-            Move::from(([(0, 1), (1, 0)], Figure::Pawn)),
-            Move::from(([(0, 2), (1, 1)], Figure::King)),
-            Move::from(([(0, 3), (1, 2)], Figure::Pawn)),
-            Move::from(([(0, 4), (1, 3)], Figure::Pawn)),
+            Move::from(([(0, 1), (1, 0)], PieceKind::Pawn)),
+            Move::from(([(0, 2), (1, 1)], PieceKind::King)),
+            Move::from(([(0, 3), (1, 2)], PieceKind::Pawn)),
+            Move::from(([(0, 4), (1, 3)], PieceKind::Pawn)),
         ];
         let mut rabbit_moves = state.generate_all_legal_moves(PlayerColor::Blue, rabbit);
         rabbit_moves.sort();
@@ -455,7 +455,7 @@ mod tests {
         let mov = Move {
             from: 20, // a1
             to: 15,   // a2
-            figure: Figure::Pawn,
+            piece: PieceKind::Pawn,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Red, 0);
 
@@ -481,7 +481,7 @@ mod tests {
         let mov = Move {
             from: 1, // b5
             to: 11,  // b3
-            figure: Figure::Pawn,
+            piece: PieceKind::Pawn,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
 
@@ -524,7 +524,7 @@ mod tests {
         let mov = Move {
             from: 20, // a1
             to: 15,   // a2
-            figure: Figure::Pawn,
+            piece: PieceKind::Pawn,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Red, 0);
 
@@ -569,7 +569,7 @@ mod tests {
         let mov = Move {
             from: 10, // a3
             to: 20,   // a1
-            figure: Figure::Pawn,
+            piece: PieceKind::Pawn,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
 
@@ -614,7 +614,7 @@ mod tests {
         let mov = Move {
             from: 7, // c4
             to: 2,   // c5
-            figure: Figure::Pawn,
+            piece: PieceKind::Pawn,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Red, 0);
 
@@ -659,7 +659,7 @@ mod tests {
         let mov = Move {
             from: 12, // c3
             to: 22,   // c1
-            figure: Figure::Pawn,
+            piece: PieceKind::Pawn,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
 
@@ -705,7 +705,7 @@ mod tests {
         let mov = Move {
             from: 12, // c3
             to: 22,   // c1
-            figure: Figure::King,
+            piece: PieceKind::King,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
 
@@ -751,7 +751,7 @@ mod tests {
         let mov = Move {
             from: 7, // c4
             to: 2,   // c5
-            figure: Figure::King,
+            piece: PieceKind::King,
         };
         let mov_result = state.make_move(&mov, PlayerColor::Red, 0);
 

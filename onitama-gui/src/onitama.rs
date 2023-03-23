@@ -6,6 +6,7 @@ use egui::{
     Label, Layout, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
+use onitama_game::game::piece::{Piece, PieceKind};
 use onitama_game::game::r#move::Move;
 use onitama_game::{
     ai::agent::Agent,
@@ -27,14 +28,6 @@ const BOARD_PANEL_WIDTH: f32 = 930.;
 const PADDING: f32 = 15.;
 const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
 
-#[derive(PartialEq, Eq, Hash, Copy, Clone)]
-pub enum Figure {
-    BlueKing,
-    BluePawn,
-    RedKing,
-    RedPawn,
-}
-
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum PlayerType {
     Human,
@@ -43,7 +36,7 @@ pub enum PlayerType {
 
 pub struct Onitama {
     debug: bool,
-    images: HashMap<Figure, Image>,
+    images: HashMap<Piece, Image>,
     game_state: Game,
     selected_card: SelectedCard,
     /// Selected piece can be identified by (row, col)
@@ -111,26 +104,26 @@ impl Onitama {
         ctx.set_fonts(font_def);
     }
 
-    fn load_images() -> HashMap<Figure, Image> {
+    fn load_images() -> HashMap<Piece, Image> {
         // Path comes from `target` folder
         let images = [
             (
-                Figure::BlueKing,
+                Piece::new(PieceKind::King, PlayerColor::Blue),
                 "blue_king",
                 "onitama-gui/assets/images/blue_king.svg",
             ),
             (
-                Figure::BluePawn,
+                Piece::new(PieceKind::Pawn, PlayerColor::Blue),
                 "blue_pawn",
                 "onitama-gui/assets/images/blue_pawn.svg",
             ),
             (
-                Figure::RedKing,
+                Piece::new(PieceKind::King, PlayerColor::Red),
                 "red_king",
                 "onitama-gui/assets/images/red_king.svg",
             ),
             (
-                Figure::RedPawn,
+                Piece::new(PieceKind::Pawn, PlayerColor::Red),
                 "red_pawn",
                 "onitama-gui/assets/images/red_pawn.svg",
             ),
@@ -139,7 +132,7 @@ impl Onitama {
         images
             .iter()
             .map(|i| (i.0, Image::load_image(i.1.to_owned(), &PathBuf::from(i.2))))
-            .collect::<HashMap<Figure, Image>>()
+            .collect::<HashMap<Piece, Image>>()
     }
 
     pub fn game_loop(&mut self) {

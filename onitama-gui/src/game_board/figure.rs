@@ -1,14 +1,14 @@
 use egui::*;
 use egui_extras::RetainedImage;
 
-pub struct Piece<'a> {
+pub struct Figure<'a> {
     pub outer_rect: &'a Rect,
     pub image: &'a RetainedImage,
 }
 
-impl<'a> Widget for Piece<'a> {
+impl<'a> Widget for Figure<'a> {
     fn ui(self, ui: &mut Ui) -> egui::Response {
-        let Piece {
+        let Figure {
             outer_rect: rect,
             image,
         } = self;

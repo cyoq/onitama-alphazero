@@ -2,7 +2,7 @@ use std::{error::Error, fmt::Display};
 
 use crate::common::from_2d_to_1d;
 
-use super::figure::Figure;
+use super::piece::PieceKind;
 
 #[derive(Debug, Clone)]
 pub struct NotationError(String);
@@ -19,7 +19,7 @@ impl Display for NotationError {
 pub struct Move {
     pub from: u32,
     pub to: u32,
-    pub figure: Figure,
+    pub piece: PieceKind,
 }
 
 impl Move {
@@ -100,13 +100,13 @@ impl Display for Move {
             "Move [from: {}, to: {}, with: {:?}]",
             Move::convert_idx_to_notation(self.from),
             Move::convert_idx_to_notation(self.to),
-            self.figure
+            self.piece
         ))
     }
 }
 
-impl From<([(u32, u32); 2], Figure)> for Move {
-    fn from(value: ([(u32, u32); 2], Figure)) -> Self {
+impl From<([(u32, u32); 2], PieceKind)> for Move {
+    fn from(value: ([(u32, u32); 2], PieceKind)) -> Self {
         let mov = value.0;
         let figure = value.1;
         let from = mov[0];
@@ -114,7 +114,7 @@ impl From<([(u32, u32); 2], Figure)> for Move {
         Self {
             from: from_2d_to_1d(from),
             to: from_2d_to_1d(to),
-            figure,
+            piece: figure,
         }
     }
 }
