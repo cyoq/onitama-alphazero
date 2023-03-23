@@ -120,16 +120,16 @@ impl<'a> GameBoard<'a> {
                         let blue_king = get_bit(state.kings[PlayerColor::Blue as usize], coords);
 
                         if red_pawn == 1 {
-                            image = Some(&self.images.get(&Figure::RedPawn).unwrap().image);
+                            image = Some(self.images.get(&Figure::RedPawn).unwrap().image());
                             piece_color = Some(PlayerColor::Red);
                         } else if blue_pawn == 1 {
-                            image = Some(&self.images.get(&Figure::BluePawn).unwrap().image);
+                            image = Some(self.images.get(&Figure::BluePawn).unwrap().image());
                             piece_color = Some(PlayerColor::Blue);
                         } else if red_king == 1 {
-                            image = Some(&self.images.get(&Figure::RedKing).unwrap().image);
+                            image = Some(self.images.get(&Figure::RedKing).unwrap().image());
                             piece_color = Some(PlayerColor::Red);
                         } else if blue_king == 1 {
-                            image = Some(&self.images.get(&Figure::BlueKing).unwrap().image);
+                            image = Some(self.images.get(&Figure::BlueKing).unwrap().image());
                             piece_color = Some(PlayerColor::Blue);
                         }
 
