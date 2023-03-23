@@ -41,6 +41,9 @@ pub struct Onitama {
     end_game: bool,
     // TODO: Later on the Application must own the player and not the Game
     players: [PlayerType; 2],
+    player_names: [&'static str; 2],
+    board_panel_text: (String, Color32),
+    card_panel_text: (String, Color32),
 }
 
 impl Onitama {
@@ -59,6 +62,7 @@ impl Onitama {
         Self {
             debug,
             players: [red_player.typ, blue_player.typ],
+            player_names: [red_player.agent.name(), blue_player.agent.name()],
             game_state: Game::with_deck(red_player.agent, blue_player.agent, deck),
             images,
             selected_card: SelectedCard::default(),
@@ -68,6 +72,8 @@ impl Onitama {
             human_done_move: None,
             move_result: None,
             end_game: false,
+            board_panel_text: ("".to_string(), Color32::BLACK),
+            card_panel_text: ("".to_string(), Color32::BLACK),
         }
     }
 
@@ -123,7 +129,6 @@ impl Onitama {
     }
 
     pub fn game_loop(&mut self) {
-        // TODO: Make a check if it is a human agent
         match self.players[self.game_state.curr_agent_idx] {
             PlayerType::Human => {
                 if let Some(done_move) = self.human_done_move {
@@ -139,10 +144,43 @@ impl Onitama {
         }
     }
 
+    pub fn update_text(&mut self) {
+        let color = match self.game_state.curr_player_color {
+            PlayerColor::Red => Color32::RED,
+            PlayerColor::Blue => Color32::BLUE,
+        };
+        self.board_panel_text = (
+            format!(
+                "{} makes a move",
+                self.player_names[self.game_state.curr_agent_idx]
+            ),
+            color,
+        );
+
+        if let Some(idx) = self.selected_card.card_idx {
+            let card = self.game_state.state.deck.get_card(idx);
+            let card_name = CARD_NAMES[card.index];
+            self.card_panel_text = (format!("{} card was chosen", card_name), color);
+        } else {
+            self.card_panel_text = (
+                format!(
+                    "{} chooses a card",
+                    self.game_state.curr_player_color.to_string()
+                ),
+                color,
+            );
+        }
+    }
+
     fn board_panel(&mut self, ui: &mut Ui) {
         ui.add_space(PADDING);
         ui.vertical_centered(|ui| {
-            ui.label(RichText::new("Game information").text_style(egui::TextStyle::Heading));
+            let (text, color) = &self.board_panel_text;
+            ui.label(
+                RichText::new(text)
+                    .text_style(egui::TextStyle::Heading)
+                    .color(*color),
+            );
         });
 
         ui.add_space(5.);
@@ -191,8 +229,11 @@ impl Onitama {
                 // Textual information strip
                 strip.cell(|ui| {
                     ui.vertical_centered(|ui| {
+                        let (text, color) = &self.card_panel_text;
                         ui.label(
-                            RichText::new("Text information").text_style(egui::TextStyle::Heading),
+                            RichText::new(text)
+                                .text_style(egui::TextStyle::Heading)
+                                .color(*color),
                         );
                     });
                 });
@@ -357,6 +398,8 @@ impl App for Onitama {
             });
         }
 
+        self.update_text();
+
         if self.move_result.is_none() || !self.move_result.unwrap().is_win() && !self.end_game {
             self.game_loop();
         }
@@ -366,11 +409,13 @@ impl App for Onitama {
                 MoveResult::Capture => tracing::warn!("A capture has happened!"),
                 MoveResult::RedWin => {
                     self.end_game = true;
-                    tracing::warn!("Red won!")
+                    self.board_panel_text = ("Red won!".to_string(), Color32::RED);
+                    self.card_panel_text = ("".to_string(), Color32::BLACK);
                 }
                 MoveResult::BlueWin => {
                     self.end_game = true;
-                    tracing::warn!("Blue won!")
+                    self.board_panel_text = ("Blue won!".to_string(), Color32::BLUE);
+                    self.card_panel_text = ("".to_string(), Color32::BLACK);
                 }
                 MoveResult::InProgress => tracing::warn!("Game is in progress"),
             }
