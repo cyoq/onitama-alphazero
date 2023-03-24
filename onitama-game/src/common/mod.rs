@@ -62,8 +62,7 @@ pub const fn get_msb(mut value: u32) -> u32 {
         value <<= 1;
     }
 
-    // to get a position starting from zero
-    pos - 1
+    pos
 }
 
 #[cfg(test)]

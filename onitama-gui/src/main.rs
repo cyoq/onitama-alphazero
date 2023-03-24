@@ -31,8 +31,8 @@ fn main() -> Result<(), eframe::Error> {
 
     let blue_player = Player {
         typ: PlayerType::Ai,
-        // agent: Box::new(AlphaBeta { max_depth: 6 }),
-        agent: Box::new(Random),
+        agent: Box::new(AlphaBeta { max_depth: 6 }),
+        // agent: Box::new(Random),
     };
 
     run_native(

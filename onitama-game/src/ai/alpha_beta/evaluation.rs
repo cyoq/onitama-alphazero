@@ -72,11 +72,11 @@ impl Evaluation {
             let enemy_pawn = get_bit(enemy_pawns, n);
 
             if my_pawn == 1 {
-                me_close_to_enemy_king += Self::manhattan_distance(my_pawn, enemy_king);
+                me_close_to_enemy_king += Self::manhattan_distance(my_pawn, enemy_king_pos);
                 let (x, y) = Move::convert_to_2d(my_pawn);
                 my_piece_square += PIECE_SQUARE_TABLE[y as usize][x as usize];
             } else if enemy_pawn == 1 {
-                enemies_close_to_my_king += Self::manhattan_distance(enemy_pawn, my_king);
+                enemies_close_to_my_king += Self::manhattan_distance(enemy_pawn, my_king_pos);
                 let (x, y) = Move::convert_to_2d(enemy_pawn);
                 enemy_piece_square += PIECE_SQUARE_TABLE[y as usize][x as usize];
             }
