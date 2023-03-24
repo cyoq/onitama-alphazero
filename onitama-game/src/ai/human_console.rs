@@ -3,13 +3,14 @@ use std::io::{self, stdout, Write};
 use crate::{
     common::get_bit,
     game::{
-        card::CARD_NAMES, done_move::DoneMove, piece::PieceKind, player_color::PlayerColor,
-        r#move::Move, state::State,
+        card::CARD_NAMES, done_move::DoneMove, game::GameState, piece::PieceKind,
+        player_color::PlayerColor, r#move::Move,
     },
 };
 
 use super::agent::Agent;
 
+#[derive(Clone)]
 pub struct HumanConsole;
 
 impl HumanConsole {
@@ -93,7 +94,9 @@ impl Agent for HumanConsole {
         "Human in Console"
     }
 
-    fn generate_move(&self, state: &State, player_color: PlayerColor) -> DoneMove {
+    fn generate_move(&self, game_state: &GameState) -> DoneMove {
+        let player_color = game_state.curr_player_color;
+        let state = &game_state.state;
         let mut moves = vec![];
         for card in state.deck.get_player_cards(player_color) {
             println!("All possible moves for card {}", CARD_NAMES[card.index]);
@@ -134,5 +137,9 @@ impl Agent for HumanConsole {
             mov: Move { from, to, piece },
             used_card_idx: card_idx as usize,
         }
+    }
+
+    fn clone_dyn(&self) -> Box<dyn Agent> {
+        Box::new(self.clone())
     }
 }

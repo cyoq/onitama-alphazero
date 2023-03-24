@@ -5,7 +5,8 @@ use super::{
     state::State,
 };
 
-pub struct Game {
+#[derive(Clone)]
+pub struct GameState {
     /// Represents a current state of the game
     pub state: State,
     /// A history of the played state. TODO: Need to understand how the string cloning affects the performance
@@ -16,7 +17,7 @@ pub struct Game {
     pub curr_player_color: PlayerColor,
 }
 
-impl Game {
+impl GameState {
     pub fn new(red_agent: Box<dyn Agent>, blue_agent: Box<dyn Agent>) -> Self {
         let state = State::new();
         let player_color = state.deck.neutral_card().player_color;
@@ -68,7 +69,7 @@ impl Game {
     }
 
     pub fn agent_generate_move(&self) -> DoneMove {
-        self.agents[self.curr_agent_idx].generate_move(&self.state, self.curr_player_color)
+        self.agents[self.curr_agent_idx].generate_move(&self)
     }
 
     pub fn progress(&mut self, done_move: DoneMove) -> MoveResult {
@@ -93,8 +94,7 @@ impl Game {
         self.history.push(self.state.clone());
 
         // move must be a legal one
-        let done_move =
-            self.agents[self.curr_agent_idx].generate_move(&self.state, self.curr_player_color);
+        let done_move = self.agents[self.curr_agent_idx].generate_move(&self);
 
         let move_result = self.state.make_move(
             &done_move.mov,

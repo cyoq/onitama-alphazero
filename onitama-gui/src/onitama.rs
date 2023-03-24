@@ -12,7 +12,7 @@ use onitama_game::game::{
     card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
     deck::Deck,
     done_move::DoneMove,
-    game::Game,
+    game::GameState,
     move_result::MoveResult,
     player_color::PlayerColor,
 };
@@ -29,7 +29,7 @@ const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
 pub struct Onitama {
     debug: bool,
     images: HashMap<Piece, Image>,
-    game_state: Game,
+    game_state: GameState,
     selected_card: SelectedCard,
     /// Selected piece can be identified by (row, col)
     selected_piece: Option<(u32, u32)>,
@@ -63,7 +63,7 @@ impl Onitama {
             debug,
             players: [red_player.typ, blue_player.typ],
             player_names: [red_player.agent.name(), blue_player.agent.name()],
-            game_state: Game::with_deck(red_player.agent, blue_player.agent, deck),
+            game_state: GameState::with_deck(red_player.agent, blue_player.agent, deck),
             images,
             selected_card: SelectedCard::default(),
             selected_piece: None,

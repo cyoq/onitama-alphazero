@@ -1,5 +1,5 @@
 use onitama_game::ai::{human_console::HumanConsole, random::Random};
-use onitama_game::game::{game::Game, move_result::MoveResult};
+use onitama_game::game::{game::GameState, move_result::MoveResult};
 
 fn main() {
     let mut progress = MoveResult::InProgress;
@@ -7,7 +7,7 @@ fn main() {
     let red_agent = HumanConsole;
     let blue_agent = Random;
 
-    let mut game = Game::new(Box::new(red_agent), Box::new(blue_agent));
+    let mut game = GameState::new(Box::new(red_agent), Box::new(blue_agent));
     let mut max_plies = 200;
 
     while progress != MoveResult::BlueWin && progress != MoveResult::RedWin {

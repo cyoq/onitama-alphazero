@@ -182,7 +182,7 @@ impl State {
     }
 
     /// Generates all legal moves for the specific card and the player
-    pub fn generate_legal_moves_card_idx(
+    pub fn generate_legal_moves_by_pos_card_idx(
         &self,
         player_color: PlayerColor,
         card_idx: usize,
@@ -196,10 +196,10 @@ impl State {
                 .collect::<Vec<&str>>()
         );
         let card = self.deck.get_card(card_idx);
-        self.generate_legal_moves(card, player_color, pos)
+        self.generate_legal_moves_by_pos(card, player_color, pos)
     }
 
-    pub fn generate_legal_moves(
+    pub fn generate_legal_moves_by_pos(
         &self,
         card: &Card,
         player_color: PlayerColor,
@@ -271,7 +271,7 @@ impl State {
         self.generate_all_legal_moves(player_color, card)
     }
 
-    /// Generates all legal moves for the specific card and the player
+    /// Generates all legal moves for the specific cards of the specific player color
     pub fn generate_all_legal_moves(&self, player_color: PlayerColor, card: &Card) -> Vec<Move> {
         let mut result: Vec<Move> = Vec::new();
         // Save pawns for the specific player

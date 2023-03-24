@@ -42,6 +42,30 @@ pub fn clear_bit(value: &mut u32, pos: usize) {
     *value &= !(1u32 << (31 - pos));
 }
 
+#[inline]
+pub const fn count_bits(mut value: u32) -> u32 {
+    let mut count: u32 = 0;
+    while value != 0 {
+        count += 1;
+        value &= value - 1;
+    }
+    count
+}
+
+/// Can be useful to get a position of a king
+#[inline]
+pub const fn get_msb(mut value: u32) -> u32 {
+    let mut pos = 0;
+
+    while value > 0 {
+        pos += 1;
+        value <<= 1;
+    }
+
+    // to get a position starting from zero
+    pos - 1
+}
+
 #[cfg(test)]
 mod tests {
     use crate::common::{from_2d_to_bitboard, get_bit};

@@ -44,6 +44,14 @@ impl Deck {
     }
 
     #[inline]
+    pub fn get_player_cards_idx(&self, player_color: PlayerColor) -> [usize; 2] {
+        match player_color {
+            PlayerColor::Red => [RED_CARD1, RED_CARD2],
+            PlayerColor::Blue => [BLUE_CARD1, BLUE_CARD2],
+        }
+    }
+
+    #[inline]
     pub fn neutral_card(&self) -> &Card {
         &self.cards[NEUTRAL]
     }

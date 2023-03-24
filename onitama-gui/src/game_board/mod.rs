@@ -6,7 +6,7 @@ use egui::*;
 use onitama_game::{
     common::{from_2d_to_1d, get_bit},
     game::{
-        done_move::DoneMove, game::Game, piece::Piece, player_color::PlayerColor, r#move::Move,
+        done_move::DoneMove, game::GameState, piece::Piece, player_color::PlayerColor, r#move::Move,
     },
 };
 
@@ -80,7 +80,7 @@ pub fn drop_target<R>(
 /// A representation of a game board
 pub struct GameBoard<'a> {
     /// State of the current game
-    pub game_state: &'a mut Game,
+    pub game_state: &'a mut GameState,
     /// A size of the cell
     pub cell_size: f32,
     /// images to display
@@ -192,7 +192,7 @@ impl<'a> GameBoard<'a> {
                                                 *self.selected_piece = Some((row, col));
 
                                                 let available_moves = state
-                                                    .generate_legal_moves_card_idx(
+                                                    .generate_legal_moves_by_pos_card_idx(
                                                         self.game_state.curr_player_color,
                                                         idx,
                                                         (row, col),
