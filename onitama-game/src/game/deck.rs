@@ -83,13 +83,9 @@ impl Deck {
     ///
     /// Be aware that the index should only be from 0 to 1,
     #[inline]
-    pub fn rotate(&mut self, idx: usize, player_color: PlayerColor) {
-        assert!(idx < 2);
-        match player_color {
-            PlayerColor::Red => self.cards.swap(idx, NEUTRAL),
-            // Blue player cards are at index 2 and 3
-            PlayerColor::Blue => self.cards.swap(idx + 2, NEUTRAL),
-        }
+    pub fn rotate(&mut self, idx: usize) {
+        assert!(idx < 4);
+        self.cards.swap(idx, NEUTRAL);
     }
 
     pub fn display(&self) -> String {

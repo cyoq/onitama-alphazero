@@ -255,20 +255,10 @@ impl<'a> GameBoard<'a> {
 
                     tracing::info!("Dropping from {:?} to {:?}", source_row_col, drop_row_col);
 
-                    let used_card_idx = match self.game_state.curr_player_color {
-                        PlayerColor::Red => self
-                            .selected_card
-                            .card_idx
-                            .expect("Card must be selected at this moment!"),
-                        // Subtracting 2, because blue player cards are at 2 and 3 index,
-                        // but card rotation happens with 0 and 1 indexes
-                        PlayerColor::Blue => {
-                            self.selected_card
-                                .card_idx
-                                .expect("Card must be selected at this moment!")
-                                - 2
-                        }
-                    };
+                    let used_card_idx = self
+                        .selected_card
+                        .card_idx
+                        .expect("Card must be selected at this moment!");
 
                     let piece = self
                         .game_state

@@ -408,7 +408,7 @@ impl App for Onitama {
 
         if let Some(result) = self.move_result {
             match result {
-                MoveResult::Capture => tracing::warn!("A capture has happened!"),
+                MoveResult::Capture => (),
                 MoveResult::RedWin => {
                     self.end_game = true;
                     self.board_panel_text = ("Red won!".to_string(), Color32::RED);
@@ -419,7 +419,7 @@ impl App for Onitama {
                     self.board_panel_text = ("Blue won!".to_string(), Color32::BLUE);
                     self.card_panel_text = ("".to_string(), Color32::BLACK);
                 }
-                MoveResult::InProgress => tracing::warn!("Game is in progress"),
+                MoveResult::InProgress => (),
             }
         }
 

@@ -111,6 +111,7 @@ impl Agent for HumanConsole {
         let mut to: u32;
 
         loop {
+            // TODO: need to fix to use all indices not only 0 and 1
             card_idx = HumanConsole::read_card_index();
             from = HumanConsole::read_notation("From: ");
             to = HumanConsole::read_notation("To: ");

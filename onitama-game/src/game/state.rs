@@ -160,7 +160,7 @@ impl State {
         }
 
         // Card rotation:
-        self.deck.rotate(used_card_idx, player_color);
+        self.deck.rotate(used_card_idx);
 
         move_result
     }
