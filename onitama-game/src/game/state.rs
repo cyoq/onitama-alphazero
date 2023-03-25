@@ -269,18 +269,30 @@ impl State {
         moves
     }
 
+    /// Generate all legal moves for both cards
+    pub fn generate_all_legal_moves(&self, player_color: PlayerColor) -> Vec<(usize, Move)> {
+        let cards = self.deck.get_player_cards_idx(player_color);
+        let mut result = vec![];
+        for card in cards {
+            let moves = self.generate_legal_moves_card_idx(player_color, card);
+            let mut temp = moves.iter().map(|m| (card, *m)).collect::<Vec<_>>();
+            result.append(&mut temp);
+        }
+        result
+    }
+
     /// Generates all legal moves for the specific card and the player
-    pub fn generate_all_legal_moves_card_idx(
+    pub fn generate_legal_moves_card_idx(
         &self,
         player_color: PlayerColor,
         card_idx: usize,
     ) -> Vec<Move> {
         let card = self.deck.get_card(card_idx);
-        self.generate_all_legal_moves(player_color, card)
+        self.generate_legal_moves(player_color, card)
     }
 
     /// Generates all legal moves for the specific cards of the specific player color
-    pub fn generate_all_legal_moves(&self, player_color: PlayerColor, card: &Card) -> Vec<Move> {
+    pub fn generate_legal_moves(&self, player_color: PlayerColor, card: &Card) -> Vec<Move> {
         let mut result: Vec<Move> = Vec::new();
         // Save pawns for the specific player
         let pawns: u32 = self.pawns[player_color as usize];
@@ -393,7 +405,7 @@ mod tests {
             Move::from(([(4, 3), (3, 3)], PieceKind::Pawn)),
             Move::from(([(4, 4), (3, 4)], PieceKind::Pawn)),
         ];
-        let mut crab_moves = state.generate_all_legal_moves(PlayerColor::Red, crab);
+        let mut crab_moves = state.generate_legal_moves(PlayerColor::Red, crab);
         crab_moves.sort();
         crab_expected_moves.sort();
         assert_eq!(crab_moves, crab_expected_moves);
@@ -407,7 +419,7 @@ mod tests {
             Move::from(([(4, 2), (3, 3)], PieceKind::King)),
             Move::from(([(4, 3), (3, 4)], PieceKind::Pawn)),
         ];
-        let mut rabbit_moves = state.generate_all_legal_moves(PlayerColor::Red, rabbit);
+        let mut rabbit_moves = state.generate_legal_moves(PlayerColor::Red, rabbit);
         rabbit_moves.sort();
         rabbit_expected_moves.sort();
         assert_eq!(rabbit_moves, rabbit_expected_moves);
@@ -431,7 +443,7 @@ mod tests {
             Move::from(([(0, 3), (1, 3)], PieceKind::Pawn)),
             Move::from(([(0, 4), (1, 4)], PieceKind::Pawn)),
         ];
-        let mut crab_moves = state.generate_all_legal_moves(PlayerColor::Blue, crab);
+        let mut crab_moves = state.generate_legal_moves(PlayerColor::Blue, crab);
         crab_moves.sort();
         crab_expected_moves.sort();
         assert_eq!(crab_moves, crab_expected_moves);
@@ -445,7 +457,7 @@ mod tests {
             Move::from(([(0, 3), (1, 2)], PieceKind::Pawn)),
             Move::from(([(0, 4), (1, 3)], PieceKind::Pawn)),
         ];
-        let mut rabbit_moves = state.generate_all_legal_moves(PlayerColor::Blue, rabbit);
+        let mut rabbit_moves = state.generate_legal_moves(PlayerColor::Blue, rabbit);
         rabbit_moves.sort();
         rabbit_expected_moves.sort();
         assert_eq!(rabbit_moves, rabbit_expected_moves);
@@ -491,7 +503,7 @@ mod tests {
             to: 11,  // b3
             piece: PieceKind::Pawn,
         };
-        let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
+        let mov_result = state.make_move(&mov, PlayerColor::Blue, 3);
 
         // Check if the game stays in progress after the move
         assert_eq!(mov_result, MoveResult::InProgress);
@@ -579,7 +591,7 @@ mod tests {
             to: 20,   // a1
             piece: PieceKind::Pawn,
         };
-        let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
+        let mov_result = state.make_move(&mov, PlayerColor::Blue, 3);
 
         // Check if capture occurred
         assert_eq!(mov_result, MoveResult::Capture);
@@ -669,7 +681,7 @@ mod tests {
             to: 22,   // c1
             piece: PieceKind::Pawn,
         };
-        let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
+        let mov_result = state.make_move(&mov, PlayerColor::Blue, 3);
 
         // Check if the game is won
         assert_eq!(mov_result, MoveResult::BlueWin);
@@ -715,7 +727,7 @@ mod tests {
             to: 22,   // c1
             piece: PieceKind::King,
         };
-        let mov_result = state.make_move(&mov, PlayerColor::Blue, 1);
+        let mov_result = state.make_move(&mov, PlayerColor::Blue, 3);
 
         // Check if the game is won
         assert_eq!(mov_result, MoveResult::BlueWin);
@@ -805,7 +817,7 @@ mod tests {
         // Cloning to avoid immutable borrow before mutable
         let rabbit = cards[0].clone();
 
-        let moves = state.generate_all_legal_moves(player_color, &rabbit);
+        let moves = state.generate_legal_moves(player_color, &rabbit);
         assert!(moves.len() == 0);
     }
 
@@ -840,11 +852,11 @@ mod tests {
         let cards = state.deck.get_player_cards(player_color);
         // Cloning to avoid immutable borrow before mutable
         let tiger = cards[0].clone();
-        let moves = state.generate_all_legal_moves(player_color, &tiger);
+        let moves = state.generate_legal_moves(player_color, &tiger);
         assert!(moves.len() == 0);
 
         let horse = cards[1].clone();
-        let moves = state.generate_all_legal_moves(player_color, &horse);
+        let moves = state.generate_legal_moves(player_color, &horse);
         assert!(moves.len() == 0);
     }
 }

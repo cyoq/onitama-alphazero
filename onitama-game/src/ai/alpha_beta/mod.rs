@@ -55,7 +55,7 @@ impl AlphaBeta {
         for card_idx in cards {
             let allowed_moves = game_state
                 .state
-                .generate_all_legal_moves_card_idx(player_color, card_idx);
+                .generate_legal_moves_card_idx(player_color, card_idx);
 
             'br: for mov in allowed_moves.iter() {
                 let done_move = DoneMove {

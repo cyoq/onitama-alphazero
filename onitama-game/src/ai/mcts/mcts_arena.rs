@@ -3,8 +3,13 @@ use std::time::{Duration, Instant};
 use rand::{thread_rng, Rng};
 
 use crate::game::{
-    card::CARD_NAMES, deck::Deck, done_move::DoneMove, move_result::MoveResult,
-    player_color::PlayerColor, r#move::Move, state::State,
+    card::{self, CARD_NAMES},
+    deck::Deck,
+    done_move::DoneMove,
+    move_result::MoveResult,
+    player_color::PlayerColor,
+    r#move::Move,
+    state::State,
 };
 
 pub struct MctsArena {
@@ -144,8 +149,7 @@ impl MctsArena {
         let cards = cloned_state.deck.get_player_cards_idx(player_color);
 
         for card_idx in cards {
-            let allowed_moves =
-                cloned_state.generate_all_legal_moves_card_idx(player_color, card_idx);
+            let allowed_moves = cloned_state.generate_legal_moves_card_idx(player_color, card_idx);
 
             for mov in allowed_moves.iter() {
                 let done_move = DoneMove {
@@ -171,28 +175,30 @@ impl MctsArena {
         let mut rng = thread_rng();
 
         while !move_result.is_win() {
-            // Select a node card
-            // Prepare a random move
-            let cards = state.deck.get_player_cards_idx(player_color);
-            let card_idx = rng.gen_range(0..2);
-            let mut card = cards[card_idx];
-            let mut moves = state.generate_all_legal_moves_card_idx(player_color, card);
+            let moves = state.generate_all_legal_moves(player_color);
             // There is a possibility that randomly chosen card
             // will not have legal moves.
             // We should fall back to the second card
             if moves.len() == 0 {
-                // Choose next card
-                card = cards[(card_idx + 1) % 2];
-                moves = state.generate_all_legal_moves_card_idx(player_color, card);
-                // println!("{}", state.display());
-                // println!("{:?}", player_color);
-                // println!("{:?}", state);
+                // If no move at all, pass the turn with random card
+                println!("{}", state.display());
+                println!("{:?}", player_color);
+                println!("{:?}", state);
+                println!("Moves {:?}", moves);
+                println!("Move result: {:?}", move_result);
+                let card_idx = match player_color {
+                    PlayerColor::Red => rng.gen_range(0..2),
+                    PlayerColor::Blue => rng.gen_range(2..4),
+                };
+                state.pass(card_idx);
+
+                player_color.switch();
+                reward = self.reward(move_result, player_color);
+                continue;
             }
-            // println!("Moves {:?}", moves);
-            // println!("Move result: {:?}", move_result);
             let mov = moves[rng.gen_range(0..moves.len())];
 
-            move_result = state.make_move(&mov, player_color, card);
+            move_result = state.make_move(&mov.1, player_color, mov.0);
             player_color.switch();
             reward = self.reward(move_result, player_color);
         }

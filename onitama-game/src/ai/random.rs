@@ -16,7 +16,7 @@ impl Agent for Random {
         let card_idx = rng.gen_range(0..2);
         let card = cards[card_idx];
 
-        let moves = state.generate_all_legal_moves(player_color, card);
+        let moves = state.generate_legal_moves(player_color, card);
         let mov = moves[rng.gen_range(0..moves.len())];
 
         DoneMove {
