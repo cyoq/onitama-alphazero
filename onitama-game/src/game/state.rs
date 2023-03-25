@@ -105,6 +105,32 @@ impl State {
         result
     }
 
+    /// Check if current state is terminal
+    pub fn is_terminal(&self) -> bool {
+        self.kings[PlayerColor::Red as usize] == 0 ||
+        self.kings[PlayerColor::Blue as usize] == 0 ||
+        // King is on the enemy temple
+        self.kings[PlayerColor::Red as usize] == BLUE_KING_SP ||
+        self.kings[PlayerColor::Blue as usize] == RED_KING_SP
+    }
+
+    /// Get current static state
+    pub fn current_state(&self) -> MoveResult {
+        let mut move_result = MoveResult::InProgress;
+
+        if self.kings[PlayerColor::Red as usize] == 0
+            || self.kings[PlayerColor::Blue as usize] == RED_KING_SP
+        {
+            move_result = MoveResult::BlueWin;
+        } else if self.kings[PlayerColor::Blue as usize] == 0
+            || self.kings[PlayerColor::Red as usize] == BLUE_KING_SP
+        {
+            move_result = MoveResult::RedWin;
+        }
+
+        move_result
+    }
+
     /// When no legal move was found, pass the turn.
     /// Passing means to choose the card to swap
     /// so that next turn new card is available

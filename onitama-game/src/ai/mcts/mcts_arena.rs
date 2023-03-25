@@ -3,17 +3,23 @@ use std::time::{Duration, Instant};
 use rand::{thread_rng, Rng};
 
 use crate::game::{
-    card::{self, CARD_NAMES},
+    card::CARD_NAMES,
     deck::Deck,
     done_move::DoneMove,
-    move_result::MoveResult,
-    player_color::PlayerColor,
+    move_result::{self, MoveResult},
+    player_color::{self, PlayerColor},
     r#move::Move,
     state::State,
 };
 
-pub struct MctsArena {
+#[derive(Clone)]
+pub struct MctsState {
     pub state: State,
+    pub player_color: PlayerColor,
+}
+
+pub struct MctsArena {
+    pub game_state: MctsState,
     pub search_time: Duration,
     pub arena: Vec<MctsNode>,
     pub min_node_visits: u32,
@@ -30,11 +36,15 @@ impl MctsArena {
         exploration_c: f32,
     ) -> Self {
         // root is always first in the arena
+        // player color enemy, because we need results from children which are going to be different color
         let root = MctsNode::new(None, 0, None, player_color);
         let arena = vec![root];
 
         Self {
-            state,
+            game_state: MctsState {
+                state,
+                player_color,
+            },
             search_time,
             arena,
             min_node_visits,
@@ -68,19 +78,28 @@ impl MctsArena {
 
     /// Make a playout to find the best node
     pub fn playout(&mut self) {
-        let mut state = self.state.clone();
+        let mut game_state = self.game_state.clone();
         let mut node_idx = 0; // root node
+        let mut move_result = MoveResult::InProgress;
 
         // 1. Select the best node and make a move of it
         while self.arena[node_idx].is_expanded && !self.arena[node_idx].is_terminal {
             node_idx = self.select(&self.arena[node_idx]);
 
+            // if node_idx == 1 {
+            //     println!("Node 6");
+            // }
+
             if let Some(mov) = self.arena[node_idx].mov {
-                let move_result = state.make_move(
+                move_result = game_state.state.make_move(
                     &mov.mov,
-                    self.arena[node_idx].player_color,
+                    game_state.player_color,
+                    // self.arena[node_idx].player_color,
                     mov.used_card_idx,
                 );
+
+                game_state.player_color.switch();
+
                 if move_result.is_win() {
                     self.arena[node_idx].is_terminal = true;
                 }
@@ -92,11 +111,16 @@ impl MctsArena {
             && !self.arena[node_idx].is_terminal
             && self.arena[node_idx].visits > self.min_node_visits
         {
-            self.expand(node_idx, &state);
+            self.expand(node_idx, &game_state);
         }
 
         // 3. Simulate the game till the end
-        let reward = self.simulate(state, node_idx);
+        let reward = self.simulate(game_state, node_idx)
+            + if move_result == MoveResult::Capture {
+                0.5
+            } else {
+                0.
+            };
 
         // 4. Back propagate the result back to the root
         self.back_propagate(node_idx, reward);
@@ -144,12 +168,16 @@ impl MctsArena {
     /// 4. Add child to the arena
     /// 5. Add child references to the parent
     /// 6. Set parent to be expanded node
-    pub fn expand(&mut self, parent: usize, cloned_state: &State) {
+    pub fn expand(&mut self, parent: usize, cloned_state: &MctsState) {
+        // Player color is switched, because next layer will represent
+        // the enemy made moves
         let player_color = self.arena[parent].player_color;
-        let cards = cloned_state.deck.get_player_cards_idx(player_color);
+        let cards = cloned_state.state.deck.get_player_cards_idx(player_color);
 
         for card_idx in cards {
-            let allowed_moves = cloned_state.generate_legal_moves_card_idx(player_color, card_idx);
+            let allowed_moves = cloned_state
+                .state
+                .generate_legal_moves_card_idx(player_color, card_idx);
 
             for mov in allowed_moves.iter() {
                 let done_move = DoneMove {
@@ -167,60 +195,60 @@ impl MctsArena {
     }
 
     /// Simulate the game with random
-    pub fn simulate(&self, mut state: State, node: usize) -> i32 {
-        let mut move_result = MoveResult::InProgress;
+    pub fn simulate(&self, mut mcts_state: MctsState, node_idx: usize) -> f32 {
+        let player_color = &mut mcts_state.player_color;
+        // let player_color = self.arena[node_idx].player_color;
+        let mut move_result = mcts_state.state.current_state();
 
-        let mut reward = 0;
-        let mut player_color = self.arena[node].player_color;
+        if move_result.is_win() {
+            // If previous turn was winning, then enemy gets a point
+            return self.reward(move_result, player_color.enemy());
+        }
+
+        let mut reward = 0.;
+
         let mut rng = thread_rng();
 
         while !move_result.is_win() {
-            let moves = state.generate_all_legal_moves(player_color);
+            // generate legal moves for the enemy
+            let moves = mcts_state.state.generate_all_legal_moves(*player_color);
             // There is a possibility that randomly chosen card
             // will not have legal moves.
             // We should fall back to the second card
             if moves.len() == 0 {
                 // If no move at all, pass the turn with random card
-                println!("{}", state.display());
-                println!("{:?}", player_color);
-                println!("{:?}", state);
-                println!("Moves {:?}", moves);
-                println!("Move result: {:?}", move_result);
                 let card_idx = match player_color {
                     PlayerColor::Red => rng.gen_range(0..2),
                     PlayerColor::Blue => rng.gen_range(2..4),
                 };
-                state.pass(card_idx);
+                mcts_state.state.pass(card_idx);
 
                 player_color.switch();
-                reward = self.reward(move_result, player_color);
+                reward = self.reward(move_result, *player_color);
                 continue;
             }
             let mov = moves[rng.gen_range(0..moves.len())];
 
-            move_result = state.make_move(&mov.1, player_color, mov.0);
+            move_result = mcts_state.state.make_move(&mov.1, *player_color, mov.0);
             player_color.switch();
-            reward = self.reward(move_result, player_color);
-        }
-
-        if move_result.is_win() {
-            reward = self.reward(move_result, player_color);
+            reward = self.reward(move_result, *player_color);
         }
 
         reward
     }
 
-    pub fn reward(&self, move_result: MoveResult, player_color: PlayerColor) -> i32 {
+    pub fn reward(&self, move_result: MoveResult, player_color: PlayerColor) -> f32 {
         match (player_color, move_result) {
-            (PlayerColor::Red, MoveResult::RedWin) => 1,
-            (PlayerColor::Red, MoveResult::BlueWin) => -1,
-            (PlayerColor::Blue, MoveResult::RedWin) => -1,
-            (PlayerColor::Blue, MoveResult::BlueWin) => 1,
-            _ => -100,
+            (PlayerColor::Red, MoveResult::RedWin) => 1.,
+            (PlayerColor::Red, MoveResult::BlueWin) => -1.,
+            (PlayerColor::Blue, MoveResult::RedWin) => -1.,
+            (PlayerColor::Blue, MoveResult::BlueWin) => 1.,
+            (_, MoveResult::Capture) => 0.5,
+            _ => 0.,
         }
     }
 
-    pub fn back_propagate(&mut self, node_idx: usize, mut reward: i32) {
+    pub fn back_propagate(&mut self, node_idx: usize, mut reward: f32) {
         let mut node = &mut self.arena[node_idx];
         loop {
             node.update(reward);
@@ -248,7 +276,7 @@ impl MctsArena {
         *result += &format!(
             "{}{}\n",
             "|  ".repeat(indent),
-            node.to_string(&self.state.deck)
+            node.to_string(&self.game_state.state.deck)
         );
 
         for child in node.children.iter() {
@@ -270,10 +298,11 @@ pub struct MctsNode {
     /// Number of visits for the MCTS node
     pub visits: u32,
     /// Number of wins in the specific node
-    pub reward: i32,
+    pub reward: f32,
     pub winrate: f32,
     pub is_terminal: bool,
     pub is_expanded: bool,
+    /// Player color who has last moved the piece
     pub player_color: PlayerColor,
 }
 
@@ -290,7 +319,7 @@ impl MctsNode {
             idx,
             mov,
             visits: 0,
-            reward: 0,
+            reward: 0.,
             winrate: 0.,
             is_terminal: false,
             is_expanded: false,
@@ -298,7 +327,7 @@ impl MctsNode {
         }
     }
 
-    pub fn update(&mut self, reward: i32) {
+    pub fn update(&mut self, reward: f32) {
         self.visits += 1;
         self.reward += reward;
         self.winrate = self.reward as f32 / self.visits as f32;
@@ -330,9 +359,12 @@ impl MctsNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::game::{
-        card::{DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
-        piece::PieceKind,
+    use crate::{
+        common::from_2d_to_bitboard,
+        game::{
+            card::{DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
+            piece::PieceKind,
+        },
     };
 
     use super::*;
@@ -365,7 +397,7 @@ mod tests {
     #[test]
     fn test_first_expand_debug_print() {
         let mut arena = arena();
-        let state = arena.state.clone();
+        let state = arena.game_state.clone();
 
         let expected = "
 [M: None, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
@@ -388,7 +420,7 @@ mod tests {
     #[test]
     fn test_root_child_expand_debug_print() {
         let mut arena = arena();
-        let state = arena.state.clone();
+        let state = arena.game_state.clone();
 
         let expected = "
 [M: None, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
@@ -426,11 +458,67 @@ mod tests {
         let mov = arena.search();
         let expected = DoneMove {
             mov: Move {
-                from: 21,
-                to: 18,
+                from: 24,
+                to: 17,
                 piece: PieceKind::Pawn,
             },
             used_card_idx: 0,
+        };
+        assert_eq!(mov, expected);
+    }
+
+    #[test]
+    fn test_best_move_win() {
+        // Theoritically using the same time, we should get the same results
+        let mut deck = deck();
+        // swap rabbit and dragon
+        deck.cards.swap(0, 3);
+        let search_time = Duration::from_millis(30);
+        let mut state = State::with_deck(deck);
+        state.kings[PlayerColor::Red as usize] = from_2d_to_bitboard((1, 3));
+
+        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2f32.sqrt());
+
+        let mov = arena.search();
+        println!("{}", arena.debug_tree());
+
+        let expected = DoneMove {
+            mov: Move {
+                from: 1,
+                to: 8,
+                piece: PieceKind::Pawn,
+            },
+            used_card_idx: 3,
+        };
+        assert_eq!(mov, expected);
+    }
+
+    #[test]
+    fn test_best_move_capture() {
+        // Theoritically using the same time, we should get the same results
+        let deck = Deck::new([
+            HORSE.clone(),
+            RABBIT.clone(),
+            TIGER.clone(),
+            FROG.clone(),
+            DRAGON.clone(),
+        ]);
+        let search_time = Duration::from_millis(30);
+        let mut state = State::with_deck(deck);
+        state.pawns[PlayerColor::Red as usize] = from_2d_to_bitboard((2, 0));
+
+        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2f32.sqrt());
+
+        let mov = arena.search();
+        println!("{}", arena.debug_tree());
+
+        let expected = DoneMove {
+            mov: Move {
+                from: 0,
+                to: 10,
+                piece: PieceKind::Pawn,
+            },
+            used_card_idx: 3,
         };
         assert_eq!(mov, expected);
     }

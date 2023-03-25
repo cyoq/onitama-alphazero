@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
 use onitama::Onitama;
@@ -19,9 +21,14 @@ fn main() -> Result<(), eframe::Error> {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
+    // let red_player = Player {
+    //     typ: PlayerType::Human,
+    //     agent: Box::new(HumanGui),
+    // };
+
     let red_player = Player {
-        typ: PlayerType::Human,
-        agent: Box::new(HumanGui),
+        typ: PlayerType::Ai,
+        agent: Box::new(AlphaBeta { max_depth: 6 }),
     };
 
     // let blue_player = Player {
@@ -31,8 +38,12 @@ fn main() -> Result<(), eframe::Error> {
 
     let blue_player = Player {
         typ: PlayerType::Ai,
-        agent: Box::new(Mcts::default()), // agent: Box::new(AlphaBeta { max_depth: 6 }),
-                                          // agent: Box::new(Random),
+        agent: Box::new(Mcts {
+            search_time: Duration::from_millis(3000),
+            min_node_visits: 5,
+            exploration_c: 2f32.sqrt(),
+        }),
+        // agent: Box::new(AlphaBeta { max_depth: 6 }),
     };
 
     run_native(

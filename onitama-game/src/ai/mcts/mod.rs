@@ -18,7 +18,7 @@ pub struct Mcts {
 impl Default for Mcts {
     fn default() -> Self {
         Self {
-            search_time: Duration::from_secs(2),
+            search_time: Duration::from_secs(1),
             exploration_c: 2f32.sqrt(),
             min_node_visits: 5,
         }
@@ -35,10 +35,9 @@ impl Agent for Mcts {
             self.exploration_c,
         );
         let mov = arena.search();
-        println!(
-            "Playouts: {}, best child winrate: {}",
-            arena.playouts, arena.arena[0].winrate
-        );
+        // println!("Tree: {}", arena.debug_tree());
+        println!("Playouts: {}", arena.playouts);
+        println!("Avg: {}", arena.arena[0].winrate);
         mov
     }
 
