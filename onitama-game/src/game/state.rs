@@ -335,7 +335,7 @@ mod tests {
     use crate::{
         common::get_bit,
         game::{
-            card::{CRAB, DRAGON, FROG, RABBIT, TIGER},
+            card::{CRAB, DRAGON, FROG, HORSE, RABBIT, TIGER},
             deck::Deck,
             move_result::MoveResult,
             piece::PieceKind,
@@ -765,5 +765,39 @@ mod tests {
         assert_eq!(*state.deck.neutral_card(), crab);
         // Check if blue king is alive, but he lost
         assert!(state.kings[PlayerColor::Blue as usize] > 0);
+    }
+
+    #[test]
+    fn blue_to_move_no_legal_moves() {
+        let deck = Deck::new([DRAGON, TIGER, RABBIT, HORSE, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+             5 | b | b | . | . | . |
+            ---+---+---+---+---+---+
+             4 | B | . | . | . | . |
+            ---+---+---+---+---+---+
+             3 | . | . | . | . | . |
+            ---+---+---+---+---+---+
+             2 | . | r | r | r | r |
+            ---+---+---+---+---+---+
+             1 | . | . | R | . | r |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
+        */
+        state.kings[PlayerColor::Blue as usize] = 67108864;
+        state.kings[PlayerColor::Red as usize] = 512;
+        state.pawns[PlayerColor::Red as usize] = 61568;
+        state.pawns[PlayerColor::Blue as usize] = 3221225472;
+
+        let player_color = PlayerColor::Blue;
+        let cards = state.deck.get_player_cards(player_color);
+        // Cloning to avoid immutable borrow before mutable
+        let rabbit = cards[0].clone();
+
+        let moves = state.generate_all_legal_moves(player_color, &rabbit);
+        assert!(moves.len() == 0);
     }
 }

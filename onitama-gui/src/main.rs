@@ -1,7 +1,7 @@
 use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
 use onitama::Onitama;
-use onitama_game::ai::{alpha_beta::AlphaBeta, human_gui::HumanGui, random::Random};
+use onitama_game::ai::{alpha_beta::AlphaBeta, human_gui::HumanGui, mcts::Mcts, random::Random};
 use player::{Player, PlayerType};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
@@ -31,8 +31,8 @@ fn main() -> Result<(), eframe::Error> {
 
     let blue_player = Player {
         typ: PlayerType::Ai,
-        agent: Box::new(AlphaBeta { max_depth: 6 }),
-        // agent: Box::new(Random),
+        agent: Box::new(Mcts::default()), // agent: Box::new(AlphaBeta { max_depth: 6 }),
+                                          // agent: Box::new(Random),
     };
 
     run_native(
