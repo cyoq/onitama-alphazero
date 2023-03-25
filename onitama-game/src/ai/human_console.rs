@@ -3,7 +3,8 @@ use std::io::{self, stdout, Write};
 use crate::{
     common::get_bit,
     game::{
-        card::CARD_NAMES, done_move::DoneMove, game::GameState, piece::PieceKind, r#move::Move,
+        card::CARD_NAMES, done_move::DoneMove, game_state::GameState, piece::PieceKind,
+        r#move::Move,
     },
 };
 

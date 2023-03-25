@@ -1,6 +1,6 @@
 use rand::{thread_rng, Rng};
 
-use crate::game::{done_move::DoneMove, game::GameState};
+use crate::game::{done_move::DoneMove, game_state::GameState};
 
 use super::agent::Agent;
 

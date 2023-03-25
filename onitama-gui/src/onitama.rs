@@ -12,7 +12,7 @@ use onitama_game::game::{
     card::{Card, CARD_NAMES, DRAGON, FROG, HORSE, ORIGINAL_CARDS, RABBIT, TIGER},
     deck::Deck,
     done_move::DoneMove,
-    game::GameState,
+    game_state::GameState,
     move_result::MoveResult,
     player_color::PlayerColor,
 };

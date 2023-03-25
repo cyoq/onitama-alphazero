@@ -1,4 +1,4 @@
-use crate::game::{done_move::DoneMove, game::GameState};
+use crate::game::{done_move::DoneMove, game_state::GameState};
 
 pub trait Agent {
     fn generate_move(&self, game_state: &GameState) -> DoneMove;

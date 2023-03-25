@@ -6,7 +6,8 @@ use egui::*;
 use onitama_game::{
     common::{from_2d_to_1d, get_bit},
     game::{
-        done_move::DoneMove, game::GameState, piece::Piece, player_color::PlayerColor, r#move::Move,
+        done_move::DoneMove, game_state::GameState, piece::Piece, player_color::PlayerColor,
+        r#move::Move,
     },
 };
 

@@ -1,7 +1,7 @@
 pub mod evaluation;
 
 use crate::game::{
-    done_move::DoneMove, game::GameState, move_result::MoveResult, player_color::PlayerColor,
+    done_move::DoneMove, game_state::GameState, move_result::MoveResult, player_color::PlayerColor,
 };
 
 use self::evaluation::Evaluation;

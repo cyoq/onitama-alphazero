@@ -1,5 +1,5 @@
 use onitama_game::ai::{human_console::HumanConsole, random::Random};
-use onitama_game::game::{game::GameState, move_result::MoveResult};
+use onitama_game::game::{game_state::GameState, move_result::MoveResult};
 
 fn main() {
     let mut progress = MoveResult::InProgress;
