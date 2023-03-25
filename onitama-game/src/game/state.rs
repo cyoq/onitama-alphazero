@@ -105,6 +105,14 @@ impl State {
         result
     }
 
+    /// When no legal move was found, pass the turn.
+    /// Passing means to choose the card to swap
+    /// so that next turn new card is available
+    pub fn pass(&mut self, card_idx: usize) -> MoveResult {
+        self.deck.rotate(card_idx);
+        MoveResult::InProgress
+    }
+
     /// When making a move, we assume that the move is completely legal by rules
     pub fn make_move(
         &mut self,
@@ -798,6 +806,45 @@ mod tests {
         let rabbit = cards[0].clone();
 
         let moves = state.generate_all_legal_moves(player_color, &rabbit);
+        assert!(moves.len() == 0);
+    }
+
+    #[test]
+    fn no_legal_moves_at_all_pass_is_required() {
+        // In this situation no legal moves are avaialable.
+        // The player must pass their turn
+        let deck = Deck::new([DRAGON, RABBIT, TIGER, HORSE, FROG]);
+        let mut state = State::with_deck(deck);
+
+        // Set the following state:
+        /*
+            ---+---+---+---+---+---+
+             5 | r | . | . | . | b |
+            ---+---+---+---+---+---+
+             4 | . | . | . | . | b |
+            ---+---+---+---+---+---+
+             3 | . | . | r | . | B |
+            ---+---+---+---+---+---+
+             2 | . | . | R | . | b |
+            ---+---+---+---+---+---+
+             1 | r | . | . | . | b |
+            ---+---+---+---+---+---+
+               | a | b | c | d | e |
+        */
+        state.kings[PlayerColor::Blue as usize] = 131072;
+        state.kings[PlayerColor::Red as usize] = 16384;
+        state.pawns[PlayerColor::Red as usize] = 2148009984;
+        state.pawns[PlayerColor::Blue as usize] = 138416256;
+
+        let player_color = PlayerColor::Blue;
+        let cards = state.deck.get_player_cards(player_color);
+        // Cloning to avoid immutable borrow before mutable
+        let tiger = cards[0].clone();
+        let moves = state.generate_all_legal_moves(player_color, &tiger);
+        assert!(moves.len() == 0);
+
+        let horse = cards[1].clone();
+        let moves = state.generate_all_legal_moves(player_color, &horse);
         assert!(moves.len() == 0);
     }
 }
