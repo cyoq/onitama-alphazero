@@ -21,15 +21,15 @@ fn main() -> Result<(), eframe::Error> {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    // let red_player = Player {
-    //     typ: PlayerType::Human,
-    //     agent: Box::new(HumanGui),
-    // };
-
     let red_player = Player {
-        typ: PlayerType::Ai,
-        agent: Box::new(AlphaBeta { max_depth: 6 }),
+        typ: PlayerType::Human,
+        agent: Box::new(HumanGui),
     };
+
+    // let red_player = Player {
+    //     typ: PlayerType::Ai,
+    //     agent: Box::new(AlphaBeta { max_depth: 4 }),
+    // };
 
     // let blue_player = Player {
     //     typ: PlayerType::Human,
@@ -39,9 +39,9 @@ fn main() -> Result<(), eframe::Error> {
     let blue_player = Player {
         typ: PlayerType::Ai,
         agent: Box::new(Mcts {
-            search_time: Duration::from_millis(3000),
+            search_time: Duration::from_millis(1000),
             min_node_visits: 5,
-            exploration_c: 2f32.sqrt(),
+            exploration_c: 1.71,
         }),
         // agent: Box::new(AlphaBeta { max_depth: 6 }),
     };
