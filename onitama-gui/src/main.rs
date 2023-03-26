@@ -38,12 +38,12 @@ fn main() -> Result<(), eframe::Error> {
 
     let blue_player = Player {
         typ: PlayerType::Ai,
-        agent: Box::new(Mcts {
-            search_time: Duration::from_millis(1000),
-            min_node_visits: 5,
-            exploration_c: 1.42,
-        }),
-        // agent: Box::new(AlphaBeta { max_depth: 6 }),
+        // agent: Box::new(Mcts {
+        //     search_time: Duration::from_millis(1000),
+        //     min_node_visits: 5,
+        //     exploration_c: 1.42,
+        // }),
+        agent: Box::new(AlphaBeta { max_depth: 6 }),
     };
 
     run_native(

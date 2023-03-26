@@ -80,6 +80,9 @@ impl Evaluation {
             }
         }
 
+        enemies_close_to_my_king += Self::distance(enemy_king_pos, my_king_pos);
+        me_close_to_enemy_king += Self::distance(my_king_pos, enemy_king_pos);
+
         sign * ((my_piece_score_sum - enemy_piece_score_sum)
             + (my_distance_to_temple - enemy_distance_to_temple)
             + (me_close_to_enemy_king - enemies_close_to_my_king)
