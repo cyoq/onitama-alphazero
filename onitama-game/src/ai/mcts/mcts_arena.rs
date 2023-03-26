@@ -3,13 +3,8 @@ use std::time::{Duration, Instant};
 use rand::{thread_rng, Rng};
 
 use crate::game::{
-    card::CARD_NAMES,
-    deck::Deck,
-    done_move::DoneMove,
-    move_result::{self, MoveResult},
-    player_color::{self, PlayerColor},
-    r#move::Move,
-    state::State,
+    card::CARD_NAMES, deck::Deck, done_move::DoneMove, move_result::MoveResult,
+    player_color::PlayerColor, r#move::Move, state::State,
 };
 
 #[derive(Clone)]
@@ -36,7 +31,6 @@ impl MctsArena {
         exploration_c: f32,
     ) -> Self {
         // root is always first in the arena
-        // player color enemy, because we need results from children which are going to be different color
         let root = MctsNode::new(None, 0, None, player_color);
         let arena = vec![root];
 
@@ -80,18 +74,13 @@ impl MctsArena {
     pub fn playout(&mut self) {
         let mut game_state = self.game_state.clone();
         let mut node_idx = 0; // root node
-        let mut move_result = MoveResult::InProgress;
 
         // 1. Select the best node and make a move of it
         while self.arena[node_idx].is_expanded && !self.arena[node_idx].is_terminal {
             node_idx = self.select(&self.arena[node_idx]);
 
-            // if node_idx == 1 {
-            //     println!("Node 6");
-            // }
-
             if let Some(mov) = self.arena[node_idx].mov {
-                move_result = game_state.state.make_move(
+                let move_result = game_state.state.make_move(
                     &mov.mov,
                     game_state.player_color,
                     // self.arena[node_idx].player_color,
@@ -115,12 +104,7 @@ impl MctsArena {
         }
 
         // 3. Simulate the game till the end
-        let reward = self.simulate(game_state, node_idx)
-            + if move_result == MoveResult::Capture {
-                0.5
-            } else {
-                0.
-            };
+        let reward = self.simulate(game_state, node_idx, self.arena[node_idx].player_color);
 
         // 4. Back propagate the result back to the root
         self.back_propagate(node_idx, reward);
@@ -171,38 +155,36 @@ impl MctsArena {
     pub fn expand(&mut self, parent: usize, cloned_state: &MctsState) {
         // Player color is switched, because next layer will represent
         // the enemy made moves
-        let player_color = self.arena[parent].player_color;
-        let cards = cloned_state.state.deck.get_player_cards_idx(player_color);
+        let player_color = cloned_state.player_color;
 
-        for card_idx in cards {
-            let allowed_moves = cloned_state
-                .state
-                .generate_legal_moves_card_idx(player_color, card_idx);
+        let allowed_moves = cloned_state.state.generate_all_legal_moves(player_color);
 
-            for mov in allowed_moves.iter() {
-                let done_move = DoneMove {
-                    mov: *mov,
-                    used_card_idx: card_idx,
-                };
-                let idx = self.size();
-                let child = MctsNode::new(Some(parent), idx, Some(done_move), player_color.enemy());
+        for mov in allowed_moves.iter() {
+            let done_move = DoneMove {
+                mov: mov.1,
+                used_card_idx: mov.0,
+            };
+            let idx = self.size();
+            let child = MctsNode::new(Some(parent), idx, Some(done_move), player_color);
 
-                self.arena.push(child);
-                self.arena[parent].children.push(idx);
-            }
+            self.arena.push(child);
+            self.arena[parent].children.push(idx);
         }
         self.arena[parent].is_expanded = true;
     }
 
     /// Simulate the game with random
-    pub fn simulate(&self, mut mcts_state: MctsState, node_idx: usize) -> f32 {
-        let player_color = &mut mcts_state.player_color;
-        // let player_color = self.arena[node_idx].player_color;
+    pub fn simulate(
+        &self,
+        mut mcts_state: MctsState,
+        node_idx: usize,
+        reward_color: PlayerColor,
+    ) -> f32 {
         let mut move_result = mcts_state.state.current_state();
 
         if move_result.is_win() {
             // If previous turn was winning, then enemy gets a point
-            return self.reward(move_result, player_color.enemy());
+            return self.reward(move_result, reward_color);
         }
 
         let mut reward = 0.;
@@ -211,27 +193,42 @@ impl MctsArena {
 
         while !move_result.is_win() {
             // generate legal moves for the enemy
-            let moves = mcts_state.state.generate_all_legal_moves(*player_color);
+            let moves = mcts_state
+                .state
+                .generate_all_legal_moves(mcts_state.player_color);
             // There is a possibility that randomly chosen card
             // will not have legal moves.
             // We should fall back to the second card
             if moves.len() == 0 {
                 // If no move at all, pass the turn with random card
-                let card_idx = match player_color {
+                let card_idx = match mcts_state.player_color {
                     PlayerColor::Red => rng.gen_range(0..2),
                     PlayerColor::Blue => rng.gen_range(2..4),
                 };
                 mcts_state.state.pass(card_idx);
 
-                player_color.switch();
-                reward = self.reward(move_result, *player_color);
+                mcts_state.player_color.switch();
+                reward = self.reward(move_result, reward_color);
                 continue;
             }
             let mov = moves[rng.gen_range(0..moves.len())];
 
-            move_result = mcts_state.state.make_move(&mov.1, *player_color, mov.0);
-            player_color.switch();
-            reward = self.reward(move_result, *player_color);
+            move_result = mcts_state
+                .state
+                .make_move(&mov.1, mcts_state.player_color, mov.0);
+            mcts_state.player_color.switch();
+
+            // Made quite a difference! MCTS becomes more aggresive
+            // with increasing this value
+            let capture_reward = if move_result == MoveResult::Capture
+                && reward_color == mcts_state.player_color.enemy()
+            {
+                0.5
+            } else {
+                0.
+            };
+
+            reward = self.reward(move_result, reward_color) + capture_reward;
         }
 
         reward
@@ -243,7 +240,6 @@ impl MctsArena {
             (PlayerColor::Red, MoveResult::BlueWin) => -1.,
             (PlayerColor::Blue, MoveResult::RedWin) => -1.,
             (PlayerColor::Blue, MoveResult::BlueWin) => 1.,
-            (_, MoveResult::Capture) => 0.5,
             _ => 0.,
         }
     }
@@ -401,16 +397,16 @@ mod tests {
 
         let expected = "
 [M: None, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
-|  [M: Dragon a1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon b1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-e2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon d1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon e1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog b1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog c1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog d1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog e1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon a1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon b1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-e2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon d1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon e1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog b1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog c1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog d1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog e1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
 ";
         arena.expand(0, &state);
         let result = arena.debug_tree();
@@ -424,25 +420,25 @@ mod tests {
 
         let expected = "
 [M: None, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
-|  [M: Dragon a1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: true]
-|  |  [M: Tiger a5-a3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger b5-b3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger c5-c3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger d5-d3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger e5-e3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit b5-a4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit c5-b4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit d5-c4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit e5-d4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon b1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-e2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon d1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon e1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog b1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog c1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog d1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog e1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon a1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
+|  |  [M: Tiger a5-a3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger b5-b3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger c5-c3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger d5-d3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger e5-e3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit b5-a4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit c5-b4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit d5-c4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit e5-d4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon b1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-e2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon d1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon e1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog b1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog c1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog d1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog e1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
 ";
         arena.expand(0, &state);
         // Expanding first child of the root
@@ -498,19 +494,19 @@ mod tests {
         // Theoritically using the same time, we should get the same results
         let deck = Deck::new([
             HORSE.clone(),
-            RABBIT.clone(),
+            DRAGON.clone(),
             TIGER.clone(),
             FROG.clone(),
-            DRAGON.clone(),
+            RABBIT.clone(),
         ]);
-        let search_time = Duration::from_millis(30);
+        let search_time = Duration::from_millis(1000);
         let mut state = State::with_deck(deck);
         state.pawns[PlayerColor::Red as usize] = from_2d_to_bitboard((2, 0));
 
-        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2f32.sqrt());
+        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 1.);
 
         let mov = arena.search();
-        println!("{}", arena.debug_tree());
+        // println!("{}", arena.debug_tree());
 
         let expected = DoneMove {
             mov: Move {
@@ -518,7 +514,7 @@ mod tests {
                 to: 10,
                 piece: PieceKind::Pawn,
             },
-            used_card_idx: 3,
+            used_card_idx: 2,
         };
         assert_eq!(mov, expected);
     }
