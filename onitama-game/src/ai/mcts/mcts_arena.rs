@@ -216,32 +216,35 @@ impl MctsArena {
             move_result = mcts_state
                 .state
                 .make_move(&mov.1, mcts_state.player_color, mov.0);
-            mcts_state.player_color.switch();
 
             // Made quite a difference! MCTS becomes more aggresive
             // with increasing this value
-            let capture_reward = if move_result == MoveResult::Capture
-                && reward_color == mcts_state.player_color.enemy()
-            {
-                0.5
-            } else {
-                0.
-            };
+            // if move_result == MoveResult::Capture && reward_color == mcts_state.player_color {
+            //     enemy_eaten_piece_count += 1;
+            // } else if move_result == MoveResult::Capture
+            //     && reward_color == mcts_state.player_color.enemy()
+            // {
+            //     my_eaten_piece_count += 1;
+            // };
 
-            reward = self.reward(move_result, reward_color) + capture_reward;
+            mcts_state.player_color.switch();
+            reward = self.reward(move_result, reward_color);
         }
 
         reward
     }
 
-    pub fn reward(&self, move_result: MoveResult, player_color: PlayerColor) -> f32 {
-        match (player_color, move_result) {
-            (PlayerColor::Red, MoveResult::RedWin) => 1.,
-            (PlayerColor::Red, MoveResult::BlueWin) => -1.,
-            (PlayerColor::Blue, MoveResult::RedWin) => -1.,
-            (PlayerColor::Blue, MoveResult::BlueWin) => 1.,
+    pub fn reward(&self, move_result: MoveResult, reward_color: PlayerColor) -> f32 {
+        match (reward_color, move_result) {
+            (PlayerColor::Red, MoveResult::RedWin) => 10.,
+            (PlayerColor::Red, MoveResult::BlueWin) => -10.,
+            (PlayerColor::Blue, MoveResult::RedWin) => -10.,
+            (PlayerColor::Blue, MoveResult::BlueWin) => 10.,
+            (_, MoveResult::Capture) => 2.5,
             _ => 0.,
         }
+        // win_result += (enemy_eaten_piece_count as f32 - my_eaten_piece_count as f32) * 0.2;
+        // win_result
     }
 
     pub fn back_propagate(&mut self, node_idx: usize, mut reward: f32) {
