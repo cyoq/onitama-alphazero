@@ -19,6 +19,7 @@ use onitama_game::game::{
 
 use crate::player::{Player, PlayerType};
 use crate::selected_card::SelectedCard;
+use crate::setup_window::SetupWindow;
 use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
 
 const UTILITY_PANEL_WIDTH: f32 = 370.;
@@ -44,6 +45,7 @@ pub struct Onitama {
     player_names: [&'static str; 2],
     board_panel_text: (String, Color32),
     card_panel_text: (String, Color32),
+    show_game_setup: bool,
 }
 
 impl Onitama {
@@ -74,6 +76,7 @@ impl Onitama {
             end_game: false,
             board_panel_text: ("".to_string(), Color32::BLACK),
             card_panel_text: ("".to_string(), Color32::BLACK),
+            show_game_setup: false,
         }
     }
 
@@ -296,9 +299,13 @@ impl Onitama {
                 self.clear_game();
             }
 
-            ui.add(Button::new(
+            let game_setup = ui.add(Button::new(
                 RichText::new("Make a new setup").text_style(egui::TextStyle::Body),
             ));
+
+            if game_setup.clicked() {
+                self.show_game_setup = true;
+            }
         });
         ui.add_space(PADDING);
 
@@ -406,6 +413,7 @@ impl App for Onitama {
             self.game_loop();
         }
 
+        // TODO: this should not be in the update
         if let Some(result) = self.move_result {
             match result {
                 MoveResult::Capture => (),
@@ -436,5 +444,7 @@ impl App for Onitama {
             .show(ctx, |ui| self.utility_panel(ui));
 
         CentralPanel::default().show(ctx, |ui| self.deck_panel(ui));
+
+        SetupWindow::show_setup(ctx, &mut self.show_game_setup);
     }
 }

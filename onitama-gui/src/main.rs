@@ -14,6 +14,7 @@ pub mod move_card;
 pub mod onitama;
 pub mod player;
 pub mod selected_card;
+pub mod setup_window;
 
 fn main() -> Result<(), eframe::Error> {
     let subscriber = FmtSubscriber::builder()
@@ -38,12 +39,12 @@ fn main() -> Result<(), eframe::Error> {
 
     let blue_player = Player {
         typ: PlayerType::Ai,
-        // agent: Box::new(Mcts {
-        //     search_time: Duration::from_millis(1000),
-        //     min_node_visits: 5,
-        //     exploration_c: 1.42,
-        // }),
-        agent: Box::new(AlphaBeta { max_depth: 6 }),
+        agent: Box::new(Mcts {
+            search_time: Duration::from_millis(1000),
+            min_node_visits: 5,
+            exploration_c: 1.42,
+        }),
+        // agent: Box::new(AlphaBeta { max_depth: 6 }),
     };
 
     run_native(
