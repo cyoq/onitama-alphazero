@@ -46,6 +46,7 @@ pub struct Onitama {
     board_panel_text: (String, Color32),
     card_panel_text: (String, Color32),
     show_game_setup: bool,
+    setup_selected_cards: [Option<Card>; 5],
 }
 
 impl Onitama {
@@ -77,6 +78,7 @@ impl Onitama {
             board_panel_text: ("".to_string(), Color32::BLACK),
             card_panel_text: ("".to_string(), Color32::BLACK),
             show_game_setup: false,
+            setup_selected_cards: [None, None, None, None, None],
         }
     }
 
@@ -431,7 +433,7 @@ impl App for Onitama {
             }
         }
 
-        SetupWindow::show_setup(ctx, &mut self.show_game_setup);
+        SetupWindow::new(&mut self.setup_selected_cards).show_setup(ctx, &mut self.show_game_setup);
 
         SidePanel::new(egui::panel::Side::Left, "board_panel")
             .max_width(BOARD_PANEL_WIDTH)
