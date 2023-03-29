@@ -431,6 +431,8 @@ impl App for Onitama {
             }
         }
 
+        SetupWindow::show_setup(ctx, &mut self.show_game_setup);
+
         SidePanel::new(egui::panel::Side::Left, "board_panel")
             .max_width(BOARD_PANEL_WIDTH)
             .min_width(BOARD_PANEL_WIDTH)
@@ -444,7 +446,5 @@ impl App for Onitama {
             .show(ctx, |ui| self.utility_panel(ui));
 
         CentralPanel::default().show(ctx, |ui| self.deck_panel(ui));
-
-        SetupWindow::show_setup(ctx, &mut self.show_game_setup);
     }
 }
