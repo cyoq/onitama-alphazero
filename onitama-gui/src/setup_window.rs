@@ -1,6 +1,9 @@
 use egui::*;
 use egui_extras::{Size, StripBuilder};
-use onitama_game::game::card::{Card, CARD_NAMES, ORIGINAL_CARDS};
+use onitama_game::game::{
+    card::{Card, CARD_NAMES, ORIGINAL_CARDS},
+    deck::Deck,
+};
 use rand::{thread_rng, Rng};
 
 use crate::move_card::MoveCard;
@@ -35,16 +38,25 @@ impl CardColor {
 
 pub struct SetupWindow<'a> {
     selected_cards: &'a mut [Option<Card>; 5],
+    deck: &'a mut Deck,
 }
 
 impl<'a> SetupWindow<'a> {
-    pub fn new(selected_cards: &'a mut [Option<Card>; 5]) -> Self {
-        Self { selected_cards }
+    pub fn new(selected_cards: &'a mut [Option<Card>; 5], deck: &'a mut Deck) -> Self {
+        Self {
+            selected_cards,
+            deck,
+        }
     }
 
-    pub fn show_setup(&mut self, ctx: &Context, open: &mut bool) {
+    pub fn show_setup(
+        &mut self,
+        ctx: &Context,
+        is_active: &'a mut bool,
+        should_start_new_game: &'a mut bool,
+    ) {
         Window::new("Game Setup")
-            .open(open)
+            .open(is_active)
             .resizable(false)
             .min_width(SETUP_WINDOW_WIDTH)
             .min_height(SETUP_WINDOW_HEIGHT)
@@ -55,7 +67,7 @@ impl<'a> SetupWindow<'a> {
                 ui.separator();
                 self.show_deck_panel(ui);
                 ui.separator();
-                self.show_bottom_panel(ui);
+                self.show_bottom_panel(ui, should_start_new_game);
             });
     }
 
@@ -123,11 +135,12 @@ impl<'a> SetupWindow<'a> {
             });
     }
 
-    fn show_bottom_panel(&mut self, ui: &mut Ui) {
+    fn show_bottom_panel(&mut self, ui: &mut Ui, should_start_new_game: &'a mut bool) {
         ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
             let start_game_btn = ui.button("Start a game");
             if start_game_btn.clicked() {
                 self.create_deck();
+                *should_start_new_game = true;
             }
             ui.add_space(10.);
             ui.checkbox(&mut true, "Save my choice");
@@ -159,7 +172,7 @@ impl<'a> SetupWindow<'a> {
             .map(|card| card.expect("Must be a valid card"))
             .collect::<Vec<_>>();
 
-        tracing::info!("{:?}", cards);
+        *self.deck = Deck::new(cards.try_into().expect("Must be 5 cards"));
     }
 
     fn clear_selected_cards(&mut self) {
@@ -196,10 +209,18 @@ impl<'a> SetupWindow<'a> {
         match color {
             CardColor::Red => match (self.selected_cards[0], self.selected_cards[1]) {
                 (Some(_), None) => self.selected_cards[1] = Some(*card),
+                (Some(_), Some(_)) => {
+                    self.selected_cards[0] = self.selected_cards[1];
+                    self.selected_cards[1] = Some(*card);
+                }
                 (_, _) => self.selected_cards[0] = Some(*card),
             },
             CardColor::Blue => match (self.selected_cards[2], self.selected_cards[3]) {
                 (Some(_), None) => self.selected_cards[3] = Some(*card),
+                (Some(_), Some(_)) => {
+                    self.selected_cards[2] = self.selected_cards[3];
+                    self.selected_cards[3] = Some(*card);
+                }
                 (_, _) => self.selected_cards[2] = Some(*card),
             },
             CardColor::Yellow => self.selected_cards[4] = Some(*card),

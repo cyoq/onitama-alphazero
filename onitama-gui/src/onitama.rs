@@ -47,6 +47,8 @@ pub struct Onitama {
     card_panel_text: (String, Color32),
     show_game_setup: bool,
     setup_selected_cards: [Option<Card>; 5],
+    should_start_new_game: bool,
+    deck: Deck,
 }
 
 impl Onitama {
@@ -66,7 +68,8 @@ impl Onitama {
             debug,
             players: [red_player.typ, blue_player.typ],
             player_names: [red_player.agent.name(), blue_player.agent.name()],
-            game_state: GameState::with_deck(red_player.agent, blue_player.agent, deck),
+            game_state: GameState::with_deck(red_player.agent, blue_player.agent, deck.clone()),
+            deck,
             images,
             selected_card: SelectedCard::default(),
             selected_piece: None,
@@ -77,8 +80,9 @@ impl Onitama {
             end_game: false,
             board_panel_text: ("".to_string(), Color32::BLACK),
             card_panel_text: ("".to_string(), Color32::BLACK),
-            show_game_setup: false,
+            show_game_setup: true,
             setup_selected_cards: [None, None, None, None, None],
+            should_start_new_game: false,
         }
     }
 
@@ -433,7 +437,24 @@ impl App for Onitama {
             }
         }
 
-        SetupWindow::new(&mut self.setup_selected_cards).show_setup(ctx, &mut self.show_game_setup);
+        if self.should_start_new_game {
+            // Close game setup window
+            self.show_game_setup = false;
+            self.game_state = GameState::with_deck(
+                self.game_state.agents[0].clone(),
+                self.game_state.agents[1].clone(),
+                self.deck.clone(),
+            );
+            self.clear_game();
+            // Do not make a new game
+            self.should_start_new_game = false;
+        }
+
+        SetupWindow::new(&mut self.setup_selected_cards, &mut self.deck).show_setup(
+            ctx,
+            &mut self.show_game_setup,
+            &mut self.should_start_new_game,
+        );
 
         SidePanel::new(egui::panel::Side::Left, "board_panel")
             .max_width(BOARD_PANEL_WIDTH)
