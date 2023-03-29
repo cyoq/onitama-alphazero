@@ -17,9 +17,9 @@ use onitama_game::game::{
     player_color::PlayerColor,
 };
 
+use crate::game_setup::setup_window::SetupWindow;
 use crate::player::{Player, PlayerType};
 use crate::selected_card::SelectedCard;
-use crate::setup_window::SetupWindow;
 use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
 
 const UTILITY_PANEL_WIDTH: f32 = 370.;

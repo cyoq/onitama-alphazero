@@ -9,12 +9,12 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 pub mod game_board;
+pub mod game_setup;
 pub mod image;
 pub mod move_card;
 pub mod onitama;
 pub mod player;
 pub mod selected_card;
-pub mod setup_window;
 
 fn main() -> Result<(), eframe::Error> {
     let subscriber = FmtSubscriber::builder()
