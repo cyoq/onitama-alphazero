@@ -1,6 +1,7 @@
 use egui::*;
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::card::{Card, CARD_NAMES, ORIGINAL_CARDS};
+use rand::{thread_rng, Rng};
 
 use crate::move_card::MoveCard;
 
@@ -27,7 +28,7 @@ impl CardColor {
         match self {
             CardColor::Red => Color32::RED,
             CardColor::Blue => Color32::BLUE,
-            CardColor::Yellow => Color32::LIGHT_YELLOW,
+            CardColor::Yellow => Color32::GOLD,
         }
     }
 }
@@ -50,14 +51,27 @@ impl<'a> SetupWindow<'a> {
             .show(ctx, |ui| {
                 self.show_top_panel(ui);
                 ui.separator();
+                self.deck_helper(ui);
+                ui.separator();
                 self.show_deck_panel(ui);
                 ui.separator();
-                Self::show_bottom_panel(ui);
+                self.show_bottom_panel(ui);
             });
     }
 
     fn show_top_panel(&self, ui: &mut Ui) {
         ui.label("Top panel");
+    }
+
+    fn deck_helper(&mut self, ui: &mut Ui) {
+        ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
+            let clear = ui.button("Clear selected cards");
+            if clear.clicked() {
+                for card_idx in 0..self.selected_cards.len() {
+                    self.selected_cards[card_idx] = None;
+                }
+            }
+        });
     }
 
     fn show_deck_panel(&mut self, ui: &mut Ui) {
@@ -102,11 +116,37 @@ impl<'a> SetupWindow<'a> {
             });
     }
 
-    fn show_bottom_panel(ui: &mut Ui) {
+    fn show_bottom_panel(&mut self, ui: &mut Ui) {
         ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
-            ui.button("Start a game");
+            let start_game_btn = ui.button("Start a game");
+            if start_game_btn.clicked() {
+                self.create_deck();
+            }
             ui.checkbox(&mut true, "Save my choice");
         });
+    }
+
+    fn create_deck(&mut self) {
+        let mut rng = thread_rng();
+        for card_idx in 0..self.selected_cards.len() {
+            if let None = self.selected_cards[card_idx] {
+                loop {
+                    let idx = rng.gen_range(0..ORIGINAL_CARDS.len());
+                    let card = ORIGINAL_CARDS[idx];
+                    if !self.selected_cards.contains(&Some(card)) {
+                        self.selected_cards[card_idx] = Some(card);
+                        break;
+                    }
+                }
+            }
+        }
+        let cards = self
+            .selected_cards
+            .iter()
+            .map(|card| card.expect("Must be a valid card"))
+            .collect::<Vec<_>>();
+
+        tracing::info!("{:?}", cards);
     }
 
     fn add_card_to_ui(&mut self, ui: &mut Ui, card: &Card) -> Response {
