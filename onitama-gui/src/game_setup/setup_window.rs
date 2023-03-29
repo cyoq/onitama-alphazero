@@ -76,20 +76,24 @@ impl<'a> SetupWindow<'a> {
     }
 
     fn deck_helper(&mut self, ui: &mut Ui) {
+        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+            ui.label("Right click on a card to select it. \nSelect up to 5 cards. \nIf less than 5 cards selected, the rest will be chosen randomly.");
+        });
+
         ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
-            let clear = ui.button("Clear");
+            let clear = ui.button("Clear selection");
             if clear.clicked() {
                 self.clear_selected_cards();
             }
             clear.on_hover_text("Clear all selected cards");
+            ui.add_space(15.);
 
-            let random_btn = ui.button("Random!");
+            let random_btn = ui.button("Random cards!");
             if random_btn.clicked() {
                 self.fill_random();
             }
             random_btn.on_hover_text("Take random cards in addition to already chosen cards");
-
-            ui.label("Right click on a card to select it. Select up to 5 cards. If less than 5 selected cards, others will be taken randomly.")
+            ui.add_space(15.);
         });
     }
 
