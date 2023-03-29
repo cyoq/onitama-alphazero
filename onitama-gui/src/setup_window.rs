@@ -65,12 +65,19 @@ impl<'a> SetupWindow<'a> {
 
     fn deck_helper(&mut self, ui: &mut Ui) {
         ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
-            let clear = ui.button("Clear selected cards");
+            let clear = ui.button("Clear");
             if clear.clicked() {
-                for card_idx in 0..self.selected_cards.len() {
-                    self.selected_cards[card_idx] = None;
-                }
+                self.clear_selected_cards();
             }
+            clear.on_hover_text("Clear all selected cards");
+
+            let random_btn = ui.button("Random!");
+            if random_btn.clicked() {
+                self.fill_random();
+            }
+            random_btn.on_hover_text("Take random cards in addition to already chosen cards");
+
+            ui.label("Right click on a card to select it. Select up to 5 cards. If less than 5 selected cards, others will be taken randomly.")
         });
     }
 
@@ -122,11 +129,12 @@ impl<'a> SetupWindow<'a> {
             if start_game_btn.clicked() {
                 self.create_deck();
             }
+            ui.add_space(10.);
             ui.checkbox(&mut true, "Save my choice");
         });
     }
 
-    fn create_deck(&mut self) {
+    fn fill_random(&mut self) {
         let mut rng = thread_rng();
         for card_idx in 0..self.selected_cards.len() {
             if let None = self.selected_cards[card_idx] {
@@ -140,6 +148,11 @@ impl<'a> SetupWindow<'a> {
                 }
             }
         }
+    }
+
+    fn create_deck(&mut self) {
+        self.fill_random();
+
         let cards = self
             .selected_cards
             .iter()
@@ -147,6 +160,12 @@ impl<'a> SetupWindow<'a> {
             .collect::<Vec<_>>();
 
         tracing::info!("{:?}", cards);
+    }
+
+    fn clear_selected_cards(&mut self) {
+        for card_idx in 0..self.selected_cards.len() {
+            self.selected_cards[card_idx] = None;
+        }
     }
 
     fn add_card_to_ui(&mut self, ui: &mut Ui, card: &Card) -> Response {
