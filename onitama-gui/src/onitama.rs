@@ -18,7 +18,7 @@ use onitama_game::game::{
 };
 
 use crate::game_setup::setup_window::SetupWindow;
-use crate::player::{Player, PlayerType};
+use crate::player::{Participant, Player, PlayerType};
 use crate::selected_card::SelectedCard;
 use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
 
@@ -45,10 +45,11 @@ pub struct Onitama {
     player_names: [&'static str; 2],
     board_panel_text: (String, Color32),
     card_panel_text: (String, Color32),
+    deck: Deck,
     show_game_setup: bool,
     setup_selected_cards: [Option<Card>; 5],
     should_start_new_game: bool,
-    deck: Deck,
+    selected_players: [Participant; 2],
 }
 
 impl Onitama {
@@ -83,6 +84,7 @@ impl Onitama {
             show_game_setup: true,
             setup_selected_cards: [None, None, None, None, None],
             should_start_new_game: false,
+            selected_players: [Participant::Human, Participant::Mcts],
         }
     }
 
@@ -450,7 +452,12 @@ impl App for Onitama {
             self.should_start_new_game = false;
         }
 
-        SetupWindow::new(&mut self.setup_selected_cards, &mut self.deck).show_setup(
+        SetupWindow::new(
+            &mut self.setup_selected_cards,
+            &mut self.deck,
+            &mut self.selected_players,
+        )
+        .show_setup(
             ctx,
             &mut self.show_game_setup,
             &mut self.should_start_new_game,

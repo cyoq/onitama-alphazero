@@ -6,7 +6,7 @@ use onitama_game::game::{
 };
 use rand::{thread_rng, Rng};
 
-use crate::move_card::MoveCard;
+use crate::{move_card::MoveCard, player::Participant};
 
 const MOVE_CARD_CELL_SIZE: f32 = 18.;
 const SETUP_WINDOW_WIDTH: f32 = 900.;
@@ -39,13 +39,19 @@ impl CardColor {
 pub struct SetupWindow<'a> {
     selected_cards: &'a mut [Option<Card>; 5],
     deck: &'a mut Deck,
+    selected_players: &'a mut [Participant; 2],
 }
 
 impl<'a> SetupWindow<'a> {
-    pub fn new(selected_cards: &'a mut [Option<Card>; 5], deck: &'a mut Deck) -> Self {
+    pub fn new(
+        selected_cards: &'a mut [Option<Card>; 5],
+        deck: &'a mut Deck,
+        selected_players: &'a mut [Participant; 2],
+    ) -> Self {
         Self {
             selected_cards,
             deck,
+            selected_players,
         }
     }
 
@@ -74,7 +80,7 @@ impl<'a> SetupWindow<'a> {
             });
     }
 
-    fn show_top_panel(&self, ui: &mut Ui) {
+    fn show_top_panel(&mut self, ui: &mut Ui) {
         // Create 1 row
         StripBuilder::new(ui)
             // height of the row
@@ -82,40 +88,72 @@ impl<'a> SetupWindow<'a> {
             .vertical(|mut strip| {
                 strip.strip(|builder| {
                     // create two columns
-                    builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
-                        // First column is the content with combo-boxes
-                        strip.cell(|ui| {
-                            ui.vertical_centered(|ui| {
-                                ui.painter().rect_filled(
-                                    ui.available_rect_before_wrap(),
-                                    0.0,
-                                    Color32::BLUE,
-                                );
-                                ui.label(format!("{}", 1));
+                    builder
+                        .size(Size::exact(200.))
+                        .size(Size::remainder())
+                        .horizontal(|mut strip| {
+                            // First column is the content with combo-boxes
+                            strip.cell(|ui| {
+                                self.top_panel_combobox(ui);
+                                // ui.vertical_centered(|ui| {
+                                //     self.top_panel_combobox(ui);
+                                // });
                             });
-                        });
 
-                        // Second column is separated into two rows with settings for each combo box
-                        strip.strip(|builder| {
-                            builder.sizes(Size::remainder(), 2).vertical(|mut strip| {
-                                for i in 0..2 {
-                                    strip.cell(|ui| {
-                                        ui.vertical_centered(|ui| {
-                                            ui.painter().rect_filled(
-                                                ui.available_rect_before_wrap(),
-                                                0.0,
-                                                Color32::BLUE,
-                                            );
-                                            ui.label(format!("{}", i));
+                            // Second column is separated into two rows with settings for each combo box
+                            strip.strip(|builder| {
+                                builder.sizes(Size::remainder(), 2).vertical(|mut strip| {
+                                    for i in 0..2 {
+                                        strip.cell(|ui| {
+                                            ui.vertical_centered(|ui| {
+                                                ui.painter().rect_filled(
+                                                    ui.available_rect_before_wrap(),
+                                                    0.0,
+                                                    Color32::BLUE,
+                                                );
+                                                ui.label(format!("{}", i));
+                                            });
+                                            ui.separator();
                                         });
-                                    });
-                                }
+                                    }
+                                });
                             });
                         });
-                    });
                 });
             });
-        // ui.add(ComboBox::from_label("Human"))
+    }
+
+    fn top_panel_combobox(&mut self, ui: &mut Ui) {
+        ui.add_space(15.);
+        ui.add(Label::new(
+            RichText::new("🟥 Red player: ").color(Color32::RED),
+        ));
+        self.create_combo_box(ui, "red_player_combo_box", 0);
+
+        ui.add_space(40.);
+
+        ui.vertical_centered(|ui| {
+            ui.label("VS");
+        });
+        ui.add_space(35.);
+
+        ui.add(Label::new(
+            RichText::new("🟦 Blue player: ").color(Color32::BLUE),
+        ));
+        self.create_combo_box(ui, "blue_player_combo_box", 1);
+    }
+
+    fn create_combo_box(&mut self, ui: &mut Ui, id: &str, idx: usize) {
+        assert!(idx < 2);
+        let player = &mut self.selected_players[idx];
+        egui::ComboBox::from_id_source(id)
+            .selected_text(player.to_string())
+            .show_ui(ui, |ui| {
+                ui.selectable_value(player, Participant::Human, "Human");
+                ui.selectable_value(player, Participant::Random, "Random");
+                ui.selectable_value(player, Participant::AlphaBeta, "AlphaBeta");
+                ui.selectable_value(player, Participant::Mcts, "MCTS");
+            });
     }
 
     fn deck_helper(&mut self, ui: &mut Ui) {
