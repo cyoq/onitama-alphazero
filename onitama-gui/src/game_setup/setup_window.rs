@@ -63,21 +63,64 @@ impl<'a> SetupWindow<'a> {
             .show(ctx, |ui| {
                 self.show_top_panel(ui);
                 ui.separator();
+
                 self.deck_helper(ui);
                 ui.separator();
+
                 self.show_deck_panel(ui);
                 ui.separator();
+
                 self.show_bottom_panel(ui, should_start_new_game);
             });
     }
 
     fn show_top_panel(&self, ui: &mut Ui) {
-        ui.label("Top panel");
+        // Create 1 row
+        StripBuilder::new(ui)
+            // height of the row
+            .size(Size::exact(200.))
+            .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    // create two columns
+                    builder.sizes(Size::remainder(), 2).horizontal(|mut strip| {
+                        // First column is the content with combo-boxes
+                        strip.cell(|ui| {
+                            ui.vertical_centered(|ui| {
+                                ui.painter().rect_filled(
+                                    ui.available_rect_before_wrap(),
+                                    0.0,
+                                    Color32::BLUE,
+                                );
+                                ui.label(format!("{}", 1));
+                            });
+                        });
+
+                        // Second column is separated into two rows with settings for each combo box
+                        strip.strip(|builder| {
+                            builder.sizes(Size::remainder(), 2).vertical(|mut strip| {
+                                for i in 0..2 {
+                                    strip.cell(|ui| {
+                                        ui.vertical_centered(|ui| {
+                                            ui.painter().rect_filled(
+                                                ui.available_rect_before_wrap(),
+                                                0.0,
+                                                Color32::BLUE,
+                                            );
+                                            ui.label(format!("{}", i));
+                                        });
+                                    });
+                                }
+                            });
+                        });
+                    });
+                });
+            });
+        // ui.add(ComboBox::from_label("Human"))
     }
 
     fn deck_helper(&mut self, ui: &mut Ui) {
         ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-            ui.label("Right click on a card to select it. \nSelect up to 5 cards. \nIf less than 5 cards selected, the rest will be chosen randomly.");
+            ui.label("Right click on a card to select player color for it. \nSelect up to 5 cards. \nIf less than 5 cards selected, the rest will be chosen randomly when starting the game.");
         });
 
         ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
