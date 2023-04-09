@@ -1,5 +1,3 @@
-use std::default;
-
 use egui::*;
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
@@ -9,8 +7,6 @@ use onitama_game::game::{
 use rand::{thread_rng, Rng};
 
 use crate::{move_card::MoveCard, onitama::PlayersSetups, player::Participant};
-
-use super::participants::{AlphaBetaSetup, HumanSetup, MctsSetup, ParticipantSetup, RandomSetup};
 
 const MOVE_CARD_CELL_SIZE: f32 = 18.;
 const SETUP_WINDOW_WIDTH: f32 = 900.;
@@ -110,24 +106,6 @@ impl<'a> SetupWindow<'a> {
                                     for participant in self.selected_participants.iter() {
                                         strip.cell(|ui| {
                                             ui.vertical_centered(|ui| {
-                                                // match participant {
-                                                //     Participant::Human => {
-                                                //         let mut hs = HumanSetup;
-                                                //         hs.show(ui);
-                                                //     }
-                                                //     Participant::Random => {
-                                                //         let mut rs = RandomSetup;
-                                                //         rs.show(ui);
-                                                //     }
-                                                //     Participant::AlphaBeta => {
-                                                //         let mut abs = AlphaBetaSetup::default();
-                                                //         abs.show(ui);
-                                                //     }
-                                                //     Participant::Mcts => {
-                                                //         let mut ms = MctsSetup::default();
-                                                //         ms.show(ui);
-                                                //     }
-                                                // }
                                                 self.players_setups
                                                     .get_mut(participant)
                                                     .expect("Must be a correct participant type!")

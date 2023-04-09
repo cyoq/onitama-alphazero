@@ -100,12 +100,12 @@ impl Onitama {
     }
 
     fn configure_player_setups() -> PlayersSetups {
-        let mut player_setups: PlayersSetups = HashMap::new();
-        player_setups.insert(Participant::Human, Box::new(HumanSetup::default()));
-        player_setups.insert(Participant::Random, Box::new(RandomSetup::default()));
-        player_setups.insert(Participant::AlphaBeta, Box::new(AlphaBetaSetup::default()));
-        player_setups.insert(Participant::Mcts, Box::new(MctsSetup::default()));
-        player_setups
+        let mut players_setups: PlayersSetups = HashMap::new();
+        players_setups.insert(Participant::Human, Box::new(HumanSetup::default()));
+        players_setups.insert(Participant::Random, Box::new(RandomSetup::default()));
+        players_setups.insert(Participant::AlphaBeta, Box::new(AlphaBetaSetup::default()));
+        players_setups.insert(Participant::Mcts, Box::new(MctsSetup::default()));
+        players_setups
     }
 
     fn configure_fonts(ctx: &Context) {

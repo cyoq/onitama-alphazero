@@ -1,9 +1,7 @@
-use std::time::Duration;
-
 use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
 use onitama::Onitama;
-use onitama_game::ai::{alpha_beta::AlphaBeta, human_gui::HumanGui, mcts::Mcts, random::Random};
+use onitama_game::ai::{alpha_beta::AlphaBeta, human_gui::HumanGui};
 use player::{Player, PlayerType};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
