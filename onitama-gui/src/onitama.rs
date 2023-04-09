@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use eframe::epaint::ahash::HashMapExt;
 use eframe::{epaint::ahash::HashMap, App, CreationContext};
 use egui::{
     Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
@@ -17,6 +18,9 @@ use onitama_game::game::{
     player_color::PlayerColor,
 };
 
+use crate::game_setup::participants::{
+    AlphaBetaSetup, HumanSetup, MctsSetup, ParticipantSetup, RandomSetup,
+};
 use crate::game_setup::setup_window::SetupWindow;
 use crate::player::{Participant, Player, PlayerType};
 use crate::selected_card::SelectedCard;
@@ -26,6 +30,8 @@ const UTILITY_PANEL_WIDTH: f32 = 370.;
 const BOARD_PANEL_WIDTH: f32 = 930.;
 const PADDING: f32 = 15.;
 const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
+
+pub type PlayersSetups = HashMap<Participant, Box<dyn ParticipantSetup>>;
 
 pub struct Onitama {
     debug: bool,
@@ -40,16 +46,16 @@ pub struct Onitama {
     human_done_move: Option<DoneMove>,
     move_result: Option<MoveResult>,
     end_game: bool,
-    // TODO: Later on the Application must own the player and not the Game
-    players: [PlayerType; 2],
-    player_names: [&'static str; 2],
     board_panel_text: (String, Color32),
     card_panel_text: (String, Color32),
     deck: Deck,
     show_game_setup: bool,
     setup_selected_cards: [Option<Card>; 5],
     should_start_new_game: bool,
-    selected_players: [Participant; 2],
+    selected_participants: [Participant; 2],
+    // TODO: Later on the Application must own the player and not the Game
+    players: [Player; 2],
+    players_setups: PlayersSetups,
 }
 
 impl Onitama {
@@ -62,16 +68,20 @@ impl Onitama {
             ORIGINAL_CARDS[HORSE.index].clone(),
         ]);
 
-        Onitama::configure_fonts(&cc.egui_ctx);
-        let images = Onitama::load_images();
+        Self::configure_fonts(&cc.egui_ctx);
+
+        let players = [red_player, blue_player];
 
         Self {
             debug,
-            players: [red_player.typ, blue_player.typ],
-            player_names: [red_player.agent.name(), blue_player.agent.name()],
-            game_state: GameState::with_deck(red_player.agent, blue_player.agent, deck.clone()),
+            game_state: GameState::with_deck(
+                players[0].agent.clone(),
+                players[1].agent.clone(),
+                deck.clone(),
+            ),
+            players,
             deck,
-            images,
+            images: Self::load_images(),
             selected_card: SelectedCard::default(),
             selected_piece: None,
             last_played_move: None,
@@ -84,8 +94,18 @@ impl Onitama {
             show_game_setup: true,
             setup_selected_cards: [None, None, None, None, None],
             should_start_new_game: false,
-            selected_players: [Participant::Human, Participant::Mcts],
+            selected_participants: [Participant::Human, Participant::AlphaBeta],
+            players_setups: Self::configure_player_setups(),
         }
+    }
+
+    fn configure_player_setups() -> PlayersSetups {
+        let mut player_setups: PlayersSetups = HashMap::new();
+        player_setups.insert(Participant::Human, Box::new(HumanSetup::default()));
+        player_setups.insert(Participant::Random, Box::new(RandomSetup::default()));
+        player_setups.insert(Participant::AlphaBeta, Box::new(AlphaBetaSetup::default()));
+        player_setups.insert(Participant::Mcts, Box::new(MctsSetup::default()));
+        player_setups
     }
 
     fn configure_fonts(ctx: &Context) {
@@ -140,7 +160,7 @@ impl Onitama {
     }
 
     pub fn game_loop(&mut self) {
-        match self.players[self.game_state.curr_agent_idx] {
+        match self.players[self.game_state.curr_agent_idx].typ {
             PlayerType::Human => {
                 if let Some(done_move) = self.human_done_move {
                     self.move_result = Some(self.game_state.progress(done_move));
@@ -163,7 +183,7 @@ impl Onitama {
         self.board_panel_text = (
             format!(
                 "{} makes a move",
-                self.player_names[self.game_state.curr_agent_idx]
+                self.players[self.game_state.curr_agent_idx].agent.name()
             ),
             color,
         );
@@ -455,7 +475,8 @@ impl App for Onitama {
         SetupWindow::new(
             &mut self.setup_selected_cards,
             &mut self.deck,
-            &mut self.selected_players,
+            &mut self.selected_participants,
+            &mut self.players_setups,
         )
         .show_setup(
             ctx,

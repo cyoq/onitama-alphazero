@@ -5,7 +5,7 @@ use onitama_game::ai::{
     agent::Agent, alpha_beta::AlphaBeta, human_gui::HumanGui, mcts::Mcts, random::Random,
 };
 
-pub trait ParticipantSetup: Default {
+pub trait ParticipantSetup {
     fn show(&mut self, ui: &mut Ui);
     fn create_participant(&self) -> Box<dyn Agent>;
 }

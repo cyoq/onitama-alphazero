@@ -13,6 +13,7 @@ pub mod game_setup;
 pub mod image;
 pub mod move_card;
 pub mod onitama;
+pub mod ontiama_config;
 pub mod player;
 pub mod selected_card;
 

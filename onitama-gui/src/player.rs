@@ -11,7 +11,7 @@ pub struct Player {
     pub agent: Box<dyn Agent>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Participant {
     Human,
     Random,

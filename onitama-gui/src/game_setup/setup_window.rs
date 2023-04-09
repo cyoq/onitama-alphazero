@@ -8,7 +8,7 @@ use onitama_game::game::{
 };
 use rand::{thread_rng, Rng};
 
-use crate::{move_card::MoveCard, player::Participant};
+use crate::{move_card::MoveCard, onitama::PlayersSetups, player::Participant};
 
 use super::participants::{AlphaBetaSetup, HumanSetup, MctsSetup, ParticipantSetup, RandomSetup};
 
@@ -43,7 +43,8 @@ impl CardColor {
 pub struct SetupWindow<'a> {
     selected_cards: &'a mut [Option<Card>; 5],
     deck: &'a mut Deck,
-    selected_players: &'a mut [Participant; 2],
+    selected_participants: &'a mut [Participant; 2],
+    players_setups: &'a mut PlayersSetups,
 }
 
 impl<'a> SetupWindow<'a> {
@@ -51,11 +52,13 @@ impl<'a> SetupWindow<'a> {
         selected_cards: &'a mut [Option<Card>; 5],
         deck: &'a mut Deck,
         selected_players: &'a mut [Participant; 2],
+        player_setups: &'a mut PlayersSetups,
     ) -> Self {
         Self {
             selected_cards,
             deck,
-            selected_players,
+            selected_participants: selected_players,
+            players_setups: player_setups,
         }
     }
 
@@ -104,27 +107,31 @@ impl<'a> SetupWindow<'a> {
                             // Second column is separated into two rows with settings for each combo box
                             strip.strip(|builder| {
                                 builder.sizes(Size::remainder(), 2).vertical(|mut strip| {
-                                    for player in self.selected_players.iter() {
+                                    for participant in self.selected_participants.iter() {
                                         strip.cell(|ui| {
                                             ui.vertical_centered(|ui| {
-                                                match player {
-                                                    Participant::Human => {
-                                                        let mut hs = HumanSetup;
-                                                        hs.show(ui);
-                                                    }
-                                                    Participant::Random => {
-                                                        let mut rs = RandomSetup;
-                                                        rs.show(ui);
-                                                    }
-                                                    Participant::AlphaBeta => {
-                                                        let mut abs = AlphaBetaSetup::default();
-                                                        abs.show(ui);
-                                                    }
-                                                    Participant::Mcts => {
-                                                        let mut ms = MctsSetup::default();
-                                                        ms.show(ui);
-                                                    }
-                                                }
+                                                // match participant {
+                                                //     Participant::Human => {
+                                                //         let mut hs = HumanSetup;
+                                                //         hs.show(ui);
+                                                //     }
+                                                //     Participant::Random => {
+                                                //         let mut rs = RandomSetup;
+                                                //         rs.show(ui);
+                                                //     }
+                                                //     Participant::AlphaBeta => {
+                                                //         let mut abs = AlphaBetaSetup::default();
+                                                //         abs.show(ui);
+                                                //     }
+                                                //     Participant::Mcts => {
+                                                //         let mut ms = MctsSetup::default();
+                                                //         ms.show(ui);
+                                                //     }
+                                                // }
+                                                self.players_setups
+                                                    .get_mut(participant)
+                                                    .expect("Must be a correct participant type!")
+                                                    .show(ui);
                                                 ui.separator();
                                             });
                                         });
@@ -158,7 +165,7 @@ impl<'a> SetupWindow<'a> {
 
     fn create_combo_box(&mut self, ui: &mut Ui, id: &str, idx: usize) {
         assert!(idx < 2);
-        let player = &mut self.selected_players[idx];
+        let player = &mut self.selected_participants[idx];
         egui::ComboBox::from_id_source(id)
             .selected_text(player.to_string())
             .show_ui(ui, |ui| {
