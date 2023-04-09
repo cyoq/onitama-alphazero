@@ -463,8 +463,8 @@ impl App for Onitama {
             // Close game setup window
             self.show_game_setup = false;
             self.game_state = GameState::with_deck(
-                self.game_state.agents[0].clone(),
-                self.game_state.agents[1].clone(),
+                self.players[0].agent.clone(),
+                self.players[1].agent.clone(),
                 self.deck.clone(),
             );
             self.clear_game();
@@ -477,6 +477,7 @@ impl App for Onitama {
             &mut self.deck,
             &mut self.selected_participants,
             &mut self.players_setups,
+            &mut self.players,
         )
         .show_setup(
             ctx,

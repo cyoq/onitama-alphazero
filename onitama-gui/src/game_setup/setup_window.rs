@@ -6,7 +6,11 @@ use onitama_game::game::{
 };
 use rand::{thread_rng, Rng};
 
-use crate::{move_card::MoveCard, onitama::PlayersSetups, player::Participant};
+use crate::{
+    move_card::MoveCard,
+    onitama::PlayersSetups,
+    player::{Participant, Player},
+};
 
 const MOVE_CARD_CELL_SIZE: f32 = 18.;
 const SETUP_WINDOW_WIDTH: f32 = 900.;
@@ -41,20 +45,23 @@ pub struct SetupWindow<'a> {
     deck: &'a mut Deck,
     selected_participants: &'a mut [Participant; 2],
     players_setups: &'a mut PlayersSetups,
+    players: &'a mut [Player; 2],
 }
 
 impl<'a> SetupWindow<'a> {
     pub fn new(
         selected_cards: &'a mut [Option<Card>; 5],
         deck: &'a mut Deck,
-        selected_players: &'a mut [Participant; 2],
-        player_setups: &'a mut PlayersSetups,
+        selected_participants: &'a mut [Participant; 2],
+        players_setups: &'a mut PlayersSetups,
+        players: &'a mut [Player; 2],
     ) -> Self {
         Self {
             selected_cards,
             deck,
-            selected_participants: selected_players,
-            players_setups: player_setups,
+            selected_participants,
+            players_setups,
+            players,
         }
     }
 
@@ -223,6 +230,7 @@ impl<'a> SetupWindow<'a> {
             let start_game_btn = ui.button("Start a game");
             if start_game_btn.clicked() {
                 self.create_deck();
+                self.assign_players();
                 *should_start_new_game = true;
             }
             ui.add_space(10.);
@@ -256,6 +264,21 @@ impl<'a> SetupWindow<'a> {
             .collect::<Vec<_>>();
 
         *self.deck = Deck::new(cards.try_into().expect("Must be 5 cards"));
+    }
+
+    fn assign_players(&mut self) {
+        let player = |p: &Participant| {
+            let agent = self
+                .players_setups
+                .get(p)
+                .expect("Must be a valid participant!")
+                .create_participant();
+            let typ = p.to_player_type();
+            Player { typ, agent }
+        };
+
+        self.players[0] = player(&self.selected_participants[0]);
+        self.players[1] = player(&self.selected_participants[1]);
     }
 
     fn clear_selected_cards(&mut self) {
