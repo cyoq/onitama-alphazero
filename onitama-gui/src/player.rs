@@ -19,6 +19,15 @@ pub enum Participant {
     Mcts,
 }
 
+impl Participant {
+    pub fn to_player_type(&self) -> PlayerType {
+        match self {
+            Participant::Human => PlayerType::Human,
+            _ => PlayerType::Ai,
+        }
+    }
+}
+
 impl ToString for Participant {
     fn to_string(&self) -> String {
         match self {

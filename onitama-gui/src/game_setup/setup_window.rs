@@ -1,3 +1,5 @@
+use std::default;
+
 use egui::*;
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
@@ -7,6 +9,8 @@ use onitama_game::game::{
 use rand::{thread_rng, Rng};
 
 use crate::{move_card::MoveCard, player::Participant};
+
+use super::participants::{AlphaBetaSetup, HumanSetup, MctsSetup, ParticipantSetup, RandomSetup};
 
 const MOVE_CARD_CELL_SIZE: f32 = 18.;
 const SETUP_WINDOW_WIDTH: f32 = 900.;
@@ -95,25 +99,34 @@ impl<'a> SetupWindow<'a> {
                             // First column is the content with combo-boxes
                             strip.cell(|ui| {
                                 self.top_panel_combobox(ui);
-                                // ui.vertical_centered(|ui| {
-                                //     self.top_panel_combobox(ui);
-                                // });
                             });
 
                             // Second column is separated into two rows with settings for each combo box
                             strip.strip(|builder| {
                                 builder.sizes(Size::remainder(), 2).vertical(|mut strip| {
-                                    for i in 0..2 {
+                                    for player in self.selected_players.iter() {
                                         strip.cell(|ui| {
                                             ui.vertical_centered(|ui| {
-                                                ui.painter().rect_filled(
-                                                    ui.available_rect_before_wrap(),
-                                                    0.0,
-                                                    Color32::BLUE,
-                                                );
-                                                ui.label(format!("{}", i));
+                                                match player {
+                                                    Participant::Human => {
+                                                        let mut hs = HumanSetup;
+                                                        hs.show(ui);
+                                                    }
+                                                    Participant::Random => {
+                                                        let mut rs = RandomSetup;
+                                                        rs.show(ui);
+                                                    }
+                                                    Participant::AlphaBeta => {
+                                                        let mut abs = AlphaBetaSetup::default();
+                                                        abs.show(ui);
+                                                    }
+                                                    Participant::Mcts => {
+                                                        let mut ms = MctsSetup::default();
+                                                        ms.show(ui);
+                                                    }
+                                                }
+                                                ui.separator();
                                             });
-                                            ui.separator();
                                         });
                                     }
                                 });
