@@ -1,6 +1,6 @@
 use crate::game::{done_move::DoneMove, game_state::GameState};
 
-pub trait Agent {
+pub trait Agent: Send {
     fn generate_move(&self, game_state: &GameState) -> DoneMove;
 
     fn name(&self) -> &'static str;

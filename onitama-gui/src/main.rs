@@ -1,8 +1,6 @@
 use eframe::{run_native, NativeOptions};
 use egui::{Vec2, Visuals};
 use onitama::Onitama;
-use onitama_game::ai::{alpha_beta::AlphaBeta, human_gui::HumanGui};
-use player::{Player, PlayerType};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -29,7 +27,9 @@ fn main() -> Result<(), eframe::Error> {
         },
         Box::new(|cc| {
             cc.egui_ctx.set_visuals(Visuals::light());
-            Box::new(Onitama::new(cc, false))
+            let mut onitama = Onitama::new(cc, false);
+            onitama.start();
+            Box::new(onitama)
         }),
     )
 }
