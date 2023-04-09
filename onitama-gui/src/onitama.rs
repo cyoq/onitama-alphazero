@@ -7,6 +7,8 @@ use egui::{
     Label, Layout, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
+use onitama_game::ai::human_gui::HumanGui;
+use onitama_game::ai::mcts::Mcts;
 use onitama_game::game::piece::{Piece, PieceKind};
 use onitama_game::game::r#move::Move;
 use onitama_game::game::{
@@ -53,13 +55,12 @@ pub struct Onitama {
     setup_selected_cards: [Option<Card>; 5],
     should_start_new_game: bool,
     selected_participants: [Participant; 2],
-    // TODO: Later on the Application must own the player and not the Game
     players: [Player; 2],
     players_setups: PlayersSetups,
 }
 
 impl Onitama {
-    pub fn new(cc: &CreationContext, debug: bool, red_player: Player, blue_player: Player) -> Self {
+    pub fn new(cc: &CreationContext, debug: bool) -> Self {
         let deck = Deck::new([
             ORIGINAL_CARDS[DRAGON.index].clone(),
             ORIGINAL_CARDS[FROG.index].clone(),
@@ -70,7 +71,16 @@ impl Onitama {
 
         Self::configure_fonts(&cc.egui_ctx);
 
+        let red_player = Player {
+            typ: PlayerType::Human,
+            agent: Box::new(HumanGui),
+        };
+        let blue_player = Player {
+            typ: PlayerType::Human,
+            agent: Box::new(Mcts::default()),
+        };
         let players = [red_player, blue_player];
+        let selected_participants = [Participant::Human, Participant::Mcts];
 
         Self {
             debug,
@@ -94,7 +104,7 @@ impl Onitama {
             show_game_setup: true,
             setup_selected_cards: [None, None, None, None, None],
             should_start_new_game: false,
-            selected_participants: [Participant::Human, Participant::AlphaBeta],
+            selected_participants,
             players_setups: Self::configure_player_setups(),
         }
     }

@@ -7,11 +7,11 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 pub mod game_board;
+pub mod game_config;
 pub mod game_setup;
 pub mod image;
 pub mod move_card;
 pub mod onitama;
-pub mod ontiama_config;
 pub mod player;
 pub mod selected_card;
 
@@ -21,31 +21,6 @@ fn main() -> Result<(), eframe::Error> {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let red_player = Player {
-        typ: PlayerType::Human,
-        agent: Box::new(HumanGui),
-    };
-
-    // let red_player = Player {
-    //     typ: PlayerType::Ai,
-    //     agent: Box::new(AlphaBeta { max_depth: 4 }),
-    // };
-
-    // let blue_player = Player {
-    //     typ: PlayerType::Human,
-    //     agent: Box::new(HumanGui),
-    // };
-
-    let blue_player = Player {
-        typ: PlayerType::Ai,
-        // agent: Box::new(Mcts {
-        //     search_time: Duration::from_millis(1000),
-        //     min_node_visits: 5,
-        //     exploration_c: 1.42,
-        // }),
-        agent: Box::new(AlphaBeta { max_depth: 6 }),
-    };
-
     run_native(
         "Onitama",
         NativeOptions {
@@ -54,7 +29,7 @@ fn main() -> Result<(), eframe::Error> {
         },
         Box::new(|cc| {
             cc.egui_ctx.set_visuals(Visuals::light());
-            Box::new(Onitama::new(cc, false, red_player, blue_player))
+            Box::new(Onitama::new(cc, false))
         }),
     )
 }

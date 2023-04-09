@@ -89,7 +89,7 @@ impl Default for MctsSetup {
         Self {
             search_time: 1000,
             min_node_visits: 5,
-            exploration_c: 1.42,
+            exploration_c: 2f32.sqrt(),
         }
     }
 }
