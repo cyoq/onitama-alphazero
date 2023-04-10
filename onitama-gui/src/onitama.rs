@@ -2,11 +2,10 @@ use std::path::PathBuf;
 use std::sync::mpsc::{sync_channel, Receiver};
 use std::thread;
 
-use eframe::epaint::ahash::HashMapExt;
 use eframe::{epaint::ahash::HashMap, App, CreationContext};
 use egui::{
     Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
-    Label, Layout, RichText, SidePanel, Ui,
+    Label, RichText, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::ai::human_gui::HumanGui;
@@ -22,9 +21,7 @@ use onitama_game::game::{
     player_color::PlayerColor,
 };
 
-use crate::game_setup::participants::{
-    create_participant_setup, AlphaBetaSetup, HumanSetup, MctsSetup, ParticipantSetup, RandomSetup,
-};
+use crate::game_setup::participants::{create_participant_setup, ParticipantSetup};
 use crate::game_setup::setup_window::SetupWindow;
 use crate::player::{Participant, Player, PlayerType};
 use crate::selected_card::SelectedCard;

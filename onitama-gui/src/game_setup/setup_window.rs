@@ -152,7 +152,7 @@ impl<'a> SetupWindow<'a> {
 
     fn create_combo_box(&mut self, ui: &mut Ui, id: &str, idx: usize) {
         assert!(idx < 2);
-        let (participant, setup) = &mut self.selected_participants[idx];
+        let (participant, _setup) = &mut self.selected_participants[idx];
         egui::ComboBox::from_id_source(id)
             .selected_text(participant.to_string())
             .show_ui(ui, |ui| {
