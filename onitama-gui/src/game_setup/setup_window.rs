@@ -8,7 +8,6 @@ use rand::{thread_rng, Rng};
 
 use crate::{
     move_card::MoveCard,
-    onitama::ParticipantsSetups,
     player::{Participant, Player},
 };
 
@@ -46,7 +45,6 @@ pub struct SetupWindow<'a> {
     selected_cards: &'a mut [Option<Card>; 5],
     deck: &'a mut Deck,
     selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
-    players_setups: &'a mut ParticipantsSetups,
     players: &'a mut [Player; 2],
 }
 
@@ -55,14 +53,12 @@ impl<'a> SetupWindow<'a> {
         selected_cards: &'a mut [Option<Card>; 5],
         deck: &'a mut Deck,
         selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
-        players_setups: &'a mut ParticipantsSetups,
         players: &'a mut [Player; 2],
     ) -> Self {
         Self {
             selected_cards,
             deck,
             selected_participants,
-            players_setups,
             players,
         }
     }

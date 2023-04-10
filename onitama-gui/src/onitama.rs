@@ -35,8 +35,6 @@ const BOARD_PANEL_WIDTH: f32 = 930.;
 const PADDING: f32 = 15.;
 const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
 
-pub type ParticipantsSetups = HashMap<Participant, Box<dyn ParticipantSetup>>;
-
 pub struct Onitama {
     debug: bool,
     images: HashMap<Piece, Image>,
@@ -58,7 +56,6 @@ pub struct Onitama {
     should_start_new_game: bool,
     selected_participants: [(Participant, Box<dyn ParticipantSetup>); 2],
     players: [Player; 2],
-    participants_setups: ParticipantsSetups,
     mov_rx: Option<Receiver<(DoneMove, f64)>>,
     do_ai_move_generation: bool,
     evaluation_score: f64,
@@ -85,7 +82,6 @@ impl Onitama {
             agent: Box::new(Mcts::default()),
         };
         let players = [red_player, blue_player];
-        let participants_setups = Self::configure_participants_setups();
         let selected_participants = [
             (
                 Participant::Human,
@@ -120,20 +116,10 @@ impl Onitama {
             setup_selected_cards: [None, None, None, None, None],
             should_start_new_game: false,
             selected_participants,
-            participants_setups,
             mov_rx: None,
             do_ai_move_generation: true,
             evaluation_score: 0.,
         }
-    }
-
-    fn configure_participants_setups() -> ParticipantsSetups {
-        let mut players_setups: ParticipantsSetups = HashMap::new();
-        players_setups.insert(Participant::Human, Box::new(HumanSetup::default()));
-        players_setups.insert(Participant::Random, Box::new(RandomSetup::default()));
-        players_setups.insert(Participant::AlphaBeta, Box::new(AlphaBetaSetup::default()));
-        players_setups.insert(Participant::Mcts, Box::new(MctsSetup::default()));
-        players_setups
     }
 
     fn configure_fonts(ctx: &Context) {
@@ -544,7 +530,6 @@ impl App for Onitama {
             &mut self.setup_selected_cards,
             &mut self.deck,
             &mut self.selected_participants,
-            &mut self.participants_setups,
             &mut self.players,
         )
         .show_setup(
