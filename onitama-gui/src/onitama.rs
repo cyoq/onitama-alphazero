@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::mpsc::{channel, sync_channel, Receiver};
+use std::sync::mpsc::{sync_channel, Receiver};
 use std::thread;
 
 use eframe::epaint::ahash::HashMapExt;
@@ -176,9 +176,6 @@ impl Onitama {
     }
 
     pub fn game_loop(&mut self, ctx: &Context) {
-        // tracing::info!("Curr index: {}", self.game_state.curr_agent_idx);
-        // tracing::info!("Start move generation: {:?}", self.start_move_generation);
-
         match self.players[self.game_state.curr_agent_idx].typ {
             PlayerType::Human => {
                 if let Some(done_move) = self.human_done_move {
@@ -188,7 +185,7 @@ impl Onitama {
             }
             PlayerType::Ai => {
                 if self.do_ai_move_generation {
-                    // Disable start move generation until a calculation thread says so
+                    // Disable start move generation until a receiver says that it received a move
                     self.do_ai_move_generation = false;
                     let (mov_tx, mov_rx) = sync_channel(1);
                     self.mov_rx = Some(mov_rx);
@@ -446,8 +443,9 @@ impl Onitama {
             }
         }
 
-        let enabled =
-            deck.get_card_owner(card) == Some(self.game_state.curr_player_color) && !self.end_game;
+        let is_card_owner = deck.get_card_owner(card) == Some(self.game_state.curr_player_color);
+        let is_human_player = self.players[self.game_state.curr_agent_idx].typ == PlayerType::Human;
+        let enabled = is_card_owner && is_human_player && !self.end_game;
 
         let response = ui.add(MoveCard {
             mirror: &deck.is_mirrored(card).unwrap_or(false),
