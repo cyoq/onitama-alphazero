@@ -23,6 +23,7 @@ use onitama_game::game::{
 
 use crate::game_setup::participants::{create_participant_setup, ParticipantSetup};
 use crate::game_setup::setup_window::SetupWindow;
+use crate::move_history::{MoveHistory, MoveInformation};
 use crate::player::Participant;
 use crate::player::{Player, PlayerType};
 use crate::selected_card::SelectedCard;
@@ -57,6 +58,7 @@ pub struct Onitama {
     mov_rx: Option<Receiver<(DoneMove, f64)>>,
     do_ai_move_generation: bool,
     evaluation_score: f64,
+    move_history: MoveHistory,
 }
 
 impl Onitama {
@@ -117,6 +119,7 @@ impl Onitama {
             mov_rx: None,
             do_ai_move_generation: true,
             evaluation_score: 0.,
+            move_history: MoveHistory::new([Participant::Human, Participant::Mcts]),
         }
     }
 
@@ -175,7 +178,29 @@ impl Onitama {
         match self.players[self.game_state.curr_agent_idx].typ {
             PlayerType::Human => {
                 if let Some(done_move) = self.human_done_move {
+                    // Need to save card before deck rotation for the history
+                    let card = self
+                        .game_state
+                        .state
+                        .deck
+                        .get_card(done_move.used_card_idx)
+                        .clone();
+
                     self.move_result = Some(self.game_state.progress(done_move));
+
+                    self.move_history.push(MoveInformation {
+                        state: self.game_state.state.clone(),
+                        done_move: done_move.mov,
+                        card,
+                        evaluation: 0.,
+                        // Get a previous player color
+                        player_color: self.game_state.curr_player_color.enemy(),
+                        ply: self.move_history.len() + 1,
+                        // these will be determined later in update loop
+                        is_win: false,
+                        is_capture: false,
+                    });
+
                     self.human_done_move = None;
                 }
             }
@@ -204,7 +229,30 @@ impl Onitama {
 
                         self.evaluation_score = score;
                         self.last_played_move = Some(Move::convert_to_2d(mov.mov.to));
+
+                        // Need to save card before deck rotation for the history
+                        let card = self
+                            .game_state
+                            .state
+                            .deck
+                            .get_card(mov.used_card_idx)
+                            .clone();
+
                         self.move_result = Some(self.game_state.progress(mov));
+
+                        self.move_history.push(MoveInformation {
+                            state: self.game_state.state.clone(),
+                            done_move: mov.mov,
+                            card,
+                            evaluation: score,
+                            // Get a previous player color
+                            player_color: self.game_state.curr_player_color.enemy(),
+                            ply: self.move_history.len() + 1,
+                            // these will be determined later in update loop
+                            is_win: false,
+                            is_capture: false,
+                        });
+
                         self.mov_rx = None;
 
                         self.do_ai_move_generation = true;
@@ -346,9 +394,9 @@ impl Onitama {
             egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
             |ui| {
                 self.utility_widget(ui);
-                ui.add(egui::Separator::default().grow(8.0));
-                self.move_history_widget(ui);
+                // ui.add(egui::Separator::default().grow(8.0));
                 self.footer(ui);
+                self.move_history_widget(ui);
             },
         );
     }
@@ -417,26 +465,7 @@ impl Onitama {
         ui.add_space(PADDING);
     }
 
-    fn clear_game(&mut self) {
-        self.game_state.clear();
-        self.selected_card = SelectedCard::default();
-        self.selected_piece = None;
-        self.allowed_moves = [[false; 5]; 5];
-        self.human_done_move = None;
-        self.last_played_move = None;
-        self.move_result = None;
-        self.end_game = false;
-        self.evaluation_score = 0.;
-        self.mov_rx = None;
-    }
-
     fn move_history_widget(&self, ui: &mut Ui) {
-        let values = vec![
-            (PlayerColor::Blue, "Crab", "a5", "b4"),
-            (PlayerColor::Red, "Tiger", "a1", "a3"),
-            (PlayerColor::Blue, "Elephant", "d5", "e4"),
-        ];
-
         ui.vertical_centered_justified(|ui| {
             ui.add_space(PADDING);
 
@@ -445,19 +474,55 @@ impl Onitama {
             ));
 
             ui.add_space(PADDING);
+
+            // control buttons
+            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                let save_game = ui.add(Button::new(
+                    RichText::new("Save game").text_style(egui::TextStyle::Body),
+                ));
+
+                if save_game.clicked() {
+                    tracing::warn!("TODO");
+                }
+
+                let load_game = ui.add(Button::new(
+                    RichText::new("Load game").text_style(egui::TextStyle::Body),
+                ));
+
+                if load_game.clicked() {
+                    tracing::warn!("TODO");
+                }
+            });
+
             ui.separator();
 
             // Vertical scroll enabled
-            let scroll = ScrollArea::new([false, true]).auto_shrink([false, true]);
+            let scroll = ScrollArea::vertical().auto_shrink([false, true]);
             scroll.show(ui, |ui| {
                 Grid::new("move_history_grid")
                     .num_columns(1)
-                    .spacing([40., 40.])
+                    .spacing([10., 10.])
                     .striped(true)
                     .show(ui, |ui| {
-                        for value in values {
-                            let title = format!("▶ {} {}-{}", value.1, value.2, value.3);
-                            let color = match value.0 {
+                        for mov_info in self.move_history.iter() {
+                            let card_name = CARD_NAMES[mov_info.card.index];
+                            let from = Move::convert_idx_to_notation(mov_info.done_move.from);
+                            let to = Move::convert_idx_to_notation(mov_info.done_move.to);
+
+                            let mut title = format!(
+                                "▶ {}. {} {}-{} {}",
+                                mov_info.ply,
+                                card_name,
+                                from,
+                                to,
+                                if mov_info.is_capture { "❌" } else { "" }
+                            );
+
+                            if mov_info.is_win {
+                                title += &format!(" ({} won!)", mov_info.player_color.to_string());
+                            }
+
+                            let color = match mov_info.player_color {
                                 PlayerColor::Red => Color32::RED,
                                 PlayerColor::Blue => Color32::BLUE,
                             };
@@ -465,30 +530,11 @@ impl Onitama {
 
                             ui.add_space(PADDING);
                             ui.end_row();
-                            // ui.separator();
                         }
                     });
             });
 
             ui.add_space(PADDING);
-        });
-
-        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-            let save_game = ui.add(Button::new(
-                RichText::new("Save game").text_style(egui::TextStyle::Body),
-            ));
-
-            if save_game.clicked() {
-                tracing::warn!("TODO");
-            }
-
-            let load_game = ui.add(Button::new(
-                RichText::new("Load game").text_style(egui::TextStyle::Body),
-            ));
-
-            if load_game.clicked() {
-                tracing::warn!("TODO");
-            }
         });
     }
 
@@ -510,6 +556,7 @@ impl Onitama {
             ui.add_space(10.);
         });
         ui.add_space(PADDING);
+        ui.separator();
     }
 
     fn move_card_to_ui(&mut self, ui: &mut Ui, card: &Card) {
@@ -542,6 +589,20 @@ impl Onitama {
         if response.hovered() && enabled {
             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
         }
+    }
+
+    fn clear_game(&mut self) {
+        self.game_state.clear();
+        self.selected_card = SelectedCard::default();
+        self.selected_piece = None;
+        self.allowed_moves = [[false; 5]; 5];
+        self.human_done_move = None;
+        self.last_played_move = None;
+        self.move_result = None;
+        self.end_game = false;
+        self.evaluation_score = 0.;
+        self.mov_rx = None;
+        self.move_history.clear();
     }
 }
 
@@ -576,16 +637,26 @@ impl App for Onitama {
         // TODO: this should not be in the update
         if let Some(result) = self.move_result {
             match result {
-                MoveResult::Capture => (),
+                MoveResult::Capture => {
+                    if let Some(h) = self.move_history.last_mut() {
+                        h.is_capture = true;
+                    }
+                }
                 MoveResult::RedWin => {
                     self.end_game = true;
                     self.board_panel_text = ("Red won!".to_string(), Color32::RED);
                     self.card_panel_text = ("".to_string(), Color32::BLACK);
+                    if let Some(h) = self.move_history.last_mut() {
+                        h.is_win = true;
+                    }
                 }
                 MoveResult::BlueWin => {
                     self.end_game = true;
                     self.board_panel_text = ("Blue won!".to_string(), Color32::BLUE);
                     self.card_panel_text = ("".to_string(), Color32::BLACK);
+                    if let Some(h) = self.move_history.last_mut() {
+                        h.is_win = true;
+                    }
                 }
                 MoveResult::InProgress => (),
             }
