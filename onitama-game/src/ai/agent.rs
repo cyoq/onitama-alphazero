@@ -1,7 +1,8 @@
 use crate::game::{done_move::DoneMove, game_state::GameState};
 
 pub trait Agent: Send {
-    fn generate_move(&self, game_state: &GameState) -> DoneMove;
+    /// Returns best move and a score for it
+    fn generate_move(&self, game_state: &GameState) -> (DoneMove, f64);
 
     fn name(&self) -> &'static str;
 

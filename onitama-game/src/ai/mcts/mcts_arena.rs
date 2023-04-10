@@ -50,7 +50,7 @@ impl MctsArena {
     /// Seach the best move
     /// 1. Make the playouts until time is up
     /// 2. Select the best node which was visited the most
-    pub fn search(&mut self) -> DoneMove {
+    pub fn search(&mut self) -> (DoneMove, f64) {
         let now = Instant::now();
 
         while now.elapsed() < self.search_time {
@@ -65,9 +65,12 @@ impl MctsArena {
             .max_by_key(|&c| self.arena[*c].visits)
             .expect("Must find the best child");
 
-        self.arena[*best_child_idx]
-            .mov
-            .expect("A child node must have a move")
+        (
+            self.arena[*best_child_idx]
+                .mov
+                .expect("A child node must have a move"),
+            self.arena[*best_child_idx].winrate as f64,
+        )
     }
 
     /// Make a playout to find the best node
@@ -454,7 +457,7 @@ mod tests {
     fn test_search() {
         // Theoritically using the same time, we should get the same results
         let mut arena = arena();
-        let mov = arena.search();
+        let mov = arena.search().0;
         let expected = DoneMove {
             mov: Move {
                 from: 24,
@@ -478,7 +481,7 @@ mod tests {
 
         let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2f32.sqrt());
 
-        let mov = arena.search();
+        let mov = arena.search().0;
         println!("{}", arena.debug_tree());
 
         let expected = DoneMove {
@@ -508,7 +511,7 @@ mod tests {
 
         let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 1.);
 
-        let mov = arena.search();
+        let mov = arena.search().0;
         // println!("{}", arena.debug_tree());
 
         let expected = DoneMove {

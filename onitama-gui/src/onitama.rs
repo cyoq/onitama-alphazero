@@ -36,6 +36,7 @@ const PADDING: f32 = 15.;
 const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
 
 pub type PlayersSetups = HashMap<Participant, Box<dyn ParticipantSetup>>;
+pub type PlayersEvaluations = HashMap<Participant, Box<dyn ParticipantSetup>>;
 
 pub struct Onitama {
     debug: bool,
@@ -59,8 +60,9 @@ pub struct Onitama {
     selected_participants: [Participant; 2],
     players: [Player; 2],
     players_setups: PlayersSetups,
-    mov_rx: Option<Receiver<DoneMove>>,
+    mov_rx: Option<Receiver<(DoneMove, f64)>>,
     do_ai_move_generation: bool,
+    evaluation_score: f64,
 }
 
 impl Onitama {
@@ -112,6 +114,7 @@ impl Onitama {
             players_setups: Self::configure_player_setups(),
             mov_rx: None,
             do_ai_move_generation: true,
+            evaluation_score: 0.,
         }
     }
 
@@ -202,6 +205,9 @@ impl Onitama {
 
                 if let Some(rx) = &self.mov_rx {
                     if let Ok(mov) = rx.try_recv() {
+                        let (mov, score) = mov;
+
+                        self.evaluation_score = score;
                         self.last_played_move = Some(Move::convert_to_2d(mov.mov.to));
                         self.move_result = Some(self.game_state.progress(mov));
                         self.mov_rx = None;
@@ -352,8 +358,7 @@ impl Onitama {
     }
 
     fn utility_widget(&mut self, ui: &mut Ui) {
-        // Add button on the left for starting a new game
-        ui.with_layout(Layout::left_to_right(egui::Align::Min), |ui| {
+        ui.vertical_centered(|ui| {
             let start_game = ui.add(Button::new(
                 RichText::new("Start a new game").text_style(egui::TextStyle::Body),
             ));
@@ -366,6 +371,8 @@ impl Onitama {
                 self.clear_game();
             }
 
+            ui.add_space(PADDING);
+
             let game_setup = ui.add(Button::new(
                 RichText::new("Make a new setup").text_style(egui::TextStyle::Body),
             ));
@@ -373,28 +380,36 @@ impl Onitama {
             if game_setup.clicked() {
                 self.show_game_setup = true;
             }
+
+            ui.add_space(PADDING);
+
+            let start_tournament = ui.add(Button::new(
+                RichText::new("Start a tournament").text_style(egui::TextStyle::Body),
+            ));
+
+            if start_tournament.clicked() {}
         });
+
         ui.add_space(PADDING);
 
-        // Add button on the right to open a window with a new game setup
-        // ui.with_layout(Layout::right_to_left(egui::Align::Max), |ui| {
-        //     ui.add(Button::new(
-        //         RichText::new("Make a new setup").text_style(egui::TextStyle::Body),
-        //     ));
-        // });
-
-        // ui.add_space(PADDING);
-
-        // // Add Statistics heading
         ui.vertical_centered(|ui| {
             ui.add(Label::new(
-                RichText::new("Statistics").text_style(egui::TextStyle::Heading),
+                RichText::new("Evaluation").text_style(egui::TextStyle::Heading),
             ))
         });
         ui.add_space(PADDING);
 
         // Add labels for the statistics
-        ui.add(Label::new("Evaluation Score: OVER9000"));
+        let eval_color = if self.evaluation_score < 0. {
+            Color32::BLUE
+        } else if self.evaluation_score == 0. {
+            Color32::BLACK
+        } else {
+            Color32::RED
+        };
+        ui.label(
+            RichText::new(format!("Evaluation Score: {}", self.evaluation_score)).color(eval_color),
+        );
         ui.add_space(PADDING);
 
         // Add footer with links
@@ -407,7 +422,7 @@ impl Onitama {
                 "https://github.com/emilk/egui",
             ));
             // then we'll put github link the the headlines source code
-            ui.add(Hyperlink::new("https://github.com/"));
+            ui.add(Hyperlink::new("https://github.com/cyoq/onitama-alphazero"));
 
             ui.add_space(10.);
         });
@@ -423,6 +438,7 @@ impl Onitama {
         self.last_played_move = None;
         self.move_result = None;
         self.end_game = false;
+        self.evaluation_score = 0.;
     }
 
     fn history_widget(&self, ui: &mut Ui) {

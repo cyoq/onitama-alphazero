@@ -6,8 +6,8 @@ use super::agent::Agent;
 pub struct HumanGui;
 
 impl Agent for HumanGui {
-    fn generate_move(&self, _game_state: &GameState) -> DoneMove {
-        // Human agent will be playing by using the GUI
+    fn generate_move(&self, _game_state: &GameState) -> (DoneMove, f64) {
+        // Human agent will be playing with using the GUI
         unimplemented!();
     }
 

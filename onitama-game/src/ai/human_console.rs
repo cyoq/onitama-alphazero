@@ -94,7 +94,7 @@ impl Agent for HumanConsole {
         "Human in Console"
     }
 
-    fn generate_move(&self, game_state: &GameState) -> DoneMove {
+    fn generate_move(&self, game_state: &GameState) -> (DoneMove, f64) {
         let player_color = game_state.curr_player_color;
         let state = &game_state.state;
         let mut moves = vec![];
@@ -134,10 +134,13 @@ impl Agent for HumanConsole {
             PieceKind::King
         };
 
-        DoneMove {
-            mov: Move { from, to, piece },
-            used_card_idx: card_idx as usize,
-        }
+        (
+            DoneMove {
+                mov: Move { from, to, piece },
+                used_card_idx: card_idx as usize,
+            },
+            0.,
+        )
     }
 
     fn clone_dyn(&self) -> Box<dyn Agent> {

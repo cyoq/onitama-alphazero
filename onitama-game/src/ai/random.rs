@@ -8,7 +8,7 @@ use super::agent::Agent;
 pub struct Random;
 
 impl Agent for Random {
-    fn generate_move(&self, game_state: &GameState) -> DoneMove {
+    fn generate_move(&self, game_state: &GameState) -> (DoneMove, f64) {
         let player_color = game_state.curr_player_color;
         let state = &game_state.state;
         let mut rng = thread_rng();
@@ -19,10 +19,13 @@ impl Agent for Random {
         let moves = state.generate_legal_moves(player_color, card);
         let mov = moves[rng.gen_range(0..moves.len())];
 
-        DoneMove {
-            mov: mov,
-            used_card_idx: card_idx,
-        }
+        (
+            DoneMove {
+                mov: mov,
+                used_card_idx: card_idx,
+            },
+            0.,
+        )
     }
 
     fn name(&self) -> &'static str {

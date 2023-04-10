@@ -192,10 +192,6 @@ impl<'a> SetupWindow<'a> {
             .size(Size::exact(130.))
             // Signal that strips will represent rows
             .vertical(|mut strip| {
-                // Textual information strip
-                // strip.cell(|ui| {
-                //     ui.vertical_centered(|ui| {});
-                // });
                 // strip builder that will separate row into 8 columns
                 strip.strip(|builder| {
                     builder.sizes(Size::remainder(), 8).horizontal(|mut strip| {

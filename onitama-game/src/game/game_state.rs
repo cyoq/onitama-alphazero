@@ -68,7 +68,7 @@ impl GameState {
         };
     }
 
-    pub fn agent_generate_move(&self) -> DoneMove {
+    pub fn agent_generate_move(&self) -> (DoneMove, f64) {
         self.agents[self.curr_agent_idx].generate_move(&self)
     }
 
@@ -94,7 +94,7 @@ impl GameState {
         self.history.push(self.state.clone());
 
         // move must be a legal one
-        let done_move = self.agents[self.curr_agent_idx].generate_move(&self);
+        let done_move = self.agents[self.curr_agent_idx].generate_move(&self).0;
 
         let move_result = self.state.make_move(
             &done_move.mov,

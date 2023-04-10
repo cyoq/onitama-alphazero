@@ -111,7 +111,7 @@ impl AlphaBeta {
 }
 
 impl Agent for AlphaBeta {
-    fn generate_move(&self, game_state: &GameState) -> DoneMove {
+    fn generate_move(&self, game_state: &GameState) -> (DoneMove, f64) {
         let mut positions = 0;
 
         let mut game_state = game_state.clone();
@@ -127,9 +127,12 @@ impl Agent for AlphaBeta {
         println!("Analyzed {} positions", positions);
         println!("Best score is {}", result.best_score);
 
-        result
-            .best_move
-            .expect("AlphaBeta agent must produce a move!")
+        (
+            result
+                .best_move
+                .expect("AlphaBeta agent must produce a move!"),
+            result.best_score as f64,
+        )
     }
 
     fn name(&self) -> &'static str {

@@ -26,7 +26,7 @@ impl Default for Mcts {
 }
 
 impl Agent for Mcts {
-    fn generate_move(&self, game_state: &GameState) -> DoneMove {
+    fn generate_move(&self, game_state: &GameState) -> (DoneMove, f64) {
         let mut arena = MctsArena::new(
             game_state.state.clone(),
             self.search_time,
@@ -37,7 +37,6 @@ impl Agent for Mcts {
         let mov = arena.search();
         // println!("Tree: {}", arena.debug_tree());
         println!("Playouts: {}", arena.playouts);
-        println!("Avg: {}", arena.arena[0].winrate);
         mov
     }
 
