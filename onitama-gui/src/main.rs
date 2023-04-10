@@ -27,8 +27,7 @@ fn main() -> Result<(), eframe::Error> {
         },
         Box::new(|cc| {
             cc.egui_ctx.set_visuals(Visuals::light());
-            let mut onitama = Onitama::new(cc, false);
-            onitama.start();
+            let onitama = Onitama::new(cc, false);
             Box::new(onitama)
         }),
     )

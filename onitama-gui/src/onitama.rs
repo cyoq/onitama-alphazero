@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::mpsc::{channel, sync_channel, Receiver, Sender, SyncSender};
+use std::sync::mpsc::{channel, sync_channel, Receiver};
 use std::thread;
 
 use eframe::epaint::ahash::HashMapExt;
@@ -37,17 +37,6 @@ const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
 
 pub type PlayersSetups = HashMap<Participant, Box<dyn ParticipantSetup>>;
 
-enum Msg {
-    GenerateAiMove,
-}
-
-fn generate_move(game_state: &GameState, mov_tx: &mut Sender<DoneMove>) {
-    let mov = game_state.agent_generate_move();
-    if let Err(e) = mov_tx.send(mov) {
-        tracing::error!("Error sending a move: {}", e);
-    }
-}
-
 pub struct Onitama {
     debug: bool,
     images: HashMap<Piece, Image>,
@@ -70,8 +59,8 @@ pub struct Onitama {
     selected_participants: [Participant; 2],
     players: [Player; 2],
     players_setups: PlayersSetups,
-    app_tx: Option<SyncSender<Msg>>,
     mov_rx: Option<Receiver<DoneMove>>,
+    do_ai_move_generation: bool,
 }
 
 impl Onitama {
@@ -121,28 +110,9 @@ impl Onitama {
             should_start_new_game: false,
             selected_participants,
             players_setups: Self::configure_player_setups(),
-            app_tx: None,
             mov_rx: None,
+            do_ai_move_generation: true,
         }
-    }
-
-    pub fn start(&mut self) {
-        let (app_tx, app_rx) = sync_channel(1);
-        self.app_tx = Some(app_tx);
-
-        let (mut mov_tx, mov_rx) = channel();
-        self.mov_rx = Some(mov_rx);
-
-        let game_state = self.game_state.clone();
-        thread::spawn(move || loop {
-            match app_rx.recv() {
-                Ok(Msg::GenerateAiMove) => {
-                    tracing::info!("Sending {:?}", game_state.curr_agent_idx);
-                    generate_move(&game_state, &mut mov_tx);
-                }
-                Err(_) => continue,
-            }
-        });
     }
 
     fn configure_player_setups() -> PlayersSetups {
@@ -205,7 +175,10 @@ impl Onitama {
             .collect::<HashMap<Piece, Image>>()
     }
 
-    pub fn game_loop(&mut self) {
+    pub fn game_loop(&mut self, ctx: &Context) {
+        // tracing::info!("Curr index: {}", self.game_state.curr_agent_idx);
+        // tracing::info!("Start move generation: {:?}", self.start_move_generation);
+
         match self.players[self.game_state.curr_agent_idx].typ {
             PlayerType::Human => {
                 if let Some(done_move) = self.human_done_move {
@@ -214,20 +187,34 @@ impl Onitama {
                 }
             }
             PlayerType::Ai => {
-                if let Some(tx) = &mut self.app_tx {
-                    if let Err(e) = tx.send(Msg::GenerateAiMove) {
-                        tracing::error!("Error sending the message: {}", e);
-                    }
+                if self.do_ai_move_generation {
+                    // Disable start move generation until a calculation thread says so
+                    self.do_ai_move_generation = false;
+                    let (mov_tx, mov_rx) = sync_channel(1);
+                    self.mov_rx = Some(mov_rx);
+
+                    let game_state = self.game_state.clone();
+
+                    thread::spawn(move || {
+                        let mov = game_state.agent_generate_move();
+                        if let Err(e) = mov_tx.send(mov) {
+                            tracing::error!("Error sending a move: {}", e);
+                        }
+                    });
                 }
+
                 if let Some(rx) = &self.mov_rx {
                     if let Ok(mov) = rx.try_recv() {
-                        // let mov = self.game_state.agent_generate_move();
                         self.last_played_move = Some(Move::convert_to_2d(mov.mov.to));
                         self.move_result = Some(self.game_state.progress(mov));
+                        self.mov_rx = None;
+
+                        self.do_ai_move_generation = true;
                     }
                 }
             }
         }
+        ctx.request_repaint();
     }
 
     pub fn update_text(&mut self) {
@@ -490,10 +477,23 @@ impl App for Onitama {
             });
         }
 
+        if self.should_start_new_game {
+            // Close game setup window
+            self.show_game_setup = false;
+            self.game_state = GameState::with_deck(
+                self.players[0].agent.clone(),
+                self.players[1].agent.clone(),
+                self.deck.clone(),
+            );
+            self.clear_game();
+            // Do not make a new game
+            self.should_start_new_game = false;
+        }
+
         self.update_text();
 
         if self.move_result.is_none() || !self.move_result.unwrap().is_win() && !self.end_game {
-            self.game_loop();
+            self.game_loop(ctx);
         }
 
         // TODO: this should not be in the update
@@ -512,19 +512,6 @@ impl App for Onitama {
                 }
                 MoveResult::InProgress => (),
             }
-        }
-
-        if self.should_start_new_game {
-            // Close game setup window
-            self.show_game_setup = false;
-            self.game_state = GameState::with_deck(
-                self.players[0].agent.clone(),
-                self.players[1].agent.clone(),
-                self.deck.clone(),
-            );
-            self.clear_game();
-            // Do not make a new game
-            self.should_start_new_game = false;
         }
 
         SetupWindow::new(
