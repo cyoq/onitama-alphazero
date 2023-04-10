@@ -5,9 +5,21 @@ use onitama_game::ai::{
     agent::Agent, alpha_beta::AlphaBeta, human_gui::HumanGui, mcts::Mcts, random::Random,
 };
 
+use crate::player::Participant;
+
 pub trait ParticipantSetup: Send {
     fn show(&mut self, ui: &mut Ui);
-    fn create_participant(&self) -> Box<dyn Agent>;
+    fn participant(&self) -> Participant;
+    fn create_agent(&self) -> Box<dyn Agent>;
+}
+
+pub fn create_participant_setup(participant: &Participant) -> Box<dyn ParticipantSetup> {
+    match *participant {
+        Participant::Human => Box::new(HumanSetup::default()),
+        Participant::Random => Box::new(RandomSetup::default()),
+        Participant::AlphaBeta => Box::new(AlphaBetaSetup::default()),
+        Participant::Mcts => Box::new(MctsSetup::default()),
+    }
 }
 
 #[derive(Default)]
@@ -21,8 +33,12 @@ impl ParticipantSetup for HumanSetup {
         ui.label("Human does not have any parameters!");
     }
 
-    fn create_participant(&self) -> Box<dyn Agent> {
+    fn create_agent(&self) -> Box<dyn Agent> {
         Box::new(HumanGui)
+    }
+
+    fn participant(&self) -> Participant {
+        Participant::Human
     }
 }
 
@@ -37,8 +53,12 @@ impl ParticipantSetup for RandomSetup {
         ui.label("Random does not have any parameters!");
     }
 
-    fn create_participant(&self) -> Box<dyn Agent> {
+    fn create_agent(&self) -> Box<dyn Agent> {
         Box::new(Random)
+    }
+
+    fn participant(&self) -> Participant {
+        Participant::Random
     }
 }
 
@@ -71,10 +91,14 @@ impl ParticipantSetup for AlphaBetaSetup {
         });
     }
 
-    fn create_participant(&self) -> Box<dyn Agent> {
+    fn create_agent(&self) -> Box<dyn Agent> {
         Box::new(AlphaBeta {
             max_depth: self.max_depth,
         })
+    }
+
+    fn participant(&self) -> Participant {
+        Participant::AlphaBeta
     }
 }
 
@@ -114,11 +138,15 @@ impl ParticipantSetup for MctsSetup {
         });
     }
 
-    fn create_participant(&self) -> Box<dyn Agent> {
+    fn create_agent(&self) -> Box<dyn Agent> {
         Box::new(Mcts {
             search_time: Duration::from_millis(self.search_time),
             min_node_visits: self.min_node_visits,
             exploration_c: self.exploration_c,
         })
+    }
+
+    fn participant(&self) -> Participant {
+        Participant::Mcts
     }
 }

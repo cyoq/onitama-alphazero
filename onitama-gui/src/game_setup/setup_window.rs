@@ -8,9 +8,11 @@ use rand::{thread_rng, Rng};
 
 use crate::{
     move_card::MoveCard,
-    onitama::PlayersSetups,
+    onitama::ParticipantsSetups,
     player::{Participant, Player},
 };
+
+use super::participants::{create_participant_setup, ParticipantSetup};
 
 const MOVE_CARD_CELL_SIZE: f32 = 18.;
 const SETUP_WINDOW_WIDTH: f32 = 900.;
@@ -43,8 +45,8 @@ impl CardColor {
 pub struct SetupWindow<'a> {
     selected_cards: &'a mut [Option<Card>; 5],
     deck: &'a mut Deck,
-    selected_participants: &'a mut [Participant; 2],
-    players_setups: &'a mut PlayersSetups,
+    selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
+    players_setups: &'a mut ParticipantsSetups,
     players: &'a mut [Player; 2],
 }
 
@@ -52,8 +54,8 @@ impl<'a> SetupWindow<'a> {
     pub fn new(
         selected_cards: &'a mut [Option<Card>; 5],
         deck: &'a mut Deck,
-        selected_participants: &'a mut [Participant; 2],
-        players_setups: &'a mut PlayersSetups,
+        selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
+        players_setups: &'a mut ParticipantsSetups,
         players: &'a mut [Player; 2],
     ) -> Self {
         Self {
@@ -110,13 +112,17 @@ impl<'a> SetupWindow<'a> {
                             // Second column is separated into two rows with settings for each combo box
                             strip.strip(|builder| {
                                 builder.sizes(Size::remainder(), 2).vertical(|mut strip| {
-                                    for participant in self.selected_participants.iter() {
+                                    for idx in 0..self.selected_participants.len() {
                                         strip.cell(|ui| {
                                             ui.vertical_centered(|ui| {
-                                                self.players_setups
-                                                    .get_mut(participant)
-                                                    .expect("Must be a correct participant type!")
-                                                    .show(ui);
+                                                // update view if participant was updated too
+                                                let (participant, setup) =
+                                                    &mut self.selected_participants[idx];
+                                                if setup.participant() != *participant {
+                                                    *setup =
+                                                        create_participant_setup(&*participant);
+                                                }
+                                                setup.show(ui);
                                                 ui.separator();
                                             });
                                         });
@@ -150,14 +156,14 @@ impl<'a> SetupWindow<'a> {
 
     fn create_combo_box(&mut self, ui: &mut Ui, id: &str, idx: usize) {
         assert!(idx < 2);
-        let player = &mut self.selected_participants[idx];
+        let (participant, setup) = &mut self.selected_participants[idx];
         egui::ComboBox::from_id_source(id)
-            .selected_text(player.to_string())
+            .selected_text(participant.to_string())
             .show_ui(ui, |ui| {
-                ui.selectable_value(player, Participant::Human, "Human");
-                ui.selectable_value(player, Participant::Random, "Random");
-                ui.selectable_value(player, Participant::AlphaBeta, "AlphaBeta");
-                ui.selectable_value(player, Participant::Mcts, "MCTS");
+                ui.selectable_value(participant, Participant::Human, "Human");
+                ui.selectable_value(participant, Participant::Random, "Random");
+                ui.selectable_value(participant, Participant::AlphaBeta, "AlphaBeta");
+                ui.selectable_value(participant, Participant::Mcts, "MCTS");
             });
     }
 
@@ -263,12 +269,13 @@ impl<'a> SetupWindow<'a> {
     }
 
     fn assign_players(&mut self) {
-        let player = |p: &Participant| {
-            let agent = self
-                .players_setups
-                .get(p)
-                .expect("Must be a valid participant!")
-                .create_participant();
+        let player = |(p, s): &(Participant, Box<dyn ParticipantSetup>)| {
+            // let agent = self
+            //     .players_setups
+            //     .get(p)
+            //     .expect("Must be a valid participant!")
+            //     .create_agent();
+            let agent = s.create_agent();
             let typ = p.to_player_type();
             Player { typ, agent }
         };

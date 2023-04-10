@@ -23,7 +23,7 @@ use onitama_game::game::{
 };
 
 use crate::game_setup::participants::{
-    AlphaBetaSetup, HumanSetup, MctsSetup, ParticipantSetup, RandomSetup,
+    create_participant_setup, AlphaBetaSetup, HumanSetup, MctsSetup, ParticipantSetup, RandomSetup,
 };
 use crate::game_setup::setup_window::SetupWindow;
 use crate::player::{Participant, Player, PlayerType};
@@ -35,8 +35,7 @@ const BOARD_PANEL_WIDTH: f32 = 930.;
 const PADDING: f32 = 15.;
 const MOVE_CARD_CELL_SIZE: f32 = 32.; // to make 160 pixel total
 
-pub type PlayersSetups = HashMap<Participant, Box<dyn ParticipantSetup>>;
-pub type PlayersEvaluations = HashMap<Participant, Box<dyn ParticipantSetup>>;
+pub type ParticipantsSetups = HashMap<Participant, Box<dyn ParticipantSetup>>;
 
 pub struct Onitama {
     debug: bool,
@@ -57,9 +56,9 @@ pub struct Onitama {
     show_game_setup: bool,
     setup_selected_cards: [Option<Card>; 5],
     should_start_new_game: bool,
-    selected_participants: [Participant; 2],
+    selected_participants: [(Participant, Box<dyn ParticipantSetup>); 2],
     players: [Player; 2],
-    players_setups: PlayersSetups,
+    participants_setups: ParticipantsSetups,
     mov_rx: Option<Receiver<(DoneMove, f64)>>,
     do_ai_move_generation: bool,
     evaluation_score: f64,
@@ -86,7 +85,17 @@ impl Onitama {
             agent: Box::new(Mcts::default()),
         };
         let players = [red_player, blue_player];
-        let selected_participants = [Participant::Human, Participant::Mcts];
+        let participants_setups = Self::configure_participants_setups();
+        let selected_participants = [
+            (
+                Participant::Human,
+                create_participant_setup(&Participant::Human),
+            ),
+            (
+                Participant::Mcts,
+                create_participant_setup(&Participant::Mcts),
+            ),
+        ];
 
         Self {
             debug,
@@ -111,15 +120,15 @@ impl Onitama {
             setup_selected_cards: [None, None, None, None, None],
             should_start_new_game: false,
             selected_participants,
-            players_setups: Self::configure_player_setups(),
+            participants_setups,
             mov_rx: None,
             do_ai_move_generation: true,
             evaluation_score: 0.,
         }
     }
 
-    fn configure_player_setups() -> PlayersSetups {
-        let mut players_setups: PlayersSetups = HashMap::new();
+    fn configure_participants_setups() -> ParticipantsSetups {
+        let mut players_setups: ParticipantsSetups = HashMap::new();
         players_setups.insert(Participant::Human, Box::new(HumanSetup::default()));
         players_setups.insert(Participant::Random, Box::new(RandomSetup::default()));
         players_setups.insert(Participant::AlphaBeta, Box::new(AlphaBetaSetup::default()));
@@ -195,6 +204,8 @@ impl Onitama {
 
                     let game_state = self.game_state.clone();
 
+                    // TODO: need to close the thread when calculation happens
+                    // but setup changes
                     thread::spawn(move || {
                         let mov = game_state.agent_generate_move();
                         if let Err(e) = mov_tx.send(mov) {
@@ -439,6 +450,7 @@ impl Onitama {
         self.move_result = None;
         self.end_game = false;
         self.evaluation_score = 0.;
+        self.mov_rx = None;
     }
 
     fn history_widget(&self, ui: &mut Ui) {
@@ -532,7 +544,7 @@ impl App for Onitama {
             &mut self.setup_selected_cards,
             &mut self.deck,
             &mut self.selected_participants,
-            &mut self.players_setups,
+            &mut self.participants_setups,
             &mut self.players,
         )
         .show_setup(
