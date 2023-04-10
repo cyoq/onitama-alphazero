@@ -9,6 +9,7 @@ pub mod game_config;
 pub mod game_setup;
 pub mod image;
 pub mod move_card;
+pub mod move_history;
 pub mod onitama;
 pub mod player;
 pub mod selected_card;

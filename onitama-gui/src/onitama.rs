@@ -4,8 +4,8 @@ use std::thread;
 
 use eframe::{epaint::ahash::HashMap, App, CreationContext};
 use egui::{
-    Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Hyperlink,
-    Label, RichText, SidePanel, Ui,
+    Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Grid,
+    Hyperlink, Label, Layout, RichText, ScrollArea, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
 use onitama_game::ai::human_gui::HumanGui;
@@ -23,7 +23,8 @@ use onitama_game::game::{
 
 use crate::game_setup::participants::{create_participant_setup, ParticipantSetup};
 use crate::game_setup::setup_window::SetupWindow;
-use crate::player::{Participant, Player, PlayerType};
+use crate::player::Participant;
+use crate::player::{Player, PlayerType};
 use crate::selected_card::SelectedCard;
 use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
 
@@ -346,13 +347,18 @@ impl Onitama {
             |ui| {
                 self.utility_widget(ui);
                 ui.add(egui::Separator::default().grow(8.0));
-                self.history_widget(ui);
+                self.move_history_widget(ui);
+                self.footer(ui);
             },
         );
     }
 
     fn utility_widget(&mut self, ui: &mut Ui) {
         ui.vertical_centered(|ui| {
+            ui.add(Label::new(
+                RichText::new("Controls").text_style(egui::TextStyle::Heading),
+            ));
+
             let start_game = ui.add(Button::new(
                 RichText::new("Start a new game").text_style(egui::TextStyle::Body),
             ));
@@ -381,10 +387,13 @@ impl Onitama {
                 RichText::new("Start a tournament").text_style(egui::TextStyle::Body),
             ));
 
-            if start_tournament.clicked() {}
+            if start_tournament.clicked() {
+                tracing::warn!("TODO");
+            }
         });
 
         ui.add_space(PADDING);
+        ui.separator();
 
         ui.vertical_centered(|ui| {
             ui.add(Label::new(
@@ -393,7 +402,7 @@ impl Onitama {
         });
         ui.add_space(PADDING);
 
-        // Add labels for the statistics
+        // Add labels for the evaluation
         let eval_color = if self.evaluation_score < 0. {
             Color32::BLUE
         } else if self.evaluation_score == 0. {
@@ -404,6 +413,86 @@ impl Onitama {
         ui.label(
             RichText::new(format!("Evaluation Score: {}", self.evaluation_score)).color(eval_color),
         );
+
+        ui.add_space(PADDING);
+    }
+
+    fn clear_game(&mut self) {
+        self.game_state.clear();
+        self.selected_card = SelectedCard::default();
+        self.selected_piece = None;
+        self.allowed_moves = [[false; 5]; 5];
+        self.human_done_move = None;
+        self.last_played_move = None;
+        self.move_result = None;
+        self.end_game = false;
+        self.evaluation_score = 0.;
+        self.mov_rx = None;
+    }
+
+    fn move_history_widget(&self, ui: &mut Ui) {
+        let values = vec![
+            (PlayerColor::Blue, "Crab", "a5", "b4"),
+            (PlayerColor::Red, "Tiger", "a1", "a3"),
+            (PlayerColor::Blue, "Elephant", "d5", "e4"),
+        ];
+
+        ui.vertical_centered_justified(|ui| {
+            ui.add_space(PADDING);
+
+            ui.add(Label::new(
+                RichText::new("Move history").text_style(egui::TextStyle::Heading),
+            ));
+
+            ui.add_space(PADDING);
+            ui.separator();
+
+            // Vertical scroll enabled
+            let scroll = ScrollArea::new([false, true]).auto_shrink([false, true]);
+            scroll.show(ui, |ui| {
+                Grid::new("move_history_grid")
+                    .num_columns(1)
+                    .spacing([40., 40.])
+                    .striped(true)
+                    .show(ui, |ui| {
+                        for value in values {
+                            let title = format!("▶ {} {}-{}", value.1, value.2, value.3);
+                            let color = match value.0 {
+                                PlayerColor::Red => Color32::RED,
+                                PlayerColor::Blue => Color32::BLUE,
+                            };
+                            ui.colored_label(color, title);
+
+                            ui.add_space(PADDING);
+                            ui.end_row();
+                            // ui.separator();
+                        }
+                    });
+            });
+
+            ui.add_space(PADDING);
+        });
+
+        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+            let save_game = ui.add(Button::new(
+                RichText::new("Save game").text_style(egui::TextStyle::Body),
+            ));
+
+            if save_game.clicked() {
+                tracing::warn!("TODO");
+            }
+
+            let load_game = ui.add(Button::new(
+                RichText::new("Load game").text_style(egui::TextStyle::Body),
+            ));
+
+            if load_game.clicked() {
+                tracing::warn!("TODO");
+            }
+        });
+    }
+
+    fn footer(&self, ui: &mut Ui) {
         ui.add_space(PADDING);
 
         // Add footer with links
@@ -421,27 +510,6 @@ impl Onitama {
             ui.add_space(10.);
         });
         ui.add_space(PADDING);
-    }
-
-    fn clear_game(&mut self) {
-        self.game_state.clear();
-        self.selected_card = SelectedCard::default();
-        self.selected_piece = None;
-        self.allowed_moves = [[false; 5]; 5];
-        self.human_done_move = None;
-        self.last_played_move = None;
-        self.move_result = None;
-        self.end_game = false;
-        self.evaluation_score = 0.;
-        self.mov_rx = None;
-    }
-
-    fn history_widget(&self, ui: &mut Ui) {
-        ui.vertical_centered_justified(|ui| {
-            ui.add(Label::new(
-                RichText::new("History").text_style(egui::TextStyle::Heading),
-            ));
-        });
     }
 
     fn move_card_to_ui(&mut self, ui: &mut Ui, card: &Card) {
