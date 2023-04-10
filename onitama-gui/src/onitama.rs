@@ -260,10 +260,11 @@ impl Onitama {
 
                         self.do_ai_move_generation = true;
                     }
+
+                    ctx.request_repaint();
                 }
             }
         }
-        ctx.request_repaint();
     }
 
     pub fn update_text(&mut self) {
@@ -481,7 +482,7 @@ impl Onitama {
             // control buttons
             ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
                 let save_game = ui.add(Button::new(
-                    RichText::new("Save game").text_style(egui::TextStyle::Body),
+                    RichText::new("Save the game").text_style(egui::TextStyle::Body),
                 ));
 
                 if save_game.clicked() {
@@ -489,7 +490,7 @@ impl Onitama {
                 }
 
                 let load_game = ui.add(Button::new(
-                    RichText::new("Load game").text_style(egui::TextStyle::Body),
+                    RichText::new("Load the game").text_style(egui::TextStyle::Body),
                 ));
 
                 if load_game.clicked() {
