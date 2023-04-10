@@ -23,6 +23,7 @@ use onitama_game::game::{
 
 use crate::game_setup::participants::{create_participant_setup, ParticipantSetup};
 use crate::game_setup::setup_window::SetupWindow;
+use crate::game_setup::tournament::TournamentSetup;
 use crate::move_history::{MoveHistory, MoveInformation};
 use crate::player::Participant;
 use crate::player::{Player, PlayerType};
@@ -59,6 +60,7 @@ pub struct Onitama {
     do_ai_move_generation: bool,
     evaluation_score: f64,
     move_history: MoveHistory,
+    tournament_setup: TournamentSetup,
 }
 
 impl Onitama {
@@ -120,6 +122,7 @@ impl Onitama {
             do_ai_move_generation: true,
             evaluation_score: 0.,
             move_history: MoveHistory::new([Participant::Human, Participant::Mcts]),
+            tournament_setup: TournamentSetup::default(),
         }
     }
 
@@ -432,7 +435,7 @@ impl Onitama {
             ui.add_space(PADDING);
 
             let start_tournament = ui.add(Button::new(
-                RichText::new("Start a tournament").text_style(egui::TextStyle::Body),
+                RichText::new("About the game").text_style(egui::TextStyle::Body),
             ));
 
             if start_tournament.clicked() {
@@ -667,6 +670,7 @@ impl App for Onitama {
             &mut self.deck,
             &mut self.selected_participants,
             &mut self.players,
+            &mut self.tournament_setup,
         )
         .show_setup(
             ctx,

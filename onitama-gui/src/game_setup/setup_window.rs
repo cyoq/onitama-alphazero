@@ -11,7 +11,10 @@ use crate::{
     player::{Participant, Player},
 };
 
-use super::participants::{create_participant_setup, ParticipantSetup};
+use super::{
+    participants::{create_participant_setup, ParticipantSetup},
+    tournament::TournamentSetup,
+};
 
 const MOVE_CARD_CELL_SIZE: f32 = 18.;
 const SETUP_WINDOW_WIDTH: f32 = 900.;
@@ -46,6 +49,7 @@ pub struct SetupWindow<'a> {
     deck: &'a mut Deck,
     selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
     players: &'a mut [Player; 2],
+    tournament_setup: &'a mut TournamentSetup,
 }
 
 impl<'a> SetupWindow<'a> {
@@ -54,12 +58,14 @@ impl<'a> SetupWindow<'a> {
         deck: &'a mut Deck,
         selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
         players: &'a mut [Player; 2],
+        tournament_setup: &'a mut TournamentSetup,
     ) -> Self {
         Self {
             selected_cards,
             deck,
             selected_participants,
             players,
+            tournament_setup,
         }
     }
 
@@ -85,6 +91,9 @@ impl<'a> SetupWindow<'a> {
                 ui.separator();
 
                 self.show_bottom_panel(ui, should_start_new_game);
+                ui.separator();
+
+                self.tournament_setup.show(ui);
             });
     }
 
