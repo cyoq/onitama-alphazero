@@ -266,11 +266,6 @@ impl<'a> SetupWindow<'a> {
 
     fn assign_players(&mut self) {
         let player = |(p, s): &(Participant, Box<dyn ParticipantSetup>)| {
-            // let agent = self
-            //     .players_setups
-            //     .get(p)
-            //     .expect("Must be a valid participant!")
-            //     .create_agent();
             let agent = s.create_agent();
             let typ = p.to_player_type();
             Player { typ, agent }
