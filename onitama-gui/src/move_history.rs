@@ -55,7 +55,7 @@ impl MoveHistory {
             datetime
         );
         let path = dir.join(filename);
-        fs::create_dir(dir)?;
+        fs::create_dir_all(dir)?;
         self.save_to(&path)?;
         Ok(())
     }
