@@ -8,6 +8,7 @@ pub struct TournamentSetup {
     pub win_2: u32,
     // A flag to save games
     pub save_games: bool,
+    pub is_tournament_on: bool,
 }
 
 impl Default for TournamentSetup {
@@ -17,6 +18,7 @@ impl Default for TournamentSetup {
             win_1: 0,
             win_2: 0,
             save_games: false,
+            is_tournament_on: false,
         }
     }
 }
@@ -40,7 +42,7 @@ impl TournamentSetup {
             let start_tournament_btn = ui.button("Start a tournament");
 
             if start_tournament_btn.clicked() {
-                tracing::warn!("TODO");
+                self.is_tournament_on = true;
             }
 
             ui.checkbox(&mut self.save_games, "Save tournament games");
