@@ -482,7 +482,9 @@ impl Onitama {
                 ));
 
                 if save_game.clicked() {
-                    tracing::warn!("TODO");
+                    if let Err(e) = self.move_history.save() {
+                        tracing::error!("Error occurred while saving the game: {}", e);
+                    };
                 }
 
                 let load_game = ui.add(Button::new(

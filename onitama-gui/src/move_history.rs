@@ -1,4 +1,8 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    fs, io,
+    ops::{Deref, DerefMut},
+    path::PathBuf,
+};
 
 use onitama_game::game::{
     card::Card, move_result::MoveResult, player_color::PlayerColor, r#move::Move, state::State,
@@ -40,7 +44,28 @@ impl MoveHistory {
         self.history.clear();
     }
 
-    pub fn save(&self) -> Result<(), String> {
+    pub fn save(&self) -> io::Result<()> {
+        let dir = PathBuf::from("./saves");
+        let now = chrono::offset::Local::now();
+        let datetime = now.format("%Y%m%y_%H%M%S");
+        let filename = format!(
+            "{}_vs_{}_{}.json",
+            self.red_player.to_string().to_lowercase(),
+            self.blue_player.to_string().to_lowercase(),
+            datetime
+        );
+        let path = dir.join(filename);
+        fs::create_dir(dir)?;
+        self.save_to(&path)?;
+        Ok(())
+    }
+
+    pub fn save_to(&self, path: &PathBuf) -> io::Result<()> {
+        fs::write(
+            path,
+            serde_json::to_string_pretty(&self)
+                .expect("Serde must serialize move history with no problem"),
+        )?;
         Ok(())
     }
 }
