@@ -1,13 +1,15 @@
 use std::path::PathBuf;
 use std::sync::mpsc::{sync_channel, Receiver};
 use std::thread;
+use std::time::Duration;
 
 use eframe::{epaint::ahash::HashMap, App, CreationContext};
 use egui::{
-    Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Grid,
-    Hyperlink, Label, Layout, RichText, ScrollArea, SidePanel, Ui,
+    Align, Button, CentralPanel, Color32, Context, Direction, FontData, FontDefinitions,
+    FontFamily, Grid, Hyperlink, Label, Layout, RichText, ScrollArea, SidePanel, Ui,
 };
 use egui_extras::{Size, StripBuilder};
+use egui_toast::{Toast, ToastOptions, Toasts};
 use onitama_game::ai::human_gui::HumanGui;
 use onitama_game::ai::mcts::Mcts;
 use onitama_game::game::piece::{Piece, PieceKind};
@@ -389,14 +391,14 @@ impl Onitama {
             });
     }
 
-    fn utility_panel(&mut self, ui: &mut Ui) {
+    fn utility_panel(&mut self, ui: &mut Ui, ctx: &Context) {
         ui.with_layout(
             egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
             |ui| {
                 self.utility_widget(ui);
                 // ui.add(egui::Separator::default().grow(8.0));
                 self.footer(ui);
-                self.move_history_widget(ui);
+                self.move_history_widget(ui, ctx);
             },
         );
     }
@@ -465,7 +467,7 @@ impl Onitama {
         ui.add_space(PADDING);
     }
 
-    fn move_history_widget(&self, ui: &mut Ui) {
+    fn move_history_widget(&self, ui: &mut Ui, ctx: &Context) {
         ui.vertical_centered_justified(|ui| {
             ui.add_space(PADDING);
 
@@ -481,11 +483,25 @@ impl Onitama {
                     RichText::new("Save the game").text_style(egui::TextStyle::Body),
                 ));
 
+                let mut toasts = Toasts::new()
+                    .anchor((1800., 800.))
+                    .direction(Direction::RightToLeft)
+                    .align_to_end(true);
+
                 if save_game.clicked() {
-                    if let Err(e) = self.move_history.save() {
-                        tracing::error!("Error occurred while saving the game: {}", e);
+                    match self.move_history.save() {
+                        Ok(_) => {
+                            toasts.add(Toast {
+                                kind: egui_toast::ToastKind::Success,
+                                text: "The game was successfully saved".into(),
+                                options: ToastOptions::with_duration(Duration::from_secs(5)),
+                            });
+                        }
+                        Err(e) => tracing::error!("Error occurred while saving the game: {}", e),
                     };
                 }
+
+                toasts.show(ctx);
 
                 let load_game = ui.add(Button::new(
                     RichText::new("Load the game").text_style(egui::TextStyle::Body),
@@ -685,7 +701,7 @@ impl App for Onitama {
             .max_width(UTILITY_PANEL_WIDTH)
             .min_width(UTILITY_PANEL_WIDTH)
             .resizable(false)
-            .show(ctx, |ui| self.utility_panel(ui));
+            .show(ctx, |ui| self.utility_panel(ui, ctx));
 
         CentralPanel::default().show(ctx, |ui| self.deck_panel(ui));
     }
