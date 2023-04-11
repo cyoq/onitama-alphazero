@@ -121,7 +121,7 @@ impl Onitama {
             mov_rx: None,
             do_ai_move_generation: true,
             evaluation_score: 0.,
-            move_history: MoveHistory::new([Participant::Human, Participant::Mcts]),
+            move_history: MoveHistory::new(Participant::Human, Participant::Mcts),
             tournament_setup: TournamentSetup::default(),
         }
     }
@@ -199,9 +199,7 @@ impl Onitama {
                         // Get a previous player color
                         player_color: self.game_state.curr_player_color.enemy(),
                         ply: self.move_history.len() + 1,
-                        // these will be determined later in update loop
-                        is_win: false,
-                        is_capture: false,
+                        move_result: self.move_result.expect("MoveResult cannot be empty here"),
                     });
 
                     self.human_done_move = None;
@@ -251,9 +249,7 @@ impl Onitama {
                             // Get a previous player color
                             player_color: self.game_state.curr_player_color.enemy(),
                             ply: self.move_history.len() + 1,
-                            // these will be determined later in update loop
-                            is_win: false,
-                            is_capture: false,
+                            move_result: self.move_result.expect("MoveResult cannot be empty here"),
                         });
 
                         self.mov_rx = None;
@@ -519,10 +515,14 @@ impl Onitama {
                                 card_name,
                                 from,
                                 to,
-                                if mov_info.is_capture { "❌" } else { "" }
+                                if mov_info.move_result == MoveResult::Capture {
+                                    "❌"
+                                } else {
+                                    ""
+                                }
                             );
 
-                            if mov_info.is_win {
+                            if mov_info.move_result.is_win() {
                                 title += &format!(" ({} won!)", mov_info.player_color.to_string());
                             }
 
@@ -628,6 +628,10 @@ impl App for Onitama {
                 self.deck.clone(),
             );
             self.clear_game();
+            self.move_history.update_players(
+                self.selected_participants[0].0.clone(),
+                self.selected_participants[1].0.clone(),
+            );
             // Do not make a new game
             self.should_start_new_game = false;
         }
@@ -641,27 +645,17 @@ impl App for Onitama {
         // TODO: this should not be in the update
         if let Some(result) = self.move_result {
             match result {
-                MoveResult::Capture => {
-                    if let Some(h) = self.move_history.last_mut() {
-                        h.is_capture = true;
-                    }
-                }
                 MoveResult::RedWin => {
                     self.end_game = true;
                     self.board_panel_text = ("Red won!".to_string(), Color32::RED);
                     self.card_panel_text = ("".to_string(), Color32::BLACK);
-                    if let Some(h) = self.move_history.last_mut() {
-                        h.is_win = true;
-                    }
                 }
                 MoveResult::BlueWin => {
                     self.end_game = true;
                     self.board_panel_text = ("Blue won!".to_string(), Color32::BLUE);
                     self.card_panel_text = ("".to_string(), Color32::BLACK);
-                    if let Some(h) = self.move_history.last_mut() {
-                        h.is_win = true;
-                    }
                 }
+                MoveResult::Capture => (),
                 MoveResult::InProgress => (),
             }
         }

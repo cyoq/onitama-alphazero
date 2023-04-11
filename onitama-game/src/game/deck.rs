@@ -1,6 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use rand::{seq::SliceRandom, thread_rng};
+use serde::{Deserialize, Serialize};
 
 use crate::common::get_bit;
 
@@ -16,7 +17,7 @@ pub const BLUE_CARD1: usize = 2;
 pub const BLUE_CARD2: usize = 3;
 pub const NEUTRAL: usize = 4;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Deck {
     pub cards: [Card; 5],
 }

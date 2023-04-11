@@ -1,4 +1,5 @@
 use onitama_game::ai::agent::Agent;
+use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum PlayerType {
@@ -11,7 +12,7 @@ pub struct Player {
     pub agent: Box<dyn Agent>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
 pub enum Participant {
     Human,
     Random,

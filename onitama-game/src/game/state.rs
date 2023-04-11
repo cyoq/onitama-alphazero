@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     common::{clear_bit, from_2d_to_1d, get_bit, set_bit},
     game::card::CARD_NAMES,
@@ -46,7 +48,7 @@ pub const RED_PAWNS_SP: u32 = 0x0000_0D80;
 pub const BLUE_TEMPLE: usize = 2;
 pub const RED_TEMPLE: usize = 22;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct State {
     pub deck: Deck,
     pub kings: [u32; 2],

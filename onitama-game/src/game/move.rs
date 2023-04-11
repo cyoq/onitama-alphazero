@@ -1,5 +1,7 @@
 use std::{error::Error, fmt::Display};
 
+use serde::{Deserialize, Serialize};
+
 use crate::common::from_2d_to_1d;
 
 use super::piece::PieceKind;
@@ -15,7 +17,7 @@ impl Display for NotationError {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Serialize, Deserialize)]
 pub struct Move {
     pub from: u32,
     pub to: u32,

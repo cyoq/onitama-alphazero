@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use super::player_color::PlayerColor;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum PieceKind {
     Pawn,
     King,

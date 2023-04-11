@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use super::player_color::PlayerColor;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Card {
     /// The configuration of the card
     pub positions: u32,
