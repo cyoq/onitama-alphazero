@@ -90,13 +90,13 @@ impl MctsArena {
             node_idx = self.select(&self.arena[node_idx]);
 
             if let Some(mov) = self.arena[node_idx].mov {
-                // during the selection we must not see a root node
+                // during a move phase we must not see a root node
+                // therefore unwrap is appropriate
                 let parent = self.arena[node_idx].parent.unwrap();
 
                 let move_result = game_state.state.make_move(
                     &mov.mov,
-                    // game_state.player_color,
-                    // a move makes a parent figure
+                    // a move makes a parent color
                     self.arena[parent].player_color,
                     mov.used_card_idx,
                 );
@@ -127,11 +127,10 @@ impl MctsArena {
         self.back_propagate(node_idx, reward);
     }
 
-    /// Selects the best or random child
-    /// 1. Get children and visits count
-    /// 2. Check if parent was visited enough times to be able to give the best child
-    ///     It is also necessary, since to calculate UCT, we need to gather some data
-    /// 3. Select the best child using UCT score by returning index of it
+    /// Selects the best child by UCT score
+    /// 1. Get parent's children
+    /// 2. Select the best child using UCT score
+    /// 3. Return the best child's index
     fn select(&self, parent: &MctsNode) -> usize {
         let children = &parent.children;
 
@@ -157,12 +156,11 @@ impl MctsArena {
     }
 
     /// Expands the node for the new children
-    /// 1. Iterate over cards
-    /// 2. Get allowed moves per card
-    /// 3. Create a new child with the move
-    /// 4. Add child to the arena
-    /// 5. Add child references to the parent
-    /// 6. Set parent to be expanded node
+    /// 1. Iterate over all allowed moves
+    /// 2. Create a new child with one legal move
+    /// 3. Add the child to the arena
+    /// 4. Add the child reference to the parent
+    /// 5. Set parent to be expanded node
     pub fn expand(&mut self, parent: usize, cloned_state: &MctsState) {
         // Player color is switched, because next layer will represent
         // the enemy made moves
@@ -185,7 +183,7 @@ impl MctsArena {
         self.arena[parent].is_expanded = true;
     }
 
-    /// Simulate the game with random
+    /// Simulate the game using random moves
     pub fn simulate(&self, mut mcts_state: MctsState, reward_color: PlayerColor) -> f32 {
         let mut move_result = mcts_state.state.current_state();
 
@@ -203,11 +201,12 @@ impl MctsArena {
                 .state
                 .generate_all_legal_moves(mcts_state.player_color);
 
-            // There is a possibility that randomly chosen card
-            // will not have legal moves.
-            // We should fall back to the second card
+            // There is a possibility that there is no
+            // legal moves at all.
+            // For this case rules apply that we should choose
+            // a card to swap with neutral and skip the turn
             if moves.len() == 0 {
-                // If no move at all, pass the turn with random card
+                // If no move at all, skip the turn with random card
                 let card_idx = match mcts_state.player_color {
                     PlayerColor::Red => rng.gen_range(0..2),
                     PlayerColor::Blue => rng.gen_range(2..4),
