@@ -106,6 +106,7 @@ pub struct MctsSetup {
     pub search_time: u64,
     pub min_node_visits: u32,
     pub exploration_c: f32,
+    pub max_playouts: u32,
 }
 
 impl Default for MctsSetup {
@@ -114,6 +115,7 @@ impl Default for MctsSetup {
             search_time: 1000,
             min_node_visits: 5,
             exploration_c: 2f32.sqrt(),
+            max_playouts: 5000,
         }
     }
 }
@@ -135,6 +137,11 @@ impl ParticipantSetup for MctsSetup {
 
             ui.label("Search time(ms): ");
             ui.add(Slider::new(&mut self.search_time, 100..=15000));
+
+            ui.add_space(20.);
+
+            ui.label("Max playouts: ");
+            ui.add(Slider::new(&mut self.max_playouts, 1..=15000));
         });
     }
 
@@ -143,6 +150,7 @@ impl ParticipantSetup for MctsSetup {
             search_time: Duration::from_millis(self.search_time),
             min_node_visits: self.min_node_visits,
             exploration_c: self.exploration_c,
+            max_playouts: self.max_playouts,
         })
     }
 

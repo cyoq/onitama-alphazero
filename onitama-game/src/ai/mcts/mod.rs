@@ -13,6 +13,7 @@ pub struct Mcts {
     pub search_time: Duration,
     pub min_node_visits: u32,
     pub exploration_c: f32,
+    pub max_playouts: u32,
 }
 
 impl Default for Mcts {
@@ -21,6 +22,7 @@ impl Default for Mcts {
             search_time: Duration::from_secs(1),
             exploration_c: 2f32.sqrt(),
             min_node_visits: 5,
+            max_playouts: 5000,
         }
     }
 }
@@ -33,8 +35,10 @@ impl Agent for Mcts {
             game_state.curr_player_color,
             self.min_node_visits,
             self.exploration_c,
+            self.max_playouts,
         );
         let mov = arena.search();
+
         // println!("Tree: {}", arena.debug_tree());
         println!("Playouts: {}", arena.playouts);
         mov

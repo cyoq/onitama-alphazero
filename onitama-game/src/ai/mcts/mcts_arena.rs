@@ -20,6 +20,7 @@ pub struct MctsArena {
     pub min_node_visits: u32,
     pub exploration_c: f32,
     pub playouts: u32,
+    pub max_playouts: u32,
 }
 
 impl MctsArena {
@@ -29,6 +30,7 @@ impl MctsArena {
         player_color: PlayerColor,
         min_node_visits: u32,
         exploration_c: f32,
+        max_playouts: u32,
     ) -> Self {
         // root is always first in the arena
         let root = MctsNode::new(None, 0, None, player_color);
@@ -44,6 +46,7 @@ impl MctsArena {
             min_node_visits,
             exploration_c,
             playouts: 0,
+            max_playouts,
         }
     }
 
@@ -53,7 +56,7 @@ impl MctsArena {
     pub fn search(&mut self) -> (DoneMove, f64) {
         let now = Instant::now();
 
-        while now.elapsed() < self.search_time {
+        while now.elapsed() < self.search_time && self.playouts < self.max_playouts {
             self.playout();
             self.playouts += 1;
         }
@@ -384,7 +387,7 @@ mod tests {
         let deck = deck();
         let search_time = Duration::from_secs(1);
         let state = State::with_deck(deck);
-        MctsArena::new(state, search_time, PlayerColor::Red, 5, 2f32.sqrt())
+        MctsArena::new(state, search_time, PlayerColor::Red, 5, 2f32.sqrt(), 5000)
     }
 
     #[test]
@@ -464,7 +467,7 @@ mod tests {
         let mut state = State::with_deck(deck);
         state.kings[PlayerColor::Red as usize] = from_2d_to_bitboard((1, 3));
 
-        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2f32.sqrt());
+        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2f32.sqrt(), 5000);
 
         let mov = arena.search().0;
         println!("{}", arena.debug_tree());
@@ -500,7 +503,7 @@ mod tests {
         state.pawns[PlayerColor::Red as usize] =
             from_2d_to_bitboard((0, 3)) | from_2d_to_bitboard((1, 4));
 
-        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2.0);
+        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2.0, 5000);
 
         let (mov, _eval) = arena.search();
         // println!("{}", arena.debug_tree());
@@ -534,7 +537,7 @@ mod tests {
         state.pawns[PlayerColor::Red as usize] =
             from_2d_to_bitboard((2, 3)) | from_2d_to_bitboard((3, 2));
 
-        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 1, 1.);
+        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 1, 1., 5000);
 
         let (mov, _eval) = arena.search();
         // println!("{}", arena.debug_tree());
