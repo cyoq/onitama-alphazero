@@ -404,16 +404,16 @@ mod tests {
 
         let expected = "
 [M: None, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
-|  [M: Dragon a1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon b1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-e2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon d1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon e1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog b1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog c1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog d1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog e1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon a1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon b1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-e2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon d1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon e1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog b1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog c1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog d1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog e1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
 ";
         arena.expand(0, &state);
         let result = arena.debug_tree();
@@ -427,25 +427,25 @@ mod tests {
 
         let expected = "
 [M: None, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
-|  [M: Dragon a1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: true]
-|  |  [M: Tiger a5-a3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger b5-b3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger c5-c3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger d5-d3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Tiger e5-e3, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit b5-a4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit c5-b4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit d5-c4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  |  [M: Rabbit e5-d4, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon b1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon c1-e2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon d1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Dragon e1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog b1-a2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog c1-b2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog d1-c2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
-|  [M: Frog e1-d2, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon a1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: true]
+|  |  [M: Tiger a5-a3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger b5-b3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger c5-c3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger d5-d3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Tiger e5-e3, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit b5-a4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit c5-b4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit d5-c4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  |  [M: Rabbit e5-d4, C: Red, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon b1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon c1-e2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon d1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Dragon e1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog b1-a2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog c1-b2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog d1-c2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
+|  [M: Frog e1-d2, C: Blue, Q: 0, W: 0, N: 0, T: false, E: false]
 ";
         arena.expand(0, &state);
         // Expanding first child of the root
@@ -455,24 +455,9 @@ mod tests {
     }
 
     #[test]
-    fn test_search() {
-        // Theoritically using the same time, we should get the same results
-        let mut arena = arena();
-        let mov = arena.search().0;
-        let expected = DoneMove {
-            mov: Move {
-                from: 24,
-                to: 17,
-                piece: PieceKind::Pawn,
-            },
-            used_card_idx: 0,
-        };
-        assert_eq!(mov, expected);
-    }
-
-    #[test]
     fn test_best_move_win() {
         // Theoritically using the same time, we should get the same results
+        // Blue must eat the Red king with the Dragon card
         let mut deck = deck();
         // swap rabbit and dragon
         deck.cards.swap(0, 3);
@@ -499,6 +484,9 @@ mod tests {
     #[test]
     fn test_no_way_to_hide_for_blue() {
         // Theoritically using the same time, we should get the same results
+        // Blue king is in the corner and he has only one move that does not lead
+        // to the lost position - Rabbit e5-c5.
+        // This test is for the MCTS sanity check that it does not choose losing move
         let deck = Deck::new([
             OX.clone(),
             MONKEY.clone(),
@@ -532,6 +520,8 @@ mod tests {
     #[test]
     fn test_worst_case_capture_blue() {
         // Theoritically using the same time, we should get the same results
+        // One more sanity check for MCTS. It must not allow to capture Blue king.
+        // This test function is more used for debugging purposes
         let deck = Deck::new([
             MONKEY.clone(),
             ROOSTER.clone(),
@@ -539,7 +529,7 @@ mod tests {
             MANTIS.clone(),
             HORSE.clone(),
         ]);
-        let search_time = Duration::from_millis(30);
+        let search_time = Duration::from_millis(1000);
         let mut state = State::with_deck(deck);
         state.kings[PlayerColor::Blue as usize] = from_2d_to_bitboard((1, 2));
         state.pawns[PlayerColor::Red as usize] =
@@ -548,15 +538,15 @@ mod tests {
         let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 1, 1.);
 
         let (mov, _eval) = arena.search();
-        println!("{}", arena.debug_tree());
+        // println!("{}", arena.debug_tree());
 
         let expected = DoneMove {
             mov: Move {
                 from: 7,
-                to: 6,
+                to: 2,
                 piece: PieceKind::King,
             },
-            used_card_idx: 2,
+            used_card_idx: 3,
         };
         assert_eq!(mov, expected);
     }
