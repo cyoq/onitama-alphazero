@@ -94,6 +94,7 @@ impl ParticipantSetup for AlphaBetaSetup {
     fn create_agent(&self) -> Box<dyn Agent> {
         Box::new(AlphaBeta {
             max_depth: self.max_depth,
+            search_time: Duration::from_millis(self.search_time),
         })
     }
 

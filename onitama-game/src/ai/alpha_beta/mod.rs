@@ -1,5 +1,7 @@
 pub mod evaluation;
 
+use std::time::{Duration, Instant};
+
 use crate::game::{
     done_move::DoneMove, game_state::GameState, move_result::MoveResult, player_color::PlayerColor,
 };
@@ -11,6 +13,16 @@ use super::agent::Agent;
 #[derive(Debug, Clone)]
 pub struct AlphaBeta {
     pub max_depth: u8,
+    pub search_time: Duration,
+}
+
+impl Default for AlphaBeta {
+    fn default() -> Self {
+        Self {
+            max_depth: 6,
+            search_time: Duration::from_secs(1),
+        }
+    }
 }
 
 struct CalculationResult {
@@ -22,6 +34,7 @@ impl AlphaBeta {
     fn alpha_beta(
         &self,
         depth: u8,
+        max_depth: u8,
         mut alpha: i32,
         mut beta: i32,
         game_state: &mut GameState,
@@ -31,7 +44,7 @@ impl AlphaBeta {
         *positions += 1;
         let player_color = game_state.curr_player_color;
 
-        if depth == self.max_depth
+        if depth == max_depth
             || move_result == Some(MoveResult::BlueWin)
             || move_result == Some(MoveResult::RedWin)
         {
@@ -65,8 +78,15 @@ impl AlphaBeta {
                 let result = game_state.progress(done_move);
 
                 // go deeper the tree
-                let calc_result =
-                    self.alpha_beta(depth + 1, alpha, beta, game_state, Some(result), positions);
+                let calc_result = self.alpha_beta(
+                    depth + 1,
+                    max_depth,
+                    alpha,
+                    beta,
+                    game_state,
+                    Some(result),
+                    positions,
+                );
 
                 let score = calc_result.best_score;
 
@@ -115,16 +135,28 @@ impl Agent for AlphaBeta {
         let mut positions = 0;
 
         let mut game_state = game_state.clone();
-        let result = self.alpha_beta(
-            0,
-            std::i32::MIN,
-            std::i32::MAX,
-            &mut game_state,
-            None,
-            &mut positions,
-        );
+        let mut result = None;
 
+        let mut depth = 1;
+        let now = Instant::now();
+
+        while now.elapsed() < self.search_time && depth < self.max_depth {
+            result = Some(self.alpha_beta(
+                0,
+                depth,
+                std::i32::MIN,
+                std::i32::MAX,
+                &mut game_state,
+                None,
+                &mut positions,
+            ));
+            depth += 1;
+        }
+
+        println!("Last depth {}", depth);
         println!("Analyzed {} positions", positions);
+        // We must receive some kind of result
+        let result = result.unwrap();
         println!("Best score is {}", result.best_score);
 
         (
