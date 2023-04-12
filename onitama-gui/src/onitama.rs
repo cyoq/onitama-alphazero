@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::sync::mpsc::{sync_channel, Receiver};
-use std::thread;
+use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use eframe::{epaint::ahash::HashMap, App, CreationContext};
@@ -60,6 +60,8 @@ pub struct Onitama {
     players: [Player; 2],
     mov_rx: Option<Receiver<(DoneMove, f64)>>,
     do_ai_move_generation: bool,
+    // Needed to stop calculation when it is needed
+    move_generation_thread: Option<JoinHandle<()>>,
     evaluation_score: f64,
     move_history: MoveHistory,
     tournament_setup: TournamentSetup,
@@ -122,6 +124,7 @@ impl Onitama {
             selected_participants,
             mov_rx: None,
             do_ai_move_generation: true,
+            move_generation_thread: None,
             evaluation_score: 0.,
             move_history: MoveHistory::new(Participant::Human, Participant::Mcts),
             tournament_setup: TournamentSetup::default(),
@@ -216,14 +219,12 @@ impl Onitama {
 
                     let game_state = self.game_state.clone();
 
-                    // TODO: need to close the thread when calculation happens
-                    // but setup changes
-                    thread::spawn(move || {
+                    self.move_generation_thread = Some(thread::spawn(move || {
                         let mov = game_state.agent_generate_move();
                         if let Err(e) = mov_tx.send(mov) {
                             tracing::error!("Error sending a move: {}", e);
                         }
-                    });
+                    }));
                 }
 
                 if let Some(rx) = &self.mov_rx {
@@ -625,6 +626,11 @@ impl Onitama {
         self.evaluation_score = 0.;
         self.mov_rx = None;
         self.move_history.clear();
+        // TODO: still not ideal solution to stop the thread
+        if let Some(thread) = self.move_generation_thread.take() {
+            thread.join().unwrap();
+        }
+        self.move_generation_thread = None;
     }
 }
 
