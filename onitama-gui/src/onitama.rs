@@ -65,6 +65,7 @@ pub struct Onitama {
     evaluation_score: f64,
     move_history: MoveHistory,
     tournament_setup: TournamentSetup,
+    toasts: Toasts,
 }
 
 impl Onitama {
@@ -99,6 +100,11 @@ impl Onitama {
             ),
         ];
 
+        let toasts = Toasts::new()
+            .anchor((1800., 800.))
+            .direction(Direction::BottomUp)
+            .align_to_end(true);
+
         Self {
             debug,
             game_state: GameState::with_deck(
@@ -128,6 +134,7 @@ impl Onitama {
             evaluation_score: 0.,
             move_history: MoveHistory::new(Participant::Human, Participant::Mcts),
             tournament_setup: TournamentSetup::default(),
+            toasts,
         }
     }
 
@@ -399,7 +406,7 @@ impl Onitama {
                 self.utility_widget(ui);
                 // ui.add(egui::Separator::default().grow(8.0));
                 self.footer(ui);
-                self.move_history_widget(ui, ctx);
+                self.move_history_widget(ui);
             },
         );
     }
@@ -468,7 +475,7 @@ impl Onitama {
         ui.add_space(PADDING);
     }
 
-    fn move_history_widget(&self, ui: &mut Ui, ctx: &Context) {
+    fn move_history_widget(&mut self, ui: &mut Ui) {
         ui.vertical_centered_justified(|ui| {
             ui.add_space(PADDING);
 
@@ -484,15 +491,10 @@ impl Onitama {
                     RichText::new("Save the game").text_style(egui::TextStyle::Body),
                 ));
 
-                let mut toasts = Toasts::new()
-                    .anchor((1800., 800.))
-                    .direction(Direction::RightToLeft)
-                    .align_to_end(true);
-
                 if save_game.clicked() {
                     match self.move_history.save() {
                         Ok(_) => {
-                            toasts.add(Toast {
+                            self.toasts.add(Toast {
                                 kind: egui_toast::ToastKind::Success,
                                 text: "The game was successfully saved".into(),
                                 options: ToastOptions::with_duration(Duration::from_secs(5)),
@@ -501,8 +503,6 @@ impl Onitama {
                         Err(e) => tracing::error!("Error occurred while saving the game: {}", e),
                     };
                 }
-
-                toasts.show(ctx);
 
                 let load_game = ui.add(Button::new(
                     RichText::new("Load the game").text_style(egui::TextStyle::Body),
@@ -696,6 +696,8 @@ impl App for Onitama {
             &mut self.show_game_setup,
             &mut self.should_start_new_game,
         );
+
+        self.toasts.show(ctx);
 
         SidePanel::new(egui::panel::Side::Left, "board_panel")
             .max_width(BOARD_PANEL_WIDTH)
