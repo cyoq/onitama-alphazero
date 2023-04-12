@@ -60,15 +60,17 @@ impl MctsArena {
 
         let children = &self.arena[0].children;
 
-        // let best_child_idx = children
-        //     .iter()
-        //     .max_by_key(|&c| self.arena[*c].visits)
-        //     .expect("Must find the best child");
-
+        // Did not see any major difference between number of visits
+        // and the winrate
         let best_child_idx = children
             .iter()
-            .max_by(|&a, &b| self.arena[*a].winrate.total_cmp(&self.arena[*b].winrate))
+            .max_by_key(|&c| self.arena[*c].visits)
             .expect("Must find the best child");
+
+        // let best_child_idx = children
+        //     .iter()
+        //     .max_by(|&a, &b| self.arena[*a].winrate.total_cmp(&self.arena[*b].winrate))
+        //     .expect("Must find the best child");
 
         (
             self.arena[*best_child_idx]
@@ -116,7 +118,10 @@ impl MctsArena {
         }
 
         // 3. Simulate the game till the end
-        let reward = self.simulate(game_state, node_idx, self.arena[0].player_color);
+        // Reward color is dependent on the parent color, because
+        // the child is the next move from the parent
+        let parent = self.arena[node_idx].parent.unwrap_or(0);
+        let reward = self.simulate(game_state, self.arena[parent].player_color);
 
         // 4. Back propagate the result back to the root
         self.back_propagate(node_idx, reward);
@@ -181,12 +186,7 @@ impl MctsArena {
     }
 
     /// Simulate the game with random
-    pub fn simulate(
-        &self,
-        mut mcts_state: MctsState,
-        node_idx: usize,
-        reward_color: PlayerColor,
-    ) -> f32 {
+    pub fn simulate(&self, mut mcts_state: MctsState, reward_color: PlayerColor) -> f32 {
         let mut move_result = mcts_state.state.current_state();
 
         if move_result.is_win() {
@@ -194,6 +194,8 @@ impl MctsArena {
         }
 
         let mut rng = thread_rng();
+
+        let mut capture_reward = 0.;
 
         while !move_result.is_win() {
             // generate legal moves for the enemy
@@ -222,10 +224,18 @@ impl MctsArena {
                 .state
                 .make_move(&mov, mcts_state.player_color, used_card_idx);
 
+            // Added additional heuristics which most likely helps the search
+            if move_result == MoveResult::Capture && mcts_state.player_color == reward_color {
+                capture_reward -= 0.25;
+            } else if move_result == MoveResult::Capture && mcts_state.player_color != reward_color
+            {
+                capture_reward += 0.25;
+            }
+
             mcts_state.player_color.switch();
         }
 
-        self.reward(move_result, reward_color)
+        self.reward(move_result, reward_color) + capture_reward
     }
 
     pub fn reward(&self, move_result: MoveResult, reward_color: PlayerColor) -> f32 {
@@ -496,17 +506,17 @@ mod tests {
             HORSE.clone(),
             DRAGON.clone(),
         ]);
-        let search_time = Duration::from_millis(30);
+        let search_time = Duration::from_millis(1000);
         let mut state = State::with_deck(deck);
         state.kings[PlayerColor::Blue as usize] = from_2d_to_bitboard((0, 4));
         state.pawns[PlayerColor::Blue as usize] = 0;
         state.pawns[PlayerColor::Red as usize] =
             from_2d_to_bitboard((0, 3)) | from_2d_to_bitboard((1, 4));
 
-        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 1, 2.0);
+        let mut arena = MctsArena::new(state, search_time, PlayerColor::Blue, 5, 2.0);
 
         let (mov, _eval) = arena.search();
-        println!("{}", arena.debug_tree());
+        // println!("{}", arena.debug_tree());
 
         let expected = DoneMove {
             mov: Move {
