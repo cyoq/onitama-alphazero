@@ -25,7 +25,7 @@ use onitama_game::game::{
 
 use crate::game_setup::participants::{create_participant_setup, ParticipantSetup};
 use crate::game_setup::setup_window::SetupWindow;
-use crate::game_setup::tournament::TournamentSetup;
+use crate::game_setup::tournament::Tournament;
 use crate::move_history::{MoveHistory, MoveInformation};
 use crate::player::Participant;
 use crate::player::{Player, PlayerType};
@@ -64,7 +64,7 @@ pub struct Onitama {
     move_generation_thread: Option<JoinHandle<()>>,
     evaluation_score: f64,
     move_history: MoveHistory,
-    tournament_setup: TournamentSetup,
+    tournament: Tournament,
     toasts: Toasts,
 }
 
@@ -133,7 +133,7 @@ impl Onitama {
             move_generation_thread: None,
             evaluation_score: 0.,
             move_history: MoveHistory::new(Participant::Human, Participant::Mcts),
-            tournament_setup: TournamentSetup::default(),
+            tournament: Tournament::default(),
             toasts,
         }
     }
@@ -511,6 +511,7 @@ impl Onitama {
                 if load_game.clicked() {
                     tracing::warn!("TODO");
                 }
+                load_game.on_hover_text("TODO");
             });
 
             ui.separator();
@@ -662,7 +663,39 @@ impl App for Onitama {
 
         self.update_text();
 
-        if self.move_result.is_none() || !self.move_result.unwrap().is_win() && !self.end_game {
+        if self.tournament.is_tournament_on {
+            if self.tournament.curr_round == self.tournament.round_amnt - 1 {
+                tracing::info!("Tournament ended!");
+                self.toasts.add(Toast {
+                    kind: egui_toast::ToastKind::Success,
+                    text: "The tournament has ended".into(),
+                    options: ToastOptions::default(),
+                });
+                self.tournament.clear();
+            }
+
+            self.game_loop(ctx);
+
+            if let Some(result) = self.move_result {
+                if result.is_win() {
+                    self.players.swap(0, 1);
+                    self.game_state = GameState::with_deck(
+                        self.players[0].agent.clone(),
+                        self.players[1].agent.clone(),
+                        self.deck.clone(),
+                    );
+                    self.clear_game();
+                    self.tournament.curr_round += 1;
+                    tracing::info!("Current round: {}", self.tournament.curr_round);
+                }
+            }
+        }
+
+        if self.move_result.is_none()
+            || !self.move_result.unwrap().is_win()
+                && !self.end_game
+                && !self.tournament.is_tournament_on
+        {
             self.game_loop(ctx);
         }
 
@@ -679,8 +712,7 @@ impl App for Onitama {
                     self.board_panel_text = ("Blue won!".to_string(), Color32::BLUE);
                     self.card_panel_text = ("".to_string(), Color32::BLACK);
                 }
-                MoveResult::Capture => (),
-                MoveResult::InProgress => (),
+                _ => (),
             }
         }
 
@@ -689,7 +721,7 @@ impl App for Onitama {
             &mut self.deck,
             &mut self.selected_participants,
             &mut self.players,
-            &mut self.tournament_setup,
+            &mut self.tournament,
         )
         .show_setup(
             ctx,

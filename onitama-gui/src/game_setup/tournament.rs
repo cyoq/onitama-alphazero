@@ -1,52 +1,43 @@
-use egui::{Align, Layout, RichText, Slider, Ui};
+use egui::{Align, Layout, Response, RichText, Slider, Ui};
 
-pub struct TournamentSetup {
-    pub round_amnt: u32,
+pub struct TournamentResult {
     // First and a second player winrate
     // Their sum must be the same as round amount
     pub win_1: u32,
     pub win_2: u32,
+}
+
+impl Default for TournamentResult {
+    fn default() -> Self {
+        Self { win_1: 0, win_2: 0 }
+    }
+}
+
+pub struct Tournament {
+    pub round_amnt: u32,
+    pub curr_round: u32,
     // A flag to save games
     pub save_games: bool,
     pub is_tournament_on: bool,
+    pub result: TournamentResult,
 }
 
-impl Default for TournamentSetup {
+impl Default for Tournament {
     fn default() -> Self {
         Self {
             round_amnt: 10,
-            win_1: 0,
-            win_2: 0,
+            curr_round: 1,
             save_games: false,
             is_tournament_on: false,
+            result: TournamentResult::default(),
         }
     }
 }
 
-impl TournamentSetup {
-    pub fn show(&mut self, ui: &mut Ui) {
-        // ui.add_space(20.);
-        let r = ui.label(RichText::new("Tournament setup").text_style(egui::TextStyle::Heading));
-        r.on_hover_text("Setup a tournament between agents");
-
-        // ui.add_space(20.);
-
-        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-            ui.label("Round amount");
-            ui.add(Slider::new(&mut self.round_amnt, 1..=1000));
-
-            ui.add_space(20.);
-        });
-
-        ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
-            let start_tournament_btn = ui.button("Start a tournament");
-
-            if start_tournament_btn.clicked() {
-                self.is_tournament_on = true;
-            }
-
-            ui.checkbox(&mut self.save_games, "Save tournament games");
-            ui.add_space(20.);
-        });
+impl Tournament {
+    pub fn clear(&mut self) {
+        self.is_tournament_on = false;
+        self.curr_round = 1;
+        self.result = TournamentResult::default();
     }
 }

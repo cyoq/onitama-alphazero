@@ -13,7 +13,7 @@ use crate::{
 
 use super::{
     participants::{create_participant_setup, ParticipantSetup},
-    tournament::TournamentSetup,
+    tournament::Tournament,
 };
 
 const MOVE_CARD_CELL_SIZE: f32 = 18.;
@@ -49,7 +49,7 @@ pub struct SetupWindow<'a> {
     deck: &'a mut Deck,
     selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
     players: &'a mut [Player; 2],
-    tournament_setup: &'a mut TournamentSetup,
+    tournament: &'a mut Tournament,
 }
 
 impl<'a> SetupWindow<'a> {
@@ -58,14 +58,14 @@ impl<'a> SetupWindow<'a> {
         deck: &'a mut Deck,
         selected_participants: &'a mut [(Participant, Box<dyn ParticipantSetup>); 2],
         players: &'a mut [Player; 2],
-        tournament_setup: &'a mut TournamentSetup,
+        tournament: &'a mut Tournament,
     ) -> Self {
         Self {
             selected_cards,
             deck,
             selected_participants,
             players,
-            tournament_setup,
+            tournament,
         }
     }
 
@@ -91,9 +91,6 @@ impl<'a> SetupWindow<'a> {
                 ui.separator();
 
                 self.show_bottom_panel(ui, should_start_new_game);
-                ui.separator();
-
-                self.tournament_setup.show(ui);
             });
     }
 
@@ -242,6 +239,36 @@ impl<'a> SetupWindow<'a> {
             }
             ui.add_space(10.);
             ui.checkbox(&mut true, "Save my choice");
+        });
+
+        ui.separator();
+
+        self.show_tournament_setup(ui, should_start_new_game);
+    }
+
+    fn show_tournament_setup(&mut self, ui: &mut Ui, should_start_new_game: &'a mut bool) {
+        let r = ui.label(RichText::new("Tournament setup").text_style(egui::TextStyle::Heading));
+        r.on_hover_text("Setup a tournament between agents");
+
+        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+            ui.label("Round amount");
+            ui.add(Slider::new(&mut self.tournament.round_amnt, 1..=1000));
+
+            ui.add_space(20.);
+        });
+
+        ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
+            let start_tournament_btn = ui.button("Start a tournament");
+
+            if start_tournament_btn.clicked() {
+                self.tournament.is_tournament_on = true;
+                self.create_deck();
+                self.assign_players();
+                *should_start_new_game = true;
+            }
+
+            ui.checkbox(&mut self.tournament.save_games, "Save tournament games");
+            ui.add_space(20.);
         });
     }
 
