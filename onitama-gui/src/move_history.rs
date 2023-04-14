@@ -12,14 +12,10 @@ use onitama_game::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::player::Participant;
-
 #[derive(Serialize)]
 pub struct MoveHistory {
-    // TODO: later on we should also save
-    // each agent parameters
-    // but should decide if serde will be the choice
-    // https://stackoverflow.com/a/50026579 can be helpful
+    // TODO: later on we should make these as references
+    // no need to own player objects
     red_player: Box<dyn Agent>,
     blue_player: Box<dyn Agent>,
     history: Vec<MoveInformation>,
