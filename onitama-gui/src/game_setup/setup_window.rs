@@ -265,6 +265,7 @@ impl<'a> SetupWindow<'a> {
                 self.tournament.is_tournament_on = true;
                 self.create_deck();
                 self.assign_players();
+                self.tournament.deck = self.deck.clone();
                 *should_start_new_game = true;
             }
 
