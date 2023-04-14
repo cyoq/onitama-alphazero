@@ -1,8 +1,10 @@
+use std::fs;
 use std::path::PathBuf;
 use std::sync::mpsc::{sync_channel, Receiver};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
+use chrono::Local;
 use eframe::{epaint::ahash::HashMap, App, CreationContext};
 use egui::{
     Align, Button, CentralPanel, Color32, Context, Direction, FontData, FontDefinitions,
@@ -65,6 +67,7 @@ pub struct Onitama {
     evaluation_score: f64,
     move_history: MoveHistory,
     tournament: Tournament,
+    tournament_folder: Option<String>,
     toasts: Toasts,
 }
 
@@ -128,6 +131,7 @@ impl Onitama {
             move_generation_thread: None,
             evaluation_score: 0.,
             tournament: Tournament::default(),
+            tournament_folder: None,
             toasts,
         }
     }
@@ -615,12 +619,29 @@ impl Onitama {
             && self.tournament.curr_round == self.tournament.round_amnt + 1
         {
             tracing::info!("Tournament ended!");
+
+            if self.tournament.save_games {
+                let folder = match &self.tournament_folder {
+                    Some(x) => x.clone(),
+                    None => format!(
+                        "./saves/tournament_{}",
+                        Local::now().format("%Y%m%y_%H%M%S")
+                    ),
+                };
+                match self.tournament.save_to_folder(&folder) {
+                    Ok(_) => tracing::info!("Created a tournament save"),
+                    Err(e) => tracing::error!("An error while creating a tournament save: {}", e),
+                }
+            }
+
             self.toasts.add(Toast {
                 kind: egui_toast::ToastKind::Success,
                 text: "The tournament has ended".into(),
                 options: ToastOptions::default(),
             });
+
             self.tournament.is_tournament_on = false;
+            self.tournament_folder = None;
             self.end_game = true;
         }
 
@@ -629,10 +650,6 @@ impl Onitama {
 
             if let Some(result) = self.move_result {
                 if result.is_win() {
-                    if self.tournament.do_player_swap {
-                        self.players.swap(0, 1);
-                    }
-
                     let winning_player = match result {
                         MoveResult::RedWin => self.players[0].typ,
                         MoveResult::BlueWin => self.players[1].typ,
@@ -640,13 +657,44 @@ impl Onitama {
                             panic!("Must be a winning step to be inside this condition!");
                         }
                     };
+
                     tracing::info!("Winning player: {:?}", winning_player);
+
                     self.tournament
                         .progress(self.move_history.len(), winning_player);
 
                     self.deck = self.tournament.deck.clone();
 
-                    // self.move_history.save_to(path);
+                    // Save a match
+                    if self.tournament.save_games {
+                        let folder = match &self.tournament_folder {
+                            Some(x) => x.clone(),
+                            None => format!(
+                                "./saves/tournament_{}",
+                                Local::now().format("%Y%m%y_%H%M%S")
+                            ),
+                        };
+                        let path = PathBuf::from(format!(
+                            "{}/{}",
+                            folder,
+                            self.move_history.get_filename()
+                        ));
+
+                        match self.move_history.save_to(&path) {
+                            Ok(_) => tracing::info!("Created a game save {:?}", path),
+                            Err(e) => tracing::error!("An error while creating a game save: {}", e),
+                        }
+                    }
+
+                    // Clear the game
+                    if self.tournament.do_player_swap {
+                        self.players.swap(0, 1);
+
+                        self.move_history.update_players(
+                            self.players[0].agent.clone(),
+                            self.players[1].agent.clone(),
+                        );
+                    }
 
                     self.game_state = GameState::with_deck(
                         self.players[0].agent.clone(),
@@ -694,7 +742,18 @@ impl App for Onitama {
         self.update_text();
 
         if self.should_start_new_game {
+            if self.tournament.save_games {
+                self.tournament_folder = Some(format!(
+                    "./saves/tournament_{}",
+                    Local::now().format("%Y%m%y_%H%M%S")
+                ));
+                match fs::create_dir_all(self.tournament_folder.clone().unwrap()) {
+                    Ok(_) => tracing::info!("Created the folder for tournament"),
+                    Err(e) => tracing::error!("Was not able to create a folder: {}", e),
+                }
+            }
             self.tournament.clear();
+
             // Close game setup window
             self.show_game_setup = false;
             self.game_state = GameState::with_deck(

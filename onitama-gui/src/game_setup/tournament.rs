@@ -1,3 +1,5 @@
+use std::{fs, io, path::PathBuf};
+
 use onitama_game::game::deck::Deck;
 use serde::Serialize;
 
@@ -32,10 +34,10 @@ pub struct Tournament {
     pub is_tournament_on: bool,
     pub random_deck_each_turn: bool,
     pub players: [PlayerType; 2],
-    pub deck: Deck,
     pub result: TournamentResult,
-    pub deck_history: Vec<Deck>,
     pub round_result_history: Vec<RoundResult>,
+    pub deck: Deck,
+    pub deck_history: Vec<Deck>,
 }
 
 impl Default for Tournament {
@@ -76,6 +78,27 @@ impl Tournament {
             .unwrap();
         self.result.wins[index] += 1;
         self.curr_round += 1;
+    }
+
+    pub fn get_filename(&self) -> String {
+        let now = chrono::offset::Local::now();
+        let datetime = now.format("%Y%m%y_%H%M%S");
+        format!(
+            "tour_{}_vs_{}_{}.json",
+            self.players[0].to_string().to_lowercase().replace(" ", "_"),
+            self.players[1].to_string().to_lowercase().replace(" ", "_"),
+            datetime
+        )
+    }
+
+    pub fn save_to_folder(&self, folder: &String) -> io::Result<()> {
+        let path = PathBuf::from(format!("{}/{}", folder, self.get_filename()));
+        fs::write(
+            path,
+            serde_json::to_string_pretty(&self)
+                .expect("Serde must serialize move history with no problem"),
+        )?;
+        Ok(())
     }
 
     pub fn clear(&mut self) {
