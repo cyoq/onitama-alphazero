@@ -399,7 +399,7 @@ impl Onitama {
             });
     }
 
-    fn utility_panel(&mut self, ui: &mut Ui, ctx: &Context) {
+    fn utility_panel(&mut self, ui: &mut Ui) {
         ui.with_layout(
             egui::Layout::top_down(egui::Align::LEFT).with_cross_justify(true),
             |ui| {
@@ -615,6 +615,44 @@ impl Onitama {
         }
     }
 
+    fn organize_tournament(&mut self, ctx: &Context) {
+        if self.tournament.is_tournament_on
+            && self.tournament.curr_round == self.tournament.round_amnt + 1
+        {
+            tracing::info!("Tournament ended!");
+            self.toasts.add(Toast {
+                kind: egui_toast::ToastKind::Success,
+                text: "The tournament has ended".into(),
+                options: ToastOptions::default(),
+            });
+            self.tournament.clear();
+            self.end_game = true;
+        }
+
+        if self.tournament.is_tournament_on {
+            self.game_loop(ctx);
+
+            if let Some(result) = self.move_result {
+                if result.is_win() {
+                    if self.tournament.do_player_swap {
+                        self.players.swap(0, 1);
+                    }
+
+                    self.game_state = GameState::with_deck(
+                        self.players[0].agent.clone(),
+                        self.players[1].agent.clone(),
+                        self.deck.clone(),
+                    );
+
+                    self.clear_game();
+
+                    self.tournament.curr_round += 1;
+                    tracing::info!("Current tournament round: {}", self.tournament.curr_round);
+                }
+            }
+        }
+    }
+
     fn clear_game(&mut self) {
         self.game_state.clear();
         self.selected_card = SelectedCard::default();
@@ -644,6 +682,8 @@ impl App for Onitama {
             });
         }
 
+        self.update_text();
+
         if self.should_start_new_game {
             // Close game setup window
             self.show_game_setup = false;
@@ -661,35 +701,7 @@ impl App for Onitama {
             self.should_start_new_game = false;
         }
 
-        self.update_text();
-
-        if self.tournament.is_tournament_on {
-            if self.tournament.curr_round == self.tournament.round_amnt - 1 {
-                tracing::info!("Tournament ended!");
-                self.toasts.add(Toast {
-                    kind: egui_toast::ToastKind::Success,
-                    text: "The tournament has ended".into(),
-                    options: ToastOptions::default(),
-                });
-                self.tournament.clear();
-            }
-
-            self.game_loop(ctx);
-
-            if let Some(result) = self.move_result {
-                if result.is_win() {
-                    self.players.swap(0, 1);
-                    self.game_state = GameState::with_deck(
-                        self.players[0].agent.clone(),
-                        self.players[1].agent.clone(),
-                        self.deck.clone(),
-                    );
-                    self.clear_game();
-                    self.tournament.curr_round += 1;
-                    tracing::info!("Current round: {}", self.tournament.curr_round);
-                }
-            }
-        }
+        self.organize_tournament(ctx);
 
         if self.move_result.is_none()
             || !self.move_result.unwrap().is_win()
@@ -741,7 +753,7 @@ impl App for Onitama {
             .max_width(UTILITY_PANEL_WIDTH)
             .min_width(UTILITY_PANEL_WIDTH)
             .resizable(false)
-            .show(ctx, |ui| self.utility_panel(ui, ctx));
+            .show(ctx, |ui| self.utility_panel(ui));
 
         CentralPanel::default().show(ctx, |ui| self.deck_panel(ui));
     }
