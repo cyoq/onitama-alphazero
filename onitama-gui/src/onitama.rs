@@ -620,7 +620,7 @@ impl Onitama {
                 text: "The tournament has ended".into(),
                 options: ToastOptions::default(),
             });
-            self.tournament.clear();
+            self.tournament.is_tournament_on = false;
             self.end_game = true;
         }
 
@@ -633,9 +633,20 @@ impl Onitama {
                         self.players.swap(0, 1);
                     }
 
-                    self.tournament.progress();
+                    let winning_player = match result {
+                        MoveResult::RedWin => self.players[0].typ,
+                        MoveResult::BlueWin => self.players[1].typ,
+                        _ => {
+                            panic!("Must be a winning step to be inside this condition!");
+                        }
+                    };
+                    tracing::info!("Winning player: {:?}", winning_player);
+                    self.tournament
+                        .progress(self.move_history.len(), winning_player);
 
                     self.deck = self.tournament.deck.clone();
+
+                    // self.move_history.save_to(path);
 
                     self.game_state = GameState::with_deck(
                         self.players[0].agent.clone(),
@@ -683,6 +694,7 @@ impl App for Onitama {
         self.update_text();
 
         if self.should_start_new_game {
+            self.tournament.clear();
             // Close game setup window
             self.show_game_setup = false;
             self.game_state = GameState::with_deck(

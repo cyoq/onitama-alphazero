@@ -257,15 +257,15 @@ impl<'a> SetupWindow<'a> {
 
             ui.label(format!(
                 "{} won {} games",
-                self.selected_players[0].0.to_string(),
-                self.tournament.result.win_1
+                self.tournament.players[0].to_string(),
+                self.tournament.result.wins[0]
             ));
             ui.add_space(100.);
 
             ui.label(format!(
                 "{} won {} games",
-                self.selected_players[1].0.to_string(),
-                self.tournament.result.win_2
+                self.tournament.players[1].to_string(),
+                self.tournament.result.wins[1]
             ));
         });
 
@@ -278,6 +278,13 @@ impl<'a> SetupWindow<'a> {
                 self.create_deck();
                 self.assign_players();
                 self.tournament.deck = self.deck.clone();
+
+                let players = self
+                    .selected_players
+                    .iter()
+                    .map(|&(p, _)| p)
+                    .collect::<Vec<_>>();
+                self.tournament.players = players.try_into().unwrap();
                 *should_start_new_game = true;
             }
 
