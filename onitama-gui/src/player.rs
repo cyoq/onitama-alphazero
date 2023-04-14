@@ -1,41 +1,35 @@
 use onitama_game::ai::agent::Agent;
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
-pub enum PlayerType {
-    Human,
-    Ai,
-}
-
 pub struct Player {
     pub typ: PlayerType,
     pub agent: Box<dyn Agent>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
-pub enum Participant {
+#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone, Copy)]
+pub enum PlayerType {
     Human,
     Random,
     AlphaBeta,
     Mcts,
 }
 
-impl Participant {
-    pub fn to_player_type(&self) -> PlayerType {
+impl PlayerType {
+    pub fn is_ai(&self) -> bool {
         match self {
-            Participant::Human => PlayerType::Human,
-            _ => PlayerType::Ai,
+            PlayerType::Human => false,
+            _ => true,
         }
     }
 }
 
-impl ToString for Participant {
+impl ToString for PlayerType {
     fn to_string(&self) -> String {
         match self {
-            Participant::Human => "Human".to_owned(),
-            Participant::Random => "Random".to_owned(),
-            Participant::AlphaBeta => "AlphaBeta".to_owned(),
-            Participant::Mcts => "MCTS".to_owned(),
+            PlayerType::Human => "Human".to_owned(),
+            PlayerType::Random => "Random".to_owned(),
+            PlayerType::AlphaBeta => "AlphaBeta".to_owned(),
+            PlayerType::Mcts => "MCTS".to_owned(),
         }
     }
 }

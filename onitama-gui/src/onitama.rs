@@ -23,12 +23,12 @@ use onitama_game::game::{
     player_color::PlayerColor,
 };
 
-use crate::game_setup::participants::{create_participant_setup, ParticipantSetup};
+use crate::game_setup::player_setups::{create_player_setup, PlayerSetup};
 use crate::game_setup::setup_window::SetupWindow;
 use crate::game_setup::tournament::Tournament;
 use crate::move_history::{MoveHistory, MoveInformation};
-use crate::player::Participant;
-use crate::player::{Player, PlayerType};
+use crate::player::Player;
+use crate::player::PlayerType;
 use crate::selected_card::SelectedCard;
 use crate::{game_board::GameBoard, image::Image, move_card::MoveCard};
 
@@ -56,7 +56,7 @@ pub struct Onitama {
     show_game_setup: bool,
     setup_selected_cards: [Option<Card>; 5],
     should_start_new_game: bool,
-    selected_participants: [(Participant, Box<dyn ParticipantSetup>); 2],
+    selected_players: [(PlayerType, Box<dyn PlayerSetup>); 2],
     players: [Player; 2],
     mov_rx: Option<Receiver<(DoneMove, f64)>>,
     do_ai_move_generation: bool,
@@ -89,15 +89,9 @@ impl Onitama {
             agent: Box::new(Mcts::default()),
         };
         let players = [red_player, blue_player];
-        let selected_participants = [
-            (
-                Participant::Human,
-                create_participant_setup(&Participant::Human),
-            ),
-            (
-                Participant::Mcts,
-                create_participant_setup(&Participant::Mcts),
-            ),
+        let selected_players = [
+            (PlayerType::Human, create_player_setup(&PlayerType::Human)),
+            (PlayerType::Mcts, create_player_setup(&PlayerType::Mcts)),
         ];
 
         let toasts = Toasts::new()
@@ -128,7 +122,7 @@ impl Onitama {
             show_game_setup: true,
             setup_selected_cards: [None, None, None, None, None],
             should_start_new_game: false,
-            selected_participants,
+            selected_players,
             mov_rx: None,
             do_ai_move_generation: true,
             move_generation_thread: None,
@@ -217,7 +211,7 @@ impl Onitama {
                     self.human_done_move = None;
                 }
             }
-            PlayerType::Ai => {
+            _ => {
                 if self.do_ai_move_generation {
                     // Disable start move generation until a receiver says that it received a move
                     self.do_ai_move_generation = false;
@@ -733,7 +727,7 @@ impl App for Onitama {
         SetupWindow::new(
             &mut self.setup_selected_cards,
             &mut self.deck,
-            &mut self.selected_participants,
+            &mut self.selected_players,
             &mut self.players,
             &mut self.tournament,
         )

@@ -5,27 +5,27 @@ use onitama_game::ai::{
     agent::Agent, alpha_beta::AlphaBeta, human_gui::HumanGui, mcts::Mcts, random::Random,
 };
 
-use crate::player::Participant;
+use crate::player::PlayerType;
 
-pub trait ParticipantSetup: Send {
+pub trait PlayerSetup: Send {
     fn show(&mut self, ui: &mut Ui);
-    fn participant(&self) -> Participant;
+    fn player_type(&self) -> PlayerType;
     fn create_agent(&self) -> Box<dyn Agent>;
 }
 
-pub fn create_participant_setup(participant: &Participant) -> Box<dyn ParticipantSetup> {
-    match *participant {
-        Participant::Human => Box::new(HumanSetup::default()),
-        Participant::Random => Box::new(RandomSetup::default()),
-        Participant::AlphaBeta => Box::new(AlphaBetaSetup::default()),
-        Participant::Mcts => Box::new(MctsSetup::default()),
+pub fn create_player_setup(player_type: &PlayerType) -> Box<dyn PlayerSetup> {
+    match *player_type {
+        PlayerType::Human => Box::new(HumanSetup::default()),
+        PlayerType::Random => Box::new(RandomSetup::default()),
+        PlayerType::AlphaBeta => Box::new(AlphaBetaSetup::default()),
+        PlayerType::Mcts => Box::new(MctsSetup::default()),
     }
 }
 
 #[derive(Default)]
 pub struct HumanSetup;
 
-impl ParticipantSetup for HumanSetup {
+impl PlayerSetup for HumanSetup {
     fn show(&mut self, ui: &mut Ui) {
         ui.add_space(20.);
         ui.label(RichText::new("Human parameters").text_style(egui::TextStyle::Heading));
@@ -37,15 +37,15 @@ impl ParticipantSetup for HumanSetup {
         Box::new(HumanGui)
     }
 
-    fn participant(&self) -> Participant {
-        Participant::Human
+    fn player_type(&self) -> PlayerType {
+        PlayerType::Human
     }
 }
 
 #[derive(Default)]
 pub struct RandomSetup;
 
-impl ParticipantSetup for RandomSetup {
+impl PlayerSetup for RandomSetup {
     fn show(&mut self, ui: &mut Ui) {
         ui.add_space(20.);
         ui.label(RichText::new("Random parameters").text_style(egui::TextStyle::Heading));
@@ -57,8 +57,8 @@ impl ParticipantSetup for RandomSetup {
         Box::new(Random)
     }
 
-    fn participant(&self) -> Participant {
-        Participant::Random
+    fn player_type(&self) -> PlayerType {
+        PlayerType::Random
     }
 }
 
@@ -76,7 +76,7 @@ impl Default for AlphaBetaSetup {
     }
 }
 
-impl ParticipantSetup for AlphaBetaSetup {
+impl PlayerSetup for AlphaBetaSetup {
     fn show(&mut self, ui: &mut Ui) {
         ui.add_space(20.);
         ui.label(RichText::new("AlphaBeta parameters").text_style(egui::TextStyle::Heading));
@@ -98,8 +98,8 @@ impl ParticipantSetup for AlphaBetaSetup {
         })
     }
 
-    fn participant(&self) -> Participant {
-        Participant::AlphaBeta
+    fn player_type(&self) -> PlayerType {
+        PlayerType::AlphaBeta
     }
 }
 
@@ -121,7 +121,7 @@ impl Default for MctsSetup {
     }
 }
 
-impl ParticipantSetup for MctsSetup {
+impl PlayerSetup for MctsSetup {
     fn show(&mut self, ui: &mut Ui) {
         ui.add_space(20.);
         ui.label(RichText::new("MCTS parameters").text_style(egui::TextStyle::Heading));
@@ -155,7 +155,7 @@ impl ParticipantSetup for MctsSetup {
         })
     }
 
-    fn participant(&self) -> Participant {
-        Participant::Mcts
+    fn player_type(&self) -> PlayerType {
+        PlayerType::Mcts
     }
 }
