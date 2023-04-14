@@ -254,7 +254,20 @@ impl<'a> SetupWindow<'a> {
             ui.label("Round amount");
             ui.add(Slider::new(&mut self.tournament.round_amnt, 1..=1000));
 
-            ui.add_space(20.);
+            ui.add_space(100.);
+
+            ui.label(format!(
+                "{} won {} games",
+                self.selected_participants[0].0.to_string(),
+                self.tournament.result.win_1
+            ));
+            ui.add_space(100.);
+
+            ui.label(format!(
+                "{} won {} games",
+                self.selected_participants[1].0.to_string(),
+                self.tournament.result.win_2
+            ));
         });
 
         ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
