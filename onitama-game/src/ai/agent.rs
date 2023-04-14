@@ -1,6 +1,8 @@
+use erased_serde::serialize_trait_object;
+
 use crate::game::{done_move::DoneMove, game_state::GameState};
 
-pub trait Agent: Send {
+pub trait Agent: Send + erased_serde::Serialize {
     /// Returns best move and a score for it
     fn generate_move(&self, game_state: &GameState) -> (DoneMove, f64);
 
@@ -15,3 +17,5 @@ impl Clone for Box<dyn Agent> {
         self.clone_dyn()
     }
 }
+
+serialize_trait_object!(Agent);

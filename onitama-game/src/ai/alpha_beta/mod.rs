@@ -2,6 +2,8 @@ pub mod evaluation;
 
 use std::time::{Duration, Instant};
 
+use serde::{Deserialize, Serialize};
+
 use crate::game::{
     done_move::DoneMove, game_state::GameState, move_result::MoveResult, player_color::PlayerColor,
 };
@@ -10,7 +12,7 @@ use self::evaluation::Evaluation;
 
 use super::agent::Agent;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlphaBeta {
     pub max_depth: u8,
     pub search_time: Duration,

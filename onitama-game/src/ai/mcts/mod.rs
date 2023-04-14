@@ -2,13 +2,15 @@ pub mod mcts_arena;
 
 use std::time::Duration;
 
+use serde::{Deserialize, Serialize};
+
 use crate::game::{done_move::DoneMove, game_state::GameState};
 
 use self::mcts_arena::MctsArena;
 
 use super::agent::Agent;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Mcts {
     pub search_time: Duration,
     pub min_node_visits: u32,

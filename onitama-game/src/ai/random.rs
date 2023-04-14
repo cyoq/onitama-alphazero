@@ -1,10 +1,11 @@
 use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
 
 use crate::game::{done_move::DoneMove, game_state::GameState};
 
 use super::agent::Agent;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Random;
 
 impl Agent for Random {

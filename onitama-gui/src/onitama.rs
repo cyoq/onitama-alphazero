@@ -112,6 +112,7 @@ impl Onitama {
                 players[1].agent.clone(),
                 deck.clone(),
             ),
+            move_history: MoveHistory::new(players[0].agent.clone(), players[1].agent.clone()),
             players,
             deck,
             images: Self::load_images(),
@@ -132,7 +133,6 @@ impl Onitama {
             do_ai_move_generation: true,
             move_generation_thread: None,
             evaluation_score: 0.,
-            move_history: MoveHistory::new(Participant::Human, Participant::Mcts),
             tournament: Tournament::default(),
             toasts,
         }
@@ -697,10 +697,8 @@ impl App for Onitama {
                 self.deck.clone(),
             );
             self.clear_game();
-            self.move_history.update_players(
-                self.selected_participants[0].0.clone(),
-                self.selected_participants[1].0.clone(),
-            );
+            self.move_history
+                .update_players(self.players[0].agent.clone(), self.players[1].agent.clone());
             // Do not make a new game
             self.should_start_new_game = false;
         }

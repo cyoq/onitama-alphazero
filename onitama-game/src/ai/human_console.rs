@@ -1,5 +1,7 @@
 use std::io::{self, stdout, Write};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     common::get_bit,
     game::{
@@ -10,7 +12,7 @@ use crate::{
 
 use super::agent::Agent;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct HumanConsole;
 
 impl HumanConsole {
