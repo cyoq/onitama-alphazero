@@ -615,6 +615,7 @@ impl Onitama {
         }
     }
 
+    // TODO: in the last round an agent still makes one move
     fn organize_tournament(&mut self, ctx: &Context) {
         if self.tournament.is_tournament_on
             && self.tournament.curr_round == self.tournament.round_amnt + 1

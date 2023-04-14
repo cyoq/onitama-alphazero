@@ -267,7 +267,10 @@ impl<'a> SetupWindow<'a> {
                 *should_start_new_game = true;
             }
 
-            ui.checkbox(&mut self.tournament.save_games, "Save tournament games");
+            ui.checkbox(&mut self.tournament.save_games, "Save tournament games?");
+            ui.add_space(20.);
+
+            ui.checkbox(&mut self.tournament.do_player_swap, "Do players swap?");
             ui.add_space(20.);
         });
     }

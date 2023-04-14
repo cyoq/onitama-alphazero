@@ -1,5 +1,3 @@
-use egui::{Align, Layout, Response, RichText, Slider, Ui};
-
 pub struct TournamentResult {
     // First and a second player winrate
     // Their sum must be the same as round amount
@@ -18,6 +16,7 @@ pub struct Tournament {
     pub curr_round: u32,
     // A flag to save games
     pub save_games: bool,
+    pub do_player_swap: bool,
     pub is_tournament_on: bool,
     pub result: TournamentResult,
 }
@@ -29,6 +28,7 @@ impl Default for Tournament {
             curr_round: 1,
             save_games: false,
             is_tournament_on: false,
+            do_player_swap: true,
             result: TournamentResult::default(),
         }
     }
