@@ -639,6 +639,10 @@ impl Onitama {
                         self.players.swap(0, 1);
                     }
 
+                    self.tournament.progress();
+
+                    self.deck = self.tournament.deck.clone();
+
                     self.game_state = GameState::with_deck(
                         self.players[0].agent.clone(),
                         self.players[1].agent.clone(),
@@ -647,7 +651,6 @@ impl Onitama {
 
                     self.clear_game();
 
-                    self.tournament.curr_round += 1;
                     tracing::info!("Current tournament round: {}", self.tournament.curr_round);
                 }
             }

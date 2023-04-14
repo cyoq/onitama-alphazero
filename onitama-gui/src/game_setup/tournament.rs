@@ -1,3 +1,5 @@
+use onitama_game::game::deck::Deck;
+
 pub struct TournamentResult {
     // First and a second player winrate
     // Their sum must be the same as round amount
@@ -18,6 +20,8 @@ pub struct Tournament {
     pub save_games: bool,
     pub do_player_swap: bool,
     pub is_tournament_on: bool,
+    pub random_deck_each_turn: bool,
+    pub deck: Deck,
     pub result: TournamentResult,
 }
 
@@ -29,12 +33,21 @@ impl Default for Tournament {
             save_games: false,
             is_tournament_on: false,
             do_player_swap: true,
+            random_deck_each_turn: true,
+            deck: Deck::default(),
             result: TournamentResult::default(),
         }
     }
 }
 
 impl Tournament {
+    pub fn progress(&mut self) {
+        if self.random_deck_each_turn {
+            self.deck = Deck::default();
+        }
+        self.curr_round += 1;
+    }
+
     pub fn clear(&mut self) {
         self.is_tournament_on = false;
         self.curr_round = 1;

@@ -259,6 +259,7 @@ impl<'a> SetupWindow<'a> {
 
         ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
             let start_tournament_btn = ui.button("Start a tournament");
+            ui.add_space(20.);
 
             if start_tournament_btn.clicked() {
                 self.tournament.is_tournament_on = true;
@@ -271,6 +272,12 @@ impl<'a> SetupWindow<'a> {
             ui.add_space(20.);
 
             ui.checkbox(&mut self.tournament.do_player_swap, "Do players swap?");
+            ui.add_space(20.);
+
+            ui.checkbox(
+                &mut self.tournament.random_deck_each_turn,
+                "Use random deck each turn?",
+            );
             ui.add_space(20.);
         });
     }
