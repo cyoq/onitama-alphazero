@@ -1,3 +1,8 @@
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
+
 use egui::*;
 use egui_extras::{Size, StripBuilder};
 use onitama_game::game::{
@@ -285,6 +290,17 @@ impl<'a> SetupWindow<'a> {
                     .iter()
                     .map(|&(p, _)| p)
                     .collect::<Vec<_>>();
+                self.tournament.players_hash = self
+                    .players
+                    .iter()
+                    .map(|p| {
+                        let mut state = DefaultHasher::new();
+                        p.agent.hash(&mut state);
+                        state.finish()
+                    })
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap();
                 self.tournament.players = players.try_into().unwrap();
                 *should_start_new_game = true;
             }

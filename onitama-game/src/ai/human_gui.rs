@@ -20,4 +20,8 @@ impl Agent for HumanGui {
     fn clone_dyn(&self) -> Box<dyn Agent> {
         Box::new(self.clone())
     }
+
+    fn id(&self) -> u64 {
+        todo!()
+    }
 }

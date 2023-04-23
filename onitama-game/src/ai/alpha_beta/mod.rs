@@ -176,4 +176,8 @@ impl Agent for AlphaBeta {
     fn clone_dyn(&self) -> Box<dyn Agent> {
         Box::new(self.clone())
     }
+
+    fn id(&self) -> u64 {
+        self.search_time.as_nanos() as u64 + self.max_depth as u64
+    }
 }

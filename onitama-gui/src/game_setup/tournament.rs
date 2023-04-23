@@ -23,6 +23,7 @@ pub struct RoundResult {
     pub round: u32,
     pub move_amnt: usize,
     pub winning_player: PlayerType,
+    pub winning_player_hash: u64,
 }
 
 #[derive(Serialize)]
@@ -35,6 +36,7 @@ pub struct Tournament {
     pub random_deck_each_turn: bool,
     // TODO: identify player by hash
     pub players: [PlayerType; 2],
+    pub players_hash: [u64; 2],
     pub result: TournamentResult,
     pub round_result_history: Vec<RoundResult>,
     pub deck: Deck,
@@ -53,6 +55,7 @@ impl Default for Tournament {
             do_player_swap: true,
             random_deck_each_turn: true,
             players: [PlayerType::Human, PlayerType::Mcts],
+            players_hash: [0; 2],
             deck,
             result: TournamentResult::default(),
             deck_history,
@@ -62,7 +65,12 @@ impl Default for Tournament {
 }
 
 impl Tournament {
-    pub fn progress(&mut self, move_amnt: usize, winning_player: PlayerType) {
+    pub fn progress(
+        &mut self,
+        move_amnt: usize,
+        winning_player: PlayerType,
+        winning_player_hash: u64,
+    ) {
         if self.random_deck_each_turn {
             self.deck = Deck::default();
             self.deck_history.push(self.deck.clone());
@@ -71,11 +79,12 @@ impl Tournament {
             round: self.curr_round,
             move_amnt,
             winning_player,
+            winning_player_hash,
         });
         let index = self
-            .players
+            .players_hash
             .iter()
-            .position(|&p| p == winning_player)
+            .position(|&p| p == winning_player_hash)
             .unwrap();
         self.result.wins[index] += 1;
         self.curr_round += 1;

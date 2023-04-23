@@ -1,4 +1,6 @@
+use std::collections::hash_map::DefaultHasher;
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 use std::sync::mpsc::{sync_channel, Receiver};
 use std::thread::{self, JoinHandle};
@@ -651,17 +653,21 @@ impl Onitama {
             if let Some(result) = self.move_result {
                 if result.is_win() {
                     let winning_player = match result {
-                        MoveResult::RedWin => self.players[0].typ,
-                        MoveResult::BlueWin => self.players[1].typ,
+                        MoveResult::RedWin => &self.players[0],
+                        MoveResult::BlueWin => &self.players[1],
                         _ => {
                             panic!("Must be a winning step to be inside this condition!");
                         }
                     };
 
-                    tracing::info!("Winning player: {:?}", winning_player);
+                    tracing::info!("Winning player: {:?}", winning_player.typ);
+
+                    let mut hasher = DefaultHasher::new();
+                    winning_player.agent.hash(&mut hasher);
+                    let hash = hasher.finish();
 
                     self.tournament
-                        .progress(self.move_history.len(), winning_player);
+                        .progress(self.move_history.len(), winning_player.typ, hash);
 
                     self.deck = self.tournament.deck.clone();
 

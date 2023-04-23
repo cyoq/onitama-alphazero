@@ -53,4 +53,11 @@ impl Agent for Mcts {
     fn clone_dyn(&self) -> Box<dyn Agent> {
         Box::new(self.clone())
     }
+
+    fn id(&self) -> u64 {
+        self.search_time.as_nanos() as u64
+            + self.exploration_c as u64
+            + self.max_playouts as u64
+            + self.min_node_visits as u64
+    }
 }

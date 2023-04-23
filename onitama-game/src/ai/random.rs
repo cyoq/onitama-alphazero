@@ -36,4 +36,8 @@ impl Agent for Random {
     fn clone_dyn(&self) -> Box<dyn Agent> {
         Box::new(self.clone())
     }
+
+    fn id(&self) -> u64 {
+        "random".parse::<u64>().unwrap()
+    }
 }

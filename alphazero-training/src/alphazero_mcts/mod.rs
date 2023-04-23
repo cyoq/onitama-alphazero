@@ -142,4 +142,12 @@ impl Agent for AlphaZeroMcts {
     fn clone_dyn(&self) -> Box<dyn Agent> {
         Box::new(self.clone())
     }
+
+    fn id(&self) -> u64 {
+        self.config.search_time.as_nanos() as u64
+            + self.config.exploration_c as u64
+            + self.config.max_playouts as u64
+            + self.config.train as u64
+            + self.model.lock().unwrap().id.parse::<u64>().unwrap()
+    }
 }
