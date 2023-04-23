@@ -1,5 +1,5 @@
 [package]
-name = "onitama-training"
+name = "onitama-alphazero"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 onitama_game = { path = "../onitama-game" }
 rand = "0.8.5"
+tch = "0.11.0"
