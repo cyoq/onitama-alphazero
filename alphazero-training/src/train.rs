@@ -18,7 +18,7 @@ use tch::{
 use crate::{
     alphazero_mcts::{AlphaZeroMcts, AlphaZeroMctsConfig},
     common::{create_tensor_from_state, Options},
-    net::{ConvResNetConfig, ConvResNetDropout},
+    net::{ConvResNet, ConvResNetConfig, ConvResNetDropout},
 };
 
 #[derive(Debug)]
@@ -55,14 +55,14 @@ pub fn self_play(
     data_buffer: Arc<Mutex<Vec<SelfPlayData>>>,
 ) {
     // TODO: playing with the stable deck at the moment
-    let deck = Deck::new([
-        ORIGINAL_CARDS[0].clone(),
-        ORIGINAL_CARDS[1].clone(),
-        ORIGINAL_CARDS[2].clone(),
-        ORIGINAL_CARDS[3].clone(),
-        ORIGINAL_CARDS[4].clone(),
-    ]);
-    let mut state = State::with_deck(deck);
+    // let deck = Deck::new([
+    //     ORIGINAL_CARDS[0].clone(),
+    //     ORIGINAL_CARDS[1].clone(),
+    //     ORIGINAL_CARDS[2].clone(),
+    //     ORIGINAL_CARDS[3].clone(),
+    //     ORIGINAL_CARDS[4].clone(),
+    // ]);
+    let mut state = State::new();
     let mut player_color = state.deck.neutral_card().player_color;
     let mut progress = MoveResult::InProgress;
 
@@ -118,11 +118,7 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
         input_channels: 21,
         resnet_block_amnt: 3,
     };
-    let model = Arc::new(Mutex::new(ConvResNetDropout::new(
-        &vs.root(),
-        net_config,
-        options,
-    )));
+    let model = Arc::new(Mutex::new(ConvResNet::new(&vs.root(), net_config, options)));
     let mcts = Arc::new(AlphaZeroMcts {
         config: AlphaZeroMctsConfig {
             max_playouts: 400,

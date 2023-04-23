@@ -324,7 +324,7 @@ impl ConvResNet {
         nn::seq_t()
             .add(nn::conv2d(
                 &(path / "vh_conv"),
-                net_config.input_channels,
+                net_config.hidden_channels,
                 1,
                 1,
                 ConvConfig {
@@ -352,7 +352,7 @@ impl ConvResNet {
         nn::seq_t()
             .add(nn::conv2d(
                 &(path / "policy_conv"),
-                net_config.input_channels,
+                net_config.hidden_channels,
                 2,
                 1,
                 ConvConfig {

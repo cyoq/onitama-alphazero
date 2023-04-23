@@ -12,7 +12,7 @@ use tch::{IndexOp, Tensor};
 
 use crate::{
     common::{create_tensor_from_state, Options},
-    net::{ConvResNetDropout, ResTowerTensor},
+    net::{ConvResNet, ConvResNetDropout, ResTowerTensor},
 };
 
 use super::AlphaZeroMctsConfig;
@@ -41,7 +41,7 @@ pub struct MctsArena {
     pub config: AlphaZeroMctsConfig,
     pub arena: Vec<MctsNode>,
     pub playouts: u32,
-    pub model: Arc<Mutex<ConvResNetDropout>>,
+    pub model: Arc<Mutex<ConvResNet>>,
     pub options: Options,
     pub reward: fn(MoveResult, PlayerColor) -> f64,
 }
@@ -51,7 +51,7 @@ impl MctsArena {
         state: State,
         player_color: PlayerColor,
         config: AlphaZeroMctsConfig,
-        model: Arc<Mutex<ConvResNetDropout>>,
+        model: Arc<Mutex<ConvResNet>>,
         options: Options,
         reward: fn(MoveResult, PlayerColor) -> f64,
     ) -> Self {
@@ -88,7 +88,11 @@ impl MctsArena {
 
         let best_child_idx = children
             .iter()
-            .max_by_key(|&c| self.arena[*c].visits)
+            .max_by(|&a, &b| {
+                let a = self.arena[*a].visits as f64 / self.arena[0].visits as f64;
+                let b = self.arena[*b].visits as f64 / self.arena[0].visits as f64;
+                a.total_cmp(&b)
+            })
             .expect("Must find the best child");
 
         (

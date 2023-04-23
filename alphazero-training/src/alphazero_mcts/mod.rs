@@ -18,7 +18,7 @@ use tch::{nn, Tensor};
 
 use crate::{
     common::Options,
-    net::{ConvResNetConfig, ConvResNetDropout},
+    net::{ConvResNet, ConvResNetConfig, ConvResNetDropout},
 };
 
 use self::mcts_arena::MctsArena;
@@ -45,7 +45,7 @@ impl Default for AlphaZeroMctsConfig {
 #[derive(Debug, Clone)]
 pub struct AlphaZeroMcts {
     pub config: AlphaZeroMctsConfig,
-    pub model: Arc<Mutex<ConvResNetDropout>>,
+    pub model: Arc<Mutex<ConvResNet>>,
     pub options: Options,
 }
 
@@ -57,11 +57,7 @@ impl AlphaZeroMcts {
         net_config: ConvResNetConfig,
         options: Options,
     ) -> Self {
-        let model = Arc::new(Mutex::new(ConvResNetDropout::new(
-            &vs.root(),
-            net_config,
-            options,
-        )));
+        let model = Arc::new(Mutex::new(ConvResNet::new(&vs.root(), net_config, options)));
         if let Err(e) = vs.load(model_path) {
             eprintln!("An error occurred while loading the file: {}", e);
         }
