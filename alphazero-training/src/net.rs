@@ -1,5 +1,5 @@
 use tch::{
-    nn::{self, ModuleT},
+    nn::{self, ConvConfig, ModuleT},
     Tensor,
 };
 
@@ -132,7 +132,7 @@ pub struct ConvResNetDropout {
 impl ConvResNetDropout {
     pub fn new(path: &nn::Path, net_config: ConvResNetConfig, options: Options) -> Self {
         let id = format!(
-            "input_{}_hidden_{}_resnet_{}",
+            "drop_input_{}_hidden_{}_resnet_{}",
             net_config.input_channels, net_config.hidden_channels, net_config.resnet_block_amnt
         );
         let model = Self::build_model(path, net_config);
@@ -228,6 +228,152 @@ impl ConvResNetDropout {
                 nn::LinearConfig::default(),
             ))
             .add_fn(|xs| xs.softmax(-1, tch::Kind::Double))
+    }
+
+    pub fn forward(&self, xs: &Tensor, train: bool) -> ResTowerTensor {
+        let y: Tensor;
+        if !train {
+            // Get one more dimension for the Batch
+            y = self.model.forward_t(&xs.unsqueeze(0), train);
+        } else {
+            // For training there should be batch dimension
+            y = self.model.forward_t(&xs, train);
+        }
+
+        let v = self.value_head.forward_t(&y, train);
+        let p = self.policy_head.forward_t(&y, train).reshape(&[-1, 2, 25]);
+
+        ResTowerTensor {
+            policy: p,
+            value: v,
+        }
+    }
+
+    pub fn alphaloss(&self, v: &Tensor, p: &Tensor, pi: &Tensor, z: &Tensor) -> (Tensor, Tensor) {
+        let value_loss = v.mse_loss(
+            &z.to_kind(self.options.kind).to_device(self.options.device),
+            tch::Reduction::Mean,
+        );
+        let policy_loss = p.cross_entropy_loss::<Tensor>(pi, None, tch::Reduction::None, -100, 0.0);
+        (value_loss, policy_loss)
+    }
+}
+
+#[derive(Debug)]
+pub struct ConvResNet {
+    pub model: nn::SequentialT,
+    pub policy_head: nn::SequentialT,
+    pub value_head: nn::SequentialT,
+    pub options: Options,
+    pub id: String,
+}
+
+impl ConvResNet {
+    pub fn new(path: &nn::Path, net_config: ConvResNetConfig, options: Options) -> Self {
+        let id = format!(
+            "conv_input_{}_hidden_{}_resnet_{}",
+            net_config.input_channels, net_config.hidden_channels, net_config.resnet_block_amnt
+        );
+        let policy_head = Self::build_policy_head(path, &net_config, options);
+        let value_head = Self::build_value_head(path, &net_config);
+        let model = Self::build_model(path, net_config);
+        Self {
+            model,
+            policy_head,
+            value_head,
+            options,
+            id,
+        }
+    }
+
+    fn build_model(path: &nn::Path, net_config: ConvResNetConfig) -> nn::SequentialT {
+        let initial_block = nn::seq_t()
+            .add(nn::conv2d(
+                &(path / "conv_init_1"),
+                net_config.input_channels,
+                net_config.hidden_channels,
+                3,
+                nn::ConvConfig {
+                    stride: 1,
+                    padding: 1,
+                    ..Default::default()
+                },
+            ))
+            .add(nn::batch_norm2d(
+                &(path / "bn1"),
+                net_config.hidden_channels,
+                Default::default(),
+            ))
+            .add_fn(|xs| xs.relu());
+
+        let mut middle_blocks = nn::seq_t();
+        for i in 0..net_config.resnet_block_amnt {
+            middle_blocks = middle_blocks.add(ResNetBlock::new(
+                &(path / format!("resnet_{}", i)),
+                net_config.hidden_channels,
+                net_config.hidden_channels,
+            ));
+        }
+
+        let model = nn::seq_t().add(initial_block).add(middle_blocks);
+
+        model
+    }
+
+    fn build_value_head(path: &nn::Path, net_config: &ConvResNetConfig) -> nn::SequentialT {
+        nn::seq_t()
+            .add(nn::conv2d(
+                &(path / "vh_conv"),
+                net_config.input_channels,
+                1,
+                1,
+                ConvConfig {
+                    stride: 1,
+                    ..Default::default()
+                },
+            ))
+            .add(nn::batch_norm2d(&(path / "vh_bn"), 1, Default::default()))
+            .add_fn(|xs| xs.relu())
+            .add_fn(|xs| xs.flatten(1, -1))
+            .add(nn::linear(
+                &(path / "vh_linear1"),
+                25,
+                1,
+                nn::LinearConfig::default(),
+            ))
+            .add_fn(|xs| xs.tanh())
+    }
+
+    fn build_policy_head(
+        path: &nn::Path,
+        net_config: &ConvResNetConfig,
+        options: Options,
+    ) -> nn::SequentialT {
+        nn::seq_t()
+            .add(nn::conv2d(
+                &(path / "policy_conv"),
+                net_config.input_channels,
+                2,
+                1,
+                ConvConfig {
+                    stride: 1,
+                    ..Default::default()
+                },
+            ))
+            .add(nn::batch_norm2d(
+                &(path / "policy_bn"),
+                2,
+                Default::default(),
+            ))
+            .add_fn(|xs| xs.relu())
+            .add_fn(|xs| xs.flatten(1, -1))
+            .add(nn::linear(
+                &(path / "ph_linear2"),
+                50,
+                50,
+                nn::LinearConfig::default(),
+            ))
+            .add_fn(move |xs| xs.softmax(-1, options.kind))
     }
 
     pub fn forward(&self, xs: &Tensor, train: bool) -> ResTowerTensor {
