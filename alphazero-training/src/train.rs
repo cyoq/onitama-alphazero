@@ -126,7 +126,7 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
     let mcts = Arc::new(AlphaZeroMcts {
         config: AlphaZeroMctsConfig {
             max_playouts: 400,
-            search_time: Duration::from_millis(500),
+            search_time: Duration::from_millis(400),
             train: true,
             ..Default::default()
         },
@@ -225,14 +225,6 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
 
                 let (value, policy) =
                     model_lock.alphaloss(&y.value, &y.policy, &pi_batch, &z_batch);
-
-                // L2 regularization
-                // let mut l2 = Tensor::zeros(&[1], options.to_tuple());
-                // let lambda2 = 1e-4;
-                // for v in vs.trainable_variables() {
-                //     l2 += v.norm();
-                // }
-                // l2 *= lambda2;
 
                 let loss = value + policy;
 
