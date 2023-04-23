@@ -12,6 +12,7 @@ pub enum PlayerType {
     Random,
     AlphaBeta,
     Mcts,
+    AlphaZero,
 }
 
 impl PlayerType {
@@ -30,6 +31,7 @@ impl ToString for PlayerType {
             PlayerType::Random => "Random".to_owned(),
             PlayerType::AlphaBeta => "AlphaBeta".to_owned(),
             PlayerType::Mcts => "MCTS".to_owned(),
+            PlayerType::AlphaZero => "AlphaZero".to_owned(),
         }
     }
 }

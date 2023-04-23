@@ -1,0 +1,18 @@
+[package]
+name = "alphazero_training"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+onitama_game = { path = "../onitama-game" }
+rand = "0.8.5"
+rand_distr = "0.4.3"
+tch = "0.10.3"
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
+anyhow = "1.0.69"
+serde = { version = "1.0.156", features = ["derive"] }
+chrono = "0.4.24"
+colored = "2.0.0"

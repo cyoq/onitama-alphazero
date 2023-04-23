@@ -165,6 +165,7 @@ impl<'a> SetupWindow<'a> {
                 ui.selectable_value(player_type, PlayerType::Random, "Random");
                 ui.selectable_value(player_type, PlayerType::AlphaBeta, "AlphaBeta");
                 ui.selectable_value(player_type, PlayerType::Mcts, "MCTS");
+                ui.selectable_value(player_type, PlayerType::AlphaZero, "AlphaZero");
             });
     }
 

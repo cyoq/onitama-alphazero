@@ -33,6 +33,7 @@ pub struct Tournament {
     pub do_player_swap: bool,
     pub is_tournament_on: bool,
     pub random_deck_each_turn: bool,
+    // TODO: identify player by hash
     pub players: [PlayerType; 2],
     pub result: TournamentResult,
     pub round_result_history: Vec<RoundResult>,

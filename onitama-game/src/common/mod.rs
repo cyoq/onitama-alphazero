@@ -65,6 +65,15 @@ pub const fn get_msb(mut value: u32) -> u32 {
     pos
 }
 
+#[inline]
+pub fn get_bit_array<T: Copy + Default + From<u32>>(value: u32) -> [T; 25] {
+    let mut bit_arr = [T::default(); 25];
+    for i in 0..25 {
+        bit_arr[i] = T::from((value >> 31 - i) & 0x1);
+    }
+    bit_arr
+}
+
 #[cfg(test)]
 mod tests {
     use crate::common::{from_2d_to_bitboard, get_bit};
