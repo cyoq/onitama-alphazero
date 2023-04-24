@@ -186,7 +186,8 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
     };
 
     let learning_rate = 1e-2;
-    let checkpoint = 5;
+    let save_checkpoint = 5;
+    let evaluation_checkpoint = 10;
 
     let mut opt = nn::Sgd {
         momentum: 0.9,
@@ -303,47 +304,48 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
             loss_stats.push(epoch, avg_loss, avg_value_loss, avg_policy_loss);
         }
 
-        // Evaluate the model against itself
-        println!("[*] Starting evaluation phase");
-        let start = Instant::now();
-        let mut evaluator = Evaluator::new(
-            evaluator_config.clone(),
-            &best_vs,
-            &vs,
-            &net_config,
-            options,
-        );
+        // Evaluate the model against itself and other agents
+        if epoch % evaluation_checkpoint == 0 {
+            println!("[*] Starting evaluation phase");
+            let start = Instant::now();
+            let mut evaluator = Evaluator::new(
+                evaluator_config.clone(),
+                &best_vs,
+                &vs,
+                &net_config,
+                options,
+            );
 
-        let (fight_statistics, should_change_best) = evaluator.pit();
-        let end = start.elapsed();
+            let (fight_statistics, should_change_best) = evaluator.pit();
+            let end = start.elapsed();
 
-        println!(
-            "[*] Done evaluation in {:?}. New model winrate against the best: {}",
-            end, fight_statistics.self_fight.winrate
-        );
-        loss_stats.push_fight(should_change_best, fight_statistics);
+            println!(
+                "[*] Done evaluation in {:?}. New model winrate against the best: {}",
+                end, fight_statistics.self_fight.winrate
+            );
+            loss_stats.push_fight(should_change_best, fight_statistics);
 
-        if should_change_best {
-            println!("[*] New model is better. Changing..");
-            if let Err(e) = best_vs.copy(&vs) {
-                eprintln!("Was not able to copy best varstore {}", e);
+            if should_change_best {
+                println!("[*] New model is better. Changing..");
+                if let Err(e) = best_vs.copy(&vs) {
+                    eprintln!("Was not able to copy best varstore {}", e);
+                }
+
+                println!("[*] Saving best model...");
+                if let Err(err) = vs.save(format!(
+                    "models/best_model_{}.ot",
+                    Local::now().format("%Y%m%d_%H%M%S")
+                )) {
+                    eprintln!("error while saving model: {}", err);
+                }
+            } else {
+                println!("[*] New model is not the best one. Continue training..");
             }
-
-            println!("[*] Saving best model...");
-            if let Err(err) = vs.save(format!(
-                "models/best_model_{}.ot",
-                Local::now().format("%Y%m%d_%H%M%S")
-            )) {
-                eprintln!("error while saving model: {}", err);
-            }
-        } else {
-            println!("[*] New model is not the best one. Continue training..");
+            println!("{:?}", loss_stats);
         }
-        println!("{:?}", loss_stats);
-        loss_stats.save();
 
         // Checkpoint save
-        if epoch % checkpoint == 0 {
+        if epoch % save_checkpoint == 0 {
             if let Err(err) = vs.save(format!(
                 "models/model_{}.ot",
                 Local::now().format("%Y%m%d_%H%M%S")
