@@ -16,3 +16,4 @@ Cargo.lock
 cards.jpg
 saves
 models
+loss_stats
