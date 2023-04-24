@@ -155,11 +155,11 @@ impl Agent for AlphaBeta {
             depth += 1;
         }
 
-        println!("Last depth {}", depth);
-        println!("Analyzed {} positions", positions);
+        // println!("Last depth {}", depth);
+        // println!("Analyzed {} positions", positions);
         // We must receive some kind of result
         let result = result.unwrap();
-        println!("Best score is {}", result.best_score);
+        // println!("Best score is {}", result.best_score);
 
         (
             result

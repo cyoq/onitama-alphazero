@@ -42,7 +42,7 @@ impl Agent for Mcts {
         let mov = arena.search();
 
         // println!("Tree: {}", arena.debug_tree());
-        println!("Playouts: {}", arena.playouts);
+        // println!("Playouts: {}", arena.playouts);
         mov
     }
 
