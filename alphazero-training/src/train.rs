@@ -139,6 +139,8 @@ pub fn self_play(
     data_buffer.lock().unwrap().extend(play_data.into_iter());
 }
 
+// TODO: Need to properly split this function up
+// Otherwise it becomes quite a mess
 pub fn train(epochs: usize) -> anyhow::Result<()> {
     let device = Device::cuda_if_available();
     // let device = Device::Cpu;
@@ -196,8 +198,8 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
     .build(&vs, learning_rate)?;
     opt.set_weight_decay(1e-4);
 
-    let self_play_batch_size = 1;
-    let train_batch_size = 256;
+    let self_play_batch_size = 10;
+    let train_batch_size = 512;
     let thread_amnt = std::thread::available_parallelism().unwrap().get() * 2;
     println!("[*] {} threads are going to be used", thread_amnt);
 
