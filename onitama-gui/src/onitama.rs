@@ -106,11 +106,7 @@ impl Onitama {
 
         Self {
             debug,
-            game_state: GameState::with_deck(
-                players[0].agent.clone(),
-                players[1].agent.clone(),
-                deck.clone(),
-            ),
+            game_state: GameState::with_deck(deck.clone()),
             move_history: MoveHistory::new(players[0].agent.clone(), players[1].agent.clone()),
             players,
             deck,
@@ -225,9 +221,10 @@ impl Onitama {
                     self.mov_rx = Some(mov_rx);
 
                     let game_state = self.game_state.clone();
+                    let agent = self.players[game_state.curr_agent_idx].agent.clone();
 
                     self.move_generation_thread = Some(thread::spawn(move || {
-                        let mov = game_state.agent_generate_move();
+                        let mov = agent.generate_move(&game_state);
                         if let Err(e) = mov_tx.send(mov) {
                             tracing::error!("Error sending a move: {}", e);
                         }
@@ -702,11 +699,7 @@ impl Onitama {
                         );
                     }
 
-                    self.game_state = GameState::with_deck(
-                        self.players[0].agent.clone(),
-                        self.players[1].agent.clone(),
-                        self.deck.clone(),
-                    );
+                    self.game_state = GameState::with_deck(self.deck.clone());
 
                     self.clear_game();
 
@@ -762,11 +755,7 @@ impl App for Onitama {
 
             // Close game setup window
             self.show_game_setup = false;
-            self.game_state = GameState::with_deck(
-                self.players[0].agent.clone(),
-                self.players[1].agent.clone(),
-                self.deck.clone(),
-            );
+            self.game_state = GameState::with_deck(self.deck.clone());
             self.clear_game();
             self.move_history
                 .update_players(self.players[0].agent.clone(), self.players[1].agent.clone());
