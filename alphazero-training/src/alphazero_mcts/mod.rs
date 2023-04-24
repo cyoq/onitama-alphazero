@@ -18,7 +18,7 @@ use tch::{nn, Tensor};
 
 use crate::{
     common::Options,
-    net::{ConvResNet, ConvResNetConfig, ConvResNetDropout},
+    net::{ConvResNet, ConvResNetConfig},
 };
 
 use self::mcts_arena::MctsArena;
@@ -121,11 +121,12 @@ impl Agent for AlphaZeroMcts {
             Self::reward,
         );
 
-        let (mov, priors) = arena.search();
-        priors.reshape(&[2, 5, 5]).print();
+        let (mov, _priors) = arena.search();
+        // priors.reshape(&[2, 5, 5]).print();
 
         let res = arena.evaluate_state(&game_state.state, game_state.curr_player_color);
-        res.policy.squeeze_dim(0).reshape(&[2, 5, 5]).print();
+        // res.policy.squeeze_dim(0).reshape(&[2, 5, 5]).print();
+        // res.value.print();
         let value = f64::from(res.value.squeeze_dim(0));
 
         (mov, value)

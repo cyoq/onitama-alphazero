@@ -103,6 +103,7 @@ pub struct ResTowerTensor {
     pub value: Tensor,
 }
 
+#[derive(Debug, Clone)]
 pub struct ConvResNetConfig {
     pub hidden_channels: i64,
     pub input_channels: i64,

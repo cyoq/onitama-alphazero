@@ -12,7 +12,7 @@ use tch::{IndexOp, Tensor};
 
 use crate::{
     common::{create_tensor_from_state, Options},
-    net::{ConvResNet, ConvResNetDropout, ResTowerTensor},
+    net::{ConvResNet, ResTowerTensor},
 };
 
 use super::AlphaZeroMctsConfig;
