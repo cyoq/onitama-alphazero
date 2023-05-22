@@ -116,8 +116,12 @@ impl MctsArena {
             };
             *(&mut priors.i((idx, child.mov.unwrap().mov.to as i64))) += child.visits as i64;
         }
-        // priors /= priors.sum(self.options.0);
-        priors = priors.softmax(0, self.options.kind);
+        let sum = priors.sum(self.options.kind);
+        // prevent division by zero
+        if f64::from(&sum) > 1e-5 {
+            priors /= sum;
+        }
+        // priors = priors.softmax(0, self.options.kind);
         priors
     }
 
