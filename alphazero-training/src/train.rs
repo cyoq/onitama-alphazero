@@ -6,6 +6,7 @@ use std::{
 };
 
 use chrono::Local;
+use heapless::HistoryBuffer;
 use onitama_game::game::{
     card::ORIGINAL_CARDS, deck::Deck, move_result::MoveResult, player_color::PlayerColor,
     state::State,
@@ -90,54 +91,64 @@ pub fn self_play(
     mcts: Arc<AlphaZeroMcts>,
     options: Options,
     deck: Option<Deck>,
-    data_buffer: Arc<Mutex<Vec<SelfPlayData>>>,
+    data_buffer: Arc<Mutex<HistoryBuffer<SelfPlayData, BUFFER_SIZE>>>,
+    game_amnt: usize,
 ) {
-    let mut state = if let Some(deck) = deck {
-        State::with_deck(deck)
-    } else {
-        State::new()
-    };
-    let mut player_color = state.deck.neutral_card().player_color;
-    let mut progress = MoveResult::InProgress;
+    for _ in 0..game_amnt {
+        let mut state = if let Some(deck) = deck.clone() {
+            State::with_deck(deck)
+        } else {
+            State::new()
+        };
+        let mut player_color = state.deck.neutral_card().player_color;
+        let mut progress = MoveResult::InProgress;
 
-    let mut max_plies = 150;
+        let mut max_plies = 150;
 
-    let mut play_data = vec![];
-    while !progress.is_win() {
-        let (mov, priors) = mcts.generate_move_tensor(&state, player_color);
+        let mut play_data = vec![];
+        while !progress.is_win() {
+            let (mov, priors) = mcts.generate_move_tensor(&state, player_color);
 
-        let state_tensor = create_tensor_from_state(&state, player_color, options.to_tuple());
+            progress = state.make_move(&mov.mov, player_color, mov.used_card_idx);
 
-        progress = state.make_move(&mov.mov, player_color, mov.used_card_idx);
+            let state_tensor = create_tensor_from_state(&state, player_color, options.to_tuple());
 
-        play_data.push(SelfPlayData {
-            // Priors are the size of [25]
-            pi: priors,
-            // Value is one number size [1]
-            z: Tensor::from(0.),
-            // Size is [L, 5, 5]. Later stack will create [B, L, 5, 5] where B is a batch size and L block layer size
-            state: state_tensor,
-            player_color,
-        });
+            play_data.push(SelfPlayData {
+                // Priors are the size of [25]
+                pi: priors,
+                // Value is one number size [1]
+                z: Tensor::from(0.),
+                // Size is [L, 5, 5]. Later stack will create [B, L, 5, 5] where B is a batch size and L block layer size
+                state: state_tensor,
+                player_color,
+            });
 
-        player_color.switch();
+            player_color.switch();
 
-        if max_plies < 0 {
-            println!("Game has become infinite!");
-            break;
+            if max_plies < 0 {
+                println!("Game has become infinite!");
+                break;
+            }
+
+            max_plies -= 1;
         }
 
-        max_plies -= 1;
+        // assign rewards to the positions depending on a player color
+        play_data
+            .iter_mut()
+            .for_each(|s| s.z = Tensor::from(AlphaZeroMcts::reward(progress, s.player_color)));
+
+        // Append play data to the data_buffer
+        data_buffer.lock().unwrap().extend(play_data.into_iter());
     }
-
-    // assign rewards to the positions depending on a player color
-    play_data
-        .iter_mut()
-        .for_each(|s| s.z = Tensor::from(AlphaZeroMcts::reward(progress, s.player_color)));
-
-    // Append play data to the data_buffer
-    data_buffer.lock().unwrap().extend(play_data.into_iter());
+    println!(
+        "[*] One self-play finished, Data buffer size: {}",
+        data_buffer.lock().unwrap().len(),
+    );
 }
+
+// roughly 1000 thousand games
+const BUFFER_SIZE: usize = 20000;
 
 // TODO: Need to properly split this function up
 // Otherwise it becomes quite a mess
@@ -154,42 +165,39 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
         resnet_block_amnt: 5,
     };
     let vs = nn::VarStore::new(device);
-    let training_model = Arc::new(Mutex::new(ConvResNet::new(
-        &vs.root(),
-        net_config.clone(),
-        options,
-    )));
+    let training_model = ConvResNet::new(&vs.root(), net_config.clone(), options);
     let mut best_vs = nn::VarStore::new(device);
     if let Err(e) = best_vs.copy(&vs) {
         eprintln!("Was not able to copy varstore {}", e);
     }
-    let best_model = Arc::new(Mutex::new(ConvResNet::new(
-        &best_vs.root(),
-        net_config.clone(),
-        options,
-    )));
+    // let best_model = Arc::new(Mutex::new(ConvResNet::new(
+    //     &best_vs.root(),
+    //     net_config.clone(),
+    //     options,
+    // )));
     let mcts_config = AlphaZeroMctsConfig {
         search_time: Duration::from_millis(400),
         max_playouts: 400,
         train: true,
         ..Default::default()
     };
-    let mut mcts = Arc::new(AlphaZeroMcts {
-        config: mcts_config.clone(),
-        model: best_model.clone(),
-        options,
-    });
+    // let mut mcts = Arc::new(AlphaZeroMcts {
+    //     config: mcts_config.clone(),
+    //     model: best_model.clone(),
+    //     options,
+    // });
 
     // TODO: playing with the stable deck at the moment
-    let deck = Some(Deck::new([
-        ORIGINAL_CARDS[0].clone(),
-        ORIGINAL_CARDS[1].clone(),
-        ORIGINAL_CARDS[2].clone(),
-        ORIGINAL_CARDS[3].clone(),
-        ORIGINAL_CARDS[4].clone(),
-    ]));
+    // let deck = Some(Deck::new([
+    //     ORIGINAL_CARDS[0].clone(),
+    //     ORIGINAL_CARDS[1].clone(),
+    //     ORIGINAL_CARDS[2].clone(),
+    //     ORIGINAL_CARDS[3].clone(),
+    //     ORIGINAL_CARDS[4].clone(),
+    // ]));
     let evaluator_config = EvaluatorConfig {
-        deck: deck.clone(),
+        // deck: deck.clone(),
+        deck: None,
         ..Default::default()
     };
 
@@ -204,8 +212,8 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
     .build(&vs, learning_rate)?;
     opt.set_weight_decay(1e-4);
 
-    let self_play_batch_size = 10;
     let train_batch_size = 512;
+    let self_play_game_amnt = 5;
     let thread_amnt = std::thread::available_parallelism().unwrap().get() * 2;
     println!("[*] {} threads are going to be used", thread_amnt);
 
@@ -213,34 +221,36 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
 
     println!("[*] Starting self play");
 
+    let data_buffer: Arc<Mutex<HistoryBuffer<SelfPlayData, BUFFER_SIZE>>> =
+        Arc::new(Mutex::new(HistoryBuffer::new()));
     // Epochs or iterations
     for epoch in 1..epochs + 1 {
-        let data_buffer: Arc<Mutex<Vec<SelfPlayData>>> = Arc::new(Mutex::new(Vec::new()));
         let start = Instant::now();
 
         // Self play data gathering
-        for i in 0..self_play_batch_size {
-            let mut handles = vec![];
+        let mut handles = vec![];
 
-            for _ in 0..thread_amnt {
-                let db = Arc::clone(&data_buffer);
-                let mcts = Arc::clone(&mcts);
-                let deck = deck.clone();
-                let handle = std::thread::spawn(move || {
-                    self_play(mcts, options, deck, db);
-                });
-                handles.push(handle);
-            }
+        for _ in 0..thread_amnt {
+            let db = Arc::clone(&data_buffer);
+            let best_model = Arc::new(Mutex::new(ConvResNet::new(
+                &best_vs.root(),
+                net_config.clone(),
+                options,
+            )));
+            let mcts = Arc::new(AlphaZeroMcts {
+                config: mcts_config.clone(),
+                model: best_model,
+                options,
+            });
+            // let deck = deck.clone();
+            let handle = std::thread::spawn(move || {
+                self_play(mcts, options, None, db, self_play_game_amnt);
+            });
+            handles.push(handle);
+        }
 
-            for handle in handles {
-                handle.join().unwrap();
-            }
-
-            println!(
-                "[*] Self-play batch: {:?}, Data buffer size: {}",
-                i,
-                data_buffer.lock().unwrap().len(),
-            );
+        for handle in handles {
+            handle.join().unwrap();
         }
 
         let end = start.elapsed();
@@ -287,23 +297,22 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
                     0,
                 );
 
-                let model_lock = training_model.lock().unwrap();
-                let y = model_lock.forward(&state_batch, true);
+                let y = training_model.forward(&state_batch, true);
 
                 let (value, policy) =
-                    model_lock.alphaloss(&y.value, &y.policy, &pi_batch, &z_batch);
+                    training_model.alphaloss(&y.value, &y.policy, &pi_batch, &z_batch);
 
                 let loss = &value + &policy;
+                value.print();
+                policy.print();
 
-                let mean = loss.mean(options.kind);
-
-                avg_loss += f64::from(&mean);
+                avg_loss += f64::from(&loss);
                 avg_value_loss += f64::from(&value);
-                avg_policy_loss += f64::from(&policy.mean(options.kind));
+                avg_policy_loss += f64::from(&policy);
 
-                opt.backward_step(&mean);
+                opt.backward_step(&loss);
 
-                println!("epoch: {:4} loss: {:5.2}", epoch, mean);
+                println!("epoch: {:4} loss: {:5.2}", epoch, f64::from(&loss));
             }
 
             avg_loss /= train_amnt as f64;
@@ -338,17 +347,6 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
                 if let Err(e) = best_vs.copy(&vs) {
                     eprintln!("Was not able to copy best varstore {}", e);
                 }
-
-                let best_model = Arc::new(Mutex::new(ConvResNet::new(
-                    &best_vs.root(),
-                    net_config.clone(),
-                    options,
-                )));
-                mcts = Arc::new(AlphaZeroMcts {
-                    config: mcts_config.clone(),
-                    model: best_model,
-                    options: options,
-                });
 
                 println!("[*] Saving best model...");
                 if let Err(err) = vs.save(format!(
