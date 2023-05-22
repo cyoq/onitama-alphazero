@@ -151,10 +151,10 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
     let net_config = ConvResNetConfig {
         hidden_channels: 32,
         input_channels: 21,
-        resnet_block_amnt: 3,
+        resnet_block_amnt: 5,
     };
     let vs = nn::VarStore::new(device);
-    let model = Arc::new(Mutex::new(ConvResNet::new(
+    let training_model = Arc::new(Mutex::new(ConvResNet::new(
         &vs.root(),
         net_config.clone(),
         options,
@@ -163,14 +163,20 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
     if let Err(e) = best_vs.copy(&vs) {
         eprintln!("Was not able to copy varstore {}", e);
     }
-    let mcts = Arc::new(AlphaZeroMcts {
-        config: AlphaZeroMctsConfig {
-            max_playouts: 400,
-            search_time: Duration::from_millis(400),
-            train: true,
-            ..Default::default()
-        },
-        model: model.clone(),
+    let best_model = Arc::new(Mutex::new(ConvResNet::new(
+        &best_vs.root(),
+        net_config.clone(),
+        options,
+    )));
+    let mcts_config = AlphaZeroMctsConfig {
+        search_time: Duration::from_millis(400),
+        max_playouts: 400,
+        train: true,
+        ..Default::default()
+    };
+    let mut mcts = Arc::new(AlphaZeroMcts {
+        config: mcts_config.clone(),
+        model: best_model.clone(),
         options,
     });
 
@@ -189,7 +195,7 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
 
     let learning_rate = 1e-2;
     let save_checkpoint = 5;
-    let evaluation_checkpoint = 10;
+    let evaluation_checkpoint = 2;
 
     let mut opt = nn::Sgd {
         momentum: 0.9,
@@ -281,7 +287,7 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
                     0,
                 );
 
-                let model_lock = model.lock().unwrap();
+                let model_lock = training_model.lock().unwrap();
                 let y = model_lock.forward(&state_batch, true);
 
                 let (value, policy) =
@@ -333,6 +339,17 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
                     eprintln!("Was not able to copy best varstore {}", e);
                 }
 
+                let best_model = Arc::new(Mutex::new(ConvResNet::new(
+                    &best_vs.root(),
+                    net_config.clone(),
+                    options,
+                )));
+                mcts = Arc::new(AlphaZeroMcts {
+                    config: mcts_config.clone(),
+                    model: best_model,
+                    options: options,
+                });
+
                 println!("[*] Saving best model...");
                 if let Err(err) = vs.save(format!(
                     "models/best_model_{}.ot",
@@ -343,7 +360,6 @@ pub fn train(epochs: usize) -> anyhow::Result<()> {
             } else {
                 println!("[*] New model is not the best one. Continue training..");
             }
-            println!("{:?}", loss_stats);
         }
 
         // Checkpoint save
