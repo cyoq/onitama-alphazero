@@ -149,7 +149,7 @@ impl PlayerSetup for MctsSetup {
             ui.add_space(20.);
 
             ui.label("Max playouts: ");
-            ui.add(Slider::new(&mut self.max_playouts, 1..=15000));
+            ui.add(Slider::new(&mut self.max_playouts, 1..=1000000));
         });
     }
 
@@ -218,7 +218,7 @@ impl PlayerSetup for AlphaZeroSetup {
         let options = Options::new(kind::FLOAT_CUDA);
         Box::new(AlphaZeroMcts::from_model_file(
             &mut vs,
-            "./models/model_20230424_000113.ot",
+            "./models/best_model_20230425_163514.ot",
             config,
             net_config,
             options,
