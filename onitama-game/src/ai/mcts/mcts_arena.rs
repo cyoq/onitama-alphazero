@@ -227,12 +227,12 @@ impl MctsArena {
                 .make_move(&mov, mcts_state.player_color, used_card_idx);
 
             // Added additional heuristics which most likely helps the search
-            if move_result == MoveResult::Capture && mcts_state.player_color == reward_color {
-                capture_reward -= 0.25;
-            } else if move_result == MoveResult::Capture && mcts_state.player_color != reward_color
-            {
-                capture_reward += 0.25;
-            }
+            // if move_result == MoveResult::Capture && mcts_state.player_color == reward_color {
+            //     capture_reward -= 0.25;
+            // } else if move_result == MoveResult::Capture && mcts_state.player_color != reward_color
+            // {
+            //     capture_reward += 0.25;
+            // }
 
             mcts_state.player_color.switch();
         }
