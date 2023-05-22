@@ -196,7 +196,7 @@ impl MctsArena {
 
         let mut rng = thread_rng();
 
-        let mut capture_reward = 0.;
+        // let mut capture_reward = 0.;
 
         while !move_result.is_win() {
             // generate legal moves for the enemy
@@ -237,7 +237,7 @@ impl MctsArena {
             mcts_state.player_color.switch();
         }
 
-        self.reward(move_result, reward_color) + capture_reward
+        self.reward(move_result, reward_color) // + capture_reward
     }
 
     pub fn reward(&self, move_result: MoveResult, reward_color: PlayerColor) -> f32 {
