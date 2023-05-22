@@ -401,7 +401,8 @@ impl ConvResNet {
             &z.to_kind(self.options.kind).to_device(self.options.device),
             tch::Reduction::Mean,
         );
-        let policy_loss = p.cross_entropy_loss::<Tensor>(pi, None, tch::Reduction::None, -100, 0.0);
+        // let policy_loss = p.cross_entropy_loss::<Tensor>(pi, None, tch::Reduction::None, -100, 0.0);
+        let policy_loss = -(p.log() * pi).mean(self.options.kind);
         (value_loss, policy_loss)
     }
 }
