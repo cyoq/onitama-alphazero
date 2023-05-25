@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use rand::{thread_rng, Rng};
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 use crate::game::{
     card::CARD_NAMES, deck::Deck, done_move::DoneMove, move_result::MoveResult,
@@ -194,7 +194,7 @@ impl MctsArena {
             return self.reward(move_result, reward_color);
         }
 
-        let mut rng = thread_rng();
+        let mut rng = SmallRng::from_entropy();
 
         // let mut capture_reward = 0.;
 

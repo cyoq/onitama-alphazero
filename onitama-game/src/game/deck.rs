@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use crate::common::get_bit;
@@ -138,7 +138,7 @@ impl Deck {
 
 impl Default for Deck {
     fn default() -> Self {
-        let mut rng = thread_rng();
+        let mut rng = SmallRng::from_entropy();
         let mut shuffled = ORIGINAL_CARDS.clone();
         shuffled.shuffle(&mut rng);
 
