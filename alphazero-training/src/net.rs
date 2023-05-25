@@ -81,9 +81,9 @@ pub struct ConvResNetConfig {
 impl Default for ConvResNetConfig {
     fn default() -> Self {
         Self {
-            hidden_channels: 32,
+            hidden_channels: 64,
             input_channels: 21,
-            resnet_block_amnt: 3,
+            resnet_block_amnt: 5,
         }
     }
 }
