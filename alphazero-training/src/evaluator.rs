@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use tch::nn;
 
 use crate::{
-    alphazero_mcts::{AlphaZeroMcts, AlphaZeroMctsConfig},
+    alphazero_mcts::{AlphaZeroMcts, AlphaZeroMctsConfig, TrainingAlphaZeroMcts},
     common::Options,
     net::{ConvResNet, ConvResNetConfig},
 };

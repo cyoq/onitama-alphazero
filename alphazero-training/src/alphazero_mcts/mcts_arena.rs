@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Instant,
-};
+use std::time::Instant;
 
 use onitama_game::game::{
     card::CARD_NAMES, deck::Deck, done_move::DoneMove, move_result::MoveResult,
@@ -36,22 +33,22 @@ pub struct EvaluationResult {
     pub priors: Vec<Vec<f64>>,
 }
 
-pub struct MctsArena {
+pub struct MctsArena<'a> {
     pub game_state: MctsState,
     pub config: AlphaZeroMctsConfig,
     pub arena: Vec<MctsNode>,
     pub playouts: u32,
-    pub model: Arc<Mutex<ConvResNet>>,
+    pub model: &'a ConvResNet,
     pub options: Options,
     pub reward: fn(MoveResult, PlayerColor) -> f64,
 }
 
-impl MctsArena {
+impl<'a> MctsArena<'a> {
     pub fn new(
         state: State,
         player_color: PlayerColor,
         config: AlphaZeroMctsConfig,
-        model: Arc<Mutex<ConvResNet>>,
+        model: &'a ConvResNet,
         options: Options,
         reward: fn(MoveResult, PlayerColor) -> f64,
     ) -> Self {
@@ -267,7 +264,7 @@ impl MctsArena {
     /// 3. Return back legal actions, their probabilities and a value
     pub fn evaluate(&self, state: &MctsState) -> EvaluationResult {
         let t = create_tensor_from_state(&state.state, state.player_color, self.options.to_tuple());
-        let results = tch::no_grad(|| self.model.lock().unwrap().forward(&t, false));
+        let results = tch::no_grad(|| self.model.forward(&t, false));
 
         // Squeeze batch dimension that should be [1], so [1, 2, 25] -> [2, 25]
         let first_card_policy = Vec::<f64>::from(results.policy.squeeze_dim(0).i((0, ..)));
@@ -325,7 +322,7 @@ impl MctsArena {
 
     pub fn evaluate_state(&self, state: &State, player_color: PlayerColor) -> ResTowerTensor {
         let t = create_tensor_from_state(&state, player_color, self.options.to_tuple());
-        tch::no_grad(|| self.model.lock().unwrap().forward(&t, false))
+        tch::no_grad(|| self.model.forward(&t, false))
     }
 
     #[inline]

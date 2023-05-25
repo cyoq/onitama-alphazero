@@ -42,14 +42,24 @@ impl Default for AlphaZeroMctsConfig {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct AlphaZeroMcts {
+pub fn reward(move_result: MoveResult, reward_color: PlayerColor) -> f64 {
+    match (reward_color, move_result) {
+        (PlayerColor::Red, MoveResult::RedWin) => 1.,
+        (PlayerColor::Red, MoveResult::BlueWin) => -1.,
+        (PlayerColor::Blue, MoveResult::RedWin) => -1.,
+        (PlayerColor::Blue, MoveResult::BlueWin) => 1.,
+        _ => 0.,
+    }
+}
+
+#[derive(Debug)]
+pub struct TrainingAlphaZeroMcts {
     pub config: AlphaZeroMctsConfig,
-    pub model: Arc<Mutex<ConvResNet>>,
+    pub model: ConvResNet,
     pub options: Options,
 }
 
-impl AlphaZeroMcts {
+impl TrainingAlphaZeroMcts {
     pub fn from_model_file(
         vs: &mut nn::VarStore,
         model_path: &str,
@@ -57,7 +67,7 @@ impl AlphaZeroMcts {
         net_config: ConvResNetConfig,
         options: Options,
     ) -> Self {
-        let model = Arc::new(Mutex::new(ConvResNet::new(&vs.root(), net_config, options)));
+        let model = ConvResNet::new(&vs.root(), net_config, options);
         if let Err(e) = vs.load(model_path) {
             eprintln!("An error occurred while loading the file: {}", e);
         }
@@ -77,23 +87,20 @@ impl AlphaZeroMcts {
             state.clone(),
             curr_player_color,
             self.config.clone(),
-            self.model.clone(),
+            &self.model,
             self.options,
-            Self::reward,
+            reward,
         );
 
         arena.search()
     }
+}
 
-    pub fn reward(move_result: MoveResult, reward_color: PlayerColor) -> f64 {
-        match (reward_color, move_result) {
-            (PlayerColor::Red, MoveResult::RedWin) => 1.,
-            (PlayerColor::Red, MoveResult::BlueWin) => -1.,
-            (PlayerColor::Blue, MoveResult::RedWin) => -1.,
-            (PlayerColor::Blue, MoveResult::BlueWin) => 1.,
-            _ => 0.,
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct AlphaZeroMcts {
+    pub config: AlphaZeroMctsConfig,
+    pub model: Arc<Mutex<ConvResNet>>,
+    pub options: Options,
 }
 
 impl Serialize for AlphaZeroMcts {
@@ -112,13 +119,14 @@ impl Serialize for AlphaZeroMcts {
 
 impl Agent for AlphaZeroMcts {
     fn generate_move(&self, game_state: &GameState) -> (DoneMove, f64) {
+        let model = self.model.lock().unwrap();
         let mut arena = MctsArena::new(
             game_state.state.clone(),
             game_state.curr_player_color,
             self.config.clone(),
-            self.model.clone(),
+            &model,
             self.options,
-            Self::reward,
+            reward,
         );
 
         let (mov, _priors) = arena.search();

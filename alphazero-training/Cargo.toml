@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 onitama_game = { path = "../onitama-game" }
-rand = "0.8.5"
+rand = { version = "0.8.5", features = ["small_rng"] }
 rand_distr = "0.4.3"
 tch = "0.10.3"
 tracing = "0.1.37"
@@ -17,4 +17,3 @@ serde = { version = "1.0.156", features = ["derive"] }
 serde_json = "1.0.96"
 chrono = "0.4.24"
 colored = "2.0.0"
-heapless = "0.7.16"

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use alphazero_training::{
-    alphazero_mcts::{AlphaZeroMcts, AlphaZeroMctsConfig},
+    alphazero_mcts::{AlphaZeroMctsConfig, TrainingAlphaZeroMcts},
     common::Options,
     net::ConvResNetConfig,
 };
@@ -216,7 +216,7 @@ impl PlayerSetup for AlphaZeroSetup {
         };
         let net_config = ConvResNetConfig::default();
         let options = Options::new(kind::FLOAT_CUDA);
-        Box::new(AlphaZeroMcts::from_model_file(
+        Box::new(TrainingAlphaZeroMcts::from_model_file(
             &mut vs,
             "./models/best_model_20230425_163514.ot",
             config,
