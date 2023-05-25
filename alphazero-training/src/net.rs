@@ -401,11 +401,12 @@ impl ConvResNet {
         //     &z.to_kind(self.options.kind).to_device(self.options.device),
         //     tch::Reduction::Mean,
         // );
-        let value_loss = (z.to_device(self.options.device) - v)
-            .pow_tensor_scalar(2)
-            .mean(self.options.kind);
+        let diff = z.to_device(self.options.device) - v;
+        let value_loss = (&diff * &diff).mean(self.options.kind);
         // let policy_loss = p.cross_entropy_loss::<Tensor>(pi, None, tch::Reduction::None, -100, 0.0);
-        let policy_loss = -(p.log() * pi).mean(self.options.kind);
+        let policy_loss = -(p.log() * pi)
+            .sum_dim_intlist([1].as_slice(), false, self.options.kind)
+            .mean(self.options.kind);
         (value_loss, policy_loss)
     }
 }
