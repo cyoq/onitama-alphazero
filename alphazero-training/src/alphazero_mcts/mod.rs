@@ -60,24 +60,6 @@ pub struct TrainingAlphaZeroMcts {
 }
 
 impl TrainingAlphaZeroMcts {
-    pub fn from_model_file(
-        vs: &mut nn::VarStore,
-        model_path: &str,
-        config: AlphaZeroMctsConfig,
-        net_config: ConvResNetConfig,
-        options: Options,
-    ) -> Self {
-        let model = ConvResNet::new(&vs.root(), net_config, options);
-        if let Err(e) = vs.load(model_path) {
-            eprintln!("An error occurred while loading the file: {}", e);
-        }
-        Self {
-            config,
-            model,
-            options,
-        }
-    }
-
     pub fn generate_move_tensor(
         &self,
         state: &State,
@@ -101,6 +83,26 @@ pub struct AlphaZeroMcts {
     pub config: AlphaZeroMctsConfig,
     pub model: Arc<Mutex<ConvResNet>>,
     pub options: Options,
+}
+
+impl AlphaZeroMcts {
+    pub fn from_model_file(
+        vs: &mut nn::VarStore,
+        model_path: &str,
+        config: AlphaZeroMctsConfig,
+        net_config: ConvResNetConfig,
+        options: Options,
+    ) -> Self {
+        let model = Arc::new(Mutex::new(ConvResNet::new(&vs.root(), net_config, options)));
+        if let Err(e) = vs.load(model_path) {
+            eprintln!("An error occurred while loading the file: {}", e);
+        }
+        Self {
+            config,
+            model,
+            options,
+        }
+    }
 }
 
 impl Serialize for AlphaZeroMcts {
@@ -135,6 +137,7 @@ impl Agent for AlphaZeroMcts {
         let res = arena.evaluate_state(&game_state.state, game_state.curr_player_color);
         // res.policy.squeeze_dim(0).reshape(&[2, 5, 5]).print();
         // res.value.print();
+
         let value = f64::from(res.value.squeeze_dim(0));
 
         (mov, value)
