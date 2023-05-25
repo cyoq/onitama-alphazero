@@ -54,7 +54,7 @@ fn main() {
         },
         iterations: 20,
         self_play_game_amnt: 100,
-        save_checkpoint: 5,
+        save_checkpoint: 2,
         evaluation_checkpoint: 2,
         evaluator_config: EvaluatorConfig {
             game_amnt: 20,
