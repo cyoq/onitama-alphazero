@@ -107,7 +107,7 @@ pub struct TrainConfig {
     pub evaluation_checkpoint: usize,
     pub thread_amnt: usize,
     // Maximum plies in the self play game to call it a draw
-    pub max_plies: usize,
+    pub max_plies: isize,
 }
 
 impl Default for TrainConfig {
