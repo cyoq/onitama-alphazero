@@ -4,6 +4,7 @@ use onitama_game::game::{
     card::CARD_NAMES, deck::Deck, done_move::DoneMove, move_result::MoveResult,
     player_color::PlayerColor, r#move::Move, state::State,
 };
+use rand::{rngs::SmallRng, SeedableRng};
 use rand_distr::{Dirichlet, Distribution};
 use tch::{IndexOp, Tensor};
 
@@ -115,10 +116,10 @@ impl<'a> MctsArena<'a> {
         }
         let sum = priors.sum(self.options.kind);
         // prevent division by zero
-        if f64::from(&sum) > 1e-5 {
+        if f64::from(&sum) > 0. {
             priors /= sum;
         }
-        // priors = priors.softmax(0, self.options.kind);
+
         priors
     }
 
@@ -181,28 +182,29 @@ impl<'a> MctsArena<'a> {
     /// 3. Return the best child's index
     fn select(&self, parent: &MctsNode) -> usize {
         let children = &parent.children;
+        // Values from Silver paper
+        let epsilon = 0.25;
+        let eta = 0.03;
+        let mut small_rng = SmallRng::from_entropy();
 
-        let uct = |child: &MctsNode| {
+        let mut uct = |child: &MctsNode| {
             // if it is a root node, apply Dirichlet noise
             if parent.parent == None && self.config.train {
                 let action_num = children.len();
-                // Values from Silver paper
-                let epsilon = 0.25;
-                let eta = 0.03;
-                let dirichlet = Dirichlet::new(&vec![eta; action_num]).unwrap();
-                let noise_vector = dirichlet.sample(&mut rand::thread_rng());
+                let dirichlet = Dirichlet::new_with_size(eta, action_num).unwrap();
+                let noise_vector = dirichlet.sample(&mut small_rng);
                 // Root is at 0th index, other root children are in sequence
                 let noise = noise_vector[child.idx - 1];
 
                 child.winrate
                     + self.config.exploration_c
                         * (child.probability * (1. - epsilon) + noise * epsilon)
-                        * (parent.visits as f64 / (child.visits + 1) as f64).sqrt()
+                        * ((parent.visits as f64).sqrt() / (child.visits + 1) as f64)
             } else {
                 child.winrate
                     + self.config.exploration_c
                         * child.probability
-                        * (parent.visits as f64 / (child.visits + 1) as f64).sqrt()
+                        * ((parent.visits as f64).sqrt() / (child.visits + 1) as f64)
             }
         };
 
