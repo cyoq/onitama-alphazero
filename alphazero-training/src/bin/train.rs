@@ -48,20 +48,21 @@ fn main() {
     // };
     let train_config = TrainConfig {
         mcts_config: AlphaZeroMctsConfig {
-            search_time: Duration::from_millis(50),
-            max_playouts: 100,
+            search_time: Duration::from_millis(200),
+            max_playouts: 400,
             ..Default::default()
         },
-        iterations: 5,
-        self_play_game_amnt: 10,
-        save_checkpoint: 1,
-        evaluation_checkpoint: 1,
+        iterations: 20,
+        self_play_game_amnt: 100,
+        save_checkpoint: 5,
+        evaluation_checkpoint: 2,
         evaluator_config: EvaluatorConfig {
-            game_amnt: 5,
+            game_amnt: 20,
             ..Default::default()
         },
         ..Default::default()
     };
+
     match train(train_config) {
         Ok(_) => println!("Success!"),
         Err(e) => println!("An error occured: {}", e),
