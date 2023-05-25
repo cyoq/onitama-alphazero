@@ -309,8 +309,8 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                     training_model.alphaloss(&y.value, &y.policy, &pi_batch, &z_batch);
 
                 let loss = &value + &policy;
-                value.print();
-                policy.print();
+                // value.print();
+                // policy.print();
 
                 avg_loss += f64::from(&loss);
                 avg_value_loss += f64::from(&value);
@@ -318,18 +318,28 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
                 opt.backward_step(&loss);
 
-                info!(
-                    "[?] Iteration: {}, epoch: {}, loss: {:5.2}",
-                    iter,
-                    epoch,
-                    f64::from(&loss)
-                );
+                // info!(
+                //     "[?] Iteration: {}, epoch: {}, loss: {:5.2}",
+                //     iter,
+                //     epoch,
+                //     f64::from(&loss)
+                // );
             }
 
             avg_epoch_loss += avg_loss / train_amnt as f64;
             avg_epoch_value_loss += avg_value_loss / train_amnt as f64;
             avg_epoch_policy_loss += avg_policy_loss / train_amnt as f64;
+
+            info!(
+                "[?] Iteration: {}, epoch: {}, avg_loss: {:5.4}, avg_policy: {:5.4}, avg_value: {:5.4}",
+                iter,
+                epoch,
+                avg_loss / train_amnt as f64,
+                avg_policy_loss / train_amnt as f64,
+                avg_value_loss / train_amnt as f64,
+            );
         }
+
         let epochs = config.training_epochs as f64;
         loss_stats.push(
             iter,
