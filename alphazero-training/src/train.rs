@@ -216,13 +216,19 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             let mut handles = vec![];
 
             for _ in 0..config.thread_amnt {
+                let mut best_vs_copy = nn::VarStore::new(device);
+                if let Err(e) = best_vs_copy.copy(&best_vs) {
+                    error!("[!] Was not able to copy best varstore: {}", e);
+                }
                 let best_model =
-                    ConvResNet::new(&best_vs.root(), config.model_config.clone(), options);
+                    ConvResNet::new(&best_vs_copy.root(), config.model_config.clone(), options);
+
                 let mcts = TrainingAlphaZeroMcts {
                     config: config.mcts_config.clone(),
                     model: best_model,
                     options,
                 };
+
                 let handle = s.spawn(|| self_play(mcts, options, config.deck.clone(), &config));
                 handles.push(handle);
             }
@@ -328,7 +334,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
         );
 
         info!(
-            "[*] I: {}, Average loss: {:5.2}, avg policy: {:5.2}, avg value: {:5.2}",
+            "[*] I: {}, Average loss: {:5.4}, avg value: {:5.4}, avg policy: {:5.4}",
             iter,
             avg_epoch_loss / epochs,
             avg_epoch_value_loss / epochs,
