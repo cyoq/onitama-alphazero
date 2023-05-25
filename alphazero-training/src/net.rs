@@ -66,38 +66,6 @@ impl nn::ModuleT for ResNetBlock {
 }
 
 #[derive(Debug)]
-pub struct DropoutBlock {
-    pub linear: nn::Linear,
-    pub batch_norm: nn::BatchNorm,
-}
-
-impl DropoutBlock {
-    pub fn new(path: &nn::Path, c_in: i64, c_out: i64) -> Self {
-        let linear = nn::linear(
-            &(path / "droupout_linear"),
-            c_in,
-            c_out,
-            nn::LinearConfig::default(),
-        );
-        let batch_norm = nn::batch_norm1d(
-            &(path / "droupout_bn"),
-            c_out,
-            nn::BatchNormConfig::default(),
-        );
-        Self { linear, batch_norm }
-    }
-}
-
-impl nn::ModuleT for DropoutBlock {
-    fn forward_t(&self, xs: &tch::Tensor, train: bool) -> tch::Tensor {
-        xs.apply_t(&self.linear, train)
-            .apply_t(&self.batch_norm, train)
-            .relu()
-            .dropout(0.3, train)
-    }
-}
-
-#[derive(Debug)]
 pub struct ResTowerTensor {
     pub policy: Tensor,
     pub value: Tensor,
