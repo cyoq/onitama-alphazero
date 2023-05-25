@@ -5,29 +5,44 @@ use serde::{Deserialize, Serialize};
 use crate::evaluator::PitStatistics;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LossStats {
-    pub epoch: Vec<usize>,
+pub struct GamesPlayed {
+    pub games_amnt: usize,
+    pub positions_retrieved: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Stats {
+    pub iteration: Vec<usize>,
     pub loss: Vec<f64>,
     pub policy_loss: Vec<f64>,
     pub value_loss: Vec<f64>,
     pub was_best_change: Vec<bool>,
     pub fight_statistics: Vec<PitStatistics>,
+    pub games_played: Vec<GamesPlayed>,
 }
 
-impl LossStats {
+impl Stats {
     pub fn new() -> Self {
         Self {
-            epoch: vec![],
+            iteration: vec![],
             loss: vec![],
             policy_loss: vec![],
             value_loss: vec![],
             was_best_change: vec![],
             fight_statistics: vec![],
+            games_played: vec![],
         }
     }
 
+    pub fn push_games_played(&mut self, games_amnt: usize, positions_amnt: usize) {
+        self.games_played.push(GamesPlayed {
+            games_amnt,
+            positions_retrieved: positions_amnt,
+        });
+    }
+
     pub fn push(&mut self, epoch: usize, loss: f64, value_loss: f64, policy_loss: f64) {
-        self.epoch.push(epoch);
+        self.iteration.push(epoch);
         self.loss.push(loss);
         self.policy_loss.push(policy_loss);
         self.value_loss.push(value_loss);

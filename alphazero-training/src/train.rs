@@ -16,7 +16,7 @@ use crate::{
     common::{create_tensor_from_state, Options},
     evaluator::{Evaluator, EvaluatorConfig},
     net::{ConvResNet, ConvResNetConfig},
-    stats::LossStats,
+    stats::Stats,
 };
 
 pub struct SelfPlayData {
@@ -186,7 +186,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
     println!("[*] {} threads are going to be used", config.thread_amnt);
 
-    let mut loss_stats = LossStats::new();
+    let mut loss_stats = Stats::new();
 
     println!("[*] Starting self play");
 
@@ -226,12 +226,17 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             data_buffer.len()
         );
 
-        // Train
-        let mut avg_loss: f64 = 0.;
-        let mut avg_value_loss: f64 = 0.;
-        let mut avg_policy_loss: f64 = 0.;
+        loss_stats.push_games_played(
+            config.self_play_game_amnt * config.thread_amnt,
+            data_buffer.len(),
+        );
 
-        for epoch in 1..config.training_epochs + 1 {
+        // Train
+        let mut avg_epoch_loss: f64 = 0.;
+        let mut avg_epoch_value_loss: f64 = 0.;
+        let mut avg_epoch_policy_loss: f64 = 0.;
+
+        for _epoch in 1..config.training_epochs + 1 {
             if data_buffer.len() < config.train_batch_size {
                 println!(
                     "Not enough data for training. Data amount: {}, expected: {}",
@@ -242,6 +247,9 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             }
 
             let train_amnt = data_buffer.len() / config.train_batch_size;
+            let mut avg_loss: f64 = 0.;
+            let mut avg_value_loss: f64 = 0.;
+            let mut avg_policy_loss: f64 = 0.;
 
             for _ in 0..train_amnt {
                 let batch = data_buffer
@@ -290,19 +298,25 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
                 opt.backward_step(&loss);
 
-                println!("epoch: {:4} loss: {:5.2}", iter, f64::from(&loss));
+                println!("Iteration: {:4} loss: {:5.2}", iter, f64::from(&loss));
             }
 
-            avg_loss /= train_amnt as f64;
-            avg_value_loss /= train_amnt as f64;
-            avg_policy_loss /= train_amnt as f64;
+            avg_epoch_loss = avg_loss / train_amnt as f64;
+            avg_epoch_value_loss = avg_value_loss / train_amnt as f64;
+            avg_epoch_policy_loss = avg_policy_loss / train_amnt as f64;
         }
-        loss_stats.push(iter, avg_loss, avg_value_loss, avg_policy_loss);
+        loss_stats.push(
+            iter,
+            avg_epoch_loss,
+            avg_epoch_value_loss,
+            avg_epoch_policy_loss,
+        );
 
         // Evaluate the model against itself and other agents
         if iter % config.evaluation_checkpoint == 0 {
             println!("[*] Starting evaluation phase");
             let start = Instant::now();
+
             let mut evaluator = Evaluator::new(
                 evaluator_config.clone(),
                 &best_vs,
