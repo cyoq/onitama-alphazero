@@ -14,6 +14,7 @@ use tch::nn;
 use crate::{
     alphazero_mcts::{AlphaZeroMcts, AlphaZeroMctsConfig},
     common::Options,
+    elo_rating::{EloRating, PlayerRating},
     net::{ConvResNet, ConvResNetConfig},
 };
 
@@ -25,26 +26,71 @@ pub struct WinLoseDraws {
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct RatingChange {
+    pub before_a: f64,
+    pub after_a: f64,
+    pub before_b: f64,
+    pub after_b: f64,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct FightStatistics {
     pub general: WinLoseDraws,
     pub winrate: f64,
     // win, lose, draws with the specific color, their sum must equal to general
     pub color: [WinLoseDraws; 2],
     pub color_winrate: [f64; 2],
+    pub rating_a: f64,
+    pub rating_b: f64,
+    pub rating_change_history: Vec<RatingChange>,
 }
 
 impl FightStatistics {
+    pub fn new(rating_a: f64, rating_b: f64) -> Self {
+        Self {
+            rating_a,
+            rating_b,
+            ..Default::default()
+        }
+    }
+
     pub fn update(&mut self, move_result: MoveResult, player_color: PlayerColor) {
         match (move_result, player_color) {
             (MoveResult::BlueWin, PlayerColor::Red) | (MoveResult::RedWin, PlayerColor::Blue) => {
+                let (ra, rb) = EloRating::elo_change(self.rating_a, self.rating_b, false);
+                self.rating_change_history.push(RatingChange {
+                    before_a: self.rating_a,
+                    after_a: ra,
+                    before_b: self.rating_b,
+                    after_b: rb,
+                });
+                self.rating_a = ra;
+                self.rating_b = rb;
+
                 self.general.loses += 1;
                 self.color[player_color as usize].loses += 1;
             }
             (MoveResult::BlueWin, PlayerColor::Blue) | (MoveResult::RedWin, PlayerColor::Red) => {
+                let (ra, rb) = EloRating::elo_change(self.rating_a, self.rating_b, true);
+                self.rating_change_history.push(RatingChange {
+                    before_a: self.rating_a,
+                    after_a: ra,
+                    before_b: self.rating_b,
+                    after_b: rb,
+                });
+                self.rating_a = ra;
+                self.rating_b = rb;
+
                 self.general.wins += 1;
                 self.color[player_color as usize].wins += 1;
             }
             _ => {
+                self.rating_change_history.push(RatingChange {
+                    before_a: self.rating_a,
+                    after_a: self.rating_a,
+                    before_b: self.rating_b,
+                    after_b: self.rating_b,
+                });
                 self.general.draws += 1;
                 self.color[player_color as usize].draws += 1;
             }
@@ -94,6 +140,7 @@ pub struct Evaluator<'a> {
     pub best_nn_vs: &'a nn::VarStore,
     pub new_nn_vs: &'a nn::VarStore,
     pub net_config: &'a ConvResNetConfig,
+    pub ratings: &'a [[PlayerRating; 2]; 4],
     pub options: Options,
 }
 
@@ -104,6 +151,7 @@ impl<'a> Evaluator<'a> {
         best_nn_vs: &'a nn::VarStore,
         new_nn_vs: &'a nn::VarStore,
         net_config: &'a ConvResNetConfig,
+        ratings: &'a [[PlayerRating; 2]; 4],
         options: Options,
     ) -> Self {
         Self {
@@ -111,6 +159,7 @@ impl<'a> Evaluator<'a> {
             best_nn_vs,
             new_nn_vs,
             net_config,
+            ratings,
             options,
         }
     }
@@ -118,10 +167,10 @@ impl<'a> Evaluator<'a> {
     /// Returns boolean which tells if the new model is better than the best one
     pub fn pit(&mut self) -> (PitStatistics, bool) {
         // Apply handles to start threads working in parallel
-        let self_fight_handle = self.fight_against_best();
-        let random_fight_handle = self.fight_against_random();
-        let mcts_fight_handle = self.fight_against_mcts();
-        let alphabeta_fight_handle = self.fight_against_alphabeta();
+        let self_fight_handle = self.fight_against_best(&self.ratings[0]);
+        let random_fight_handle = self.fight_against_random(&self.ratings[1]);
+        let mcts_fight_handle = self.fight_against_mcts(&self.ratings[2]);
+        let alphabeta_fight_handle = self.fight_against_alphabeta(&self.ratings[3]);
 
         let self_fight = self_fight_handle.join().unwrap();
         let random_fight = random_fight_handle.join().unwrap();
@@ -142,7 +191,10 @@ impl<'a> Evaluator<'a> {
         (statistics, is_best)
     }
 
-    pub fn fight_against_best(&self) -> JoinHandle<FightStatistics> {
+    pub fn fight_against_best(
+        &self,
+        ratings: &'a [PlayerRating; 2],
+    ) -> JoinHandle<FightStatistics> {
         let mcts_config = AlphaZeroMctsConfig {
             search_time: Duration::from_millis(400),
             max_playouts: 400,
@@ -172,10 +224,15 @@ impl<'a> Evaluator<'a> {
         };
 
         let config = self.config.clone();
-        std::thread::spawn(move || fight(config, Box::new(new_mcts), Box::new(best_mcts)))
+        let ra = *ratings[0].rating;
+        let rb = *ratings[1].rating;
+        std::thread::spawn(move || fight(config, Box::new(new_mcts), Box::new(best_mcts), ra, rb))
     }
 
-    pub fn fight_against_random(&self) -> JoinHandle<FightStatistics> {
+    pub fn fight_against_random(
+        &self,
+        ratings: &'a [PlayerRating; 2],
+    ) -> JoinHandle<FightStatistics> {
         let mcts_config = AlphaZeroMctsConfig {
             search_time: Duration::from_millis(400),
             max_playouts: 400,
@@ -196,10 +253,15 @@ impl<'a> Evaluator<'a> {
         let random = Random;
 
         let config = self.config.clone();
-        std::thread::spawn(move || fight(config, Box::new(mcts), Box::new(random)))
+        let ra = *ratings[0].rating;
+        let rb = *ratings[1].rating;
+        std::thread::spawn(move || fight(config, Box::new(mcts), Box::new(random), ra, rb))
     }
 
-    pub fn fight_against_alphabeta(&self) -> JoinHandle<FightStatistics> {
+    pub fn fight_against_alphabeta(
+        &self,
+        ratings: &'a [PlayerRating; 2],
+    ) -> JoinHandle<FightStatistics> {
         let mcts_config = AlphaZeroMctsConfig {
             search_time: Duration::from_millis(400),
             max_playouts: 400,
@@ -223,10 +285,15 @@ impl<'a> Evaluator<'a> {
         };
 
         let config = self.config.clone();
-        std::thread::spawn(move || fight(config, Box::new(mcts), Box::new(alphabeta)))
+        let ra = *ratings[0].rating;
+        let rb = *ratings[1].rating;
+        std::thread::spawn(move || fight(config, Box::new(mcts), Box::new(alphabeta), ra, rb))
     }
 
-    pub fn fight_against_mcts(&self) -> JoinHandle<FightStatistics> {
+    pub fn fight_against_mcts(
+        &self,
+        ratings: &'a [PlayerRating; 2],
+    ) -> JoinHandle<FightStatistics> {
         let mcts_config = AlphaZeroMctsConfig {
             search_time: Duration::from_millis(400),
             max_playouts: 400,
@@ -252,7 +319,9 @@ impl<'a> Evaluator<'a> {
         };
 
         let config = self.config.clone();
-        std::thread::spawn(move || fight(config, Box::new(a0_mcts), Box::new(mcts)))
+        let ra = *ratings[0].rating;
+        let rb = *ratings[1].rating;
+        std::thread::spawn(move || fight(config, Box::new(a0_mcts), Box::new(mcts), ra, rb))
     }
 }
 
@@ -260,10 +329,12 @@ pub fn fight(
     config: EvaluatorConfig,
     agent: Box<dyn Agent>,
     opponent: Box<dyn Agent>,
+    agent_rating: f64,
+    opponent_rating: f64,
 ) -> FightStatistics {
     let mut agents = [agent, opponent];
     let mut agent_color = PlayerColor::Red;
-    let mut statistics = FightStatistics::default();
+    let mut statistics = FightStatistics::new(agent_rating, opponent_rating);
 
     for _ in 0..config.game_amnt {
         let deck: Deck;

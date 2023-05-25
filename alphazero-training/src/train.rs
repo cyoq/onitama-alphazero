@@ -14,7 +14,8 @@ use tch::{
 use crate::{
     alphazero_mcts::{reward, AlphaZeroMctsConfig, TrainingAlphaZeroMcts},
     common::{create_tensor_from_state, Options},
-    evaluator::{Evaluator, EvaluatorConfig},
+    elo_rating::PlayerRating,
+    evaluator::{Evaluator, EvaluatorConfig, PitStatistics},
     net::{ConvResNet, ConvResNetConfig},
     stats::Stats,
 };
@@ -187,6 +188,21 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
     println!("[*] {} threads are going to be used", config.thread_amnt);
 
     let mut loss_stats = Stats::new();
+    use crate::elo_rating::FightPlayer::*;
+    // TODO: very very verbose solution,
+    // Need a way to create a better architecture
+    let mut ratings = [
+        [
+            PlayerRating::new(TrainingModel),
+            PlayerRating::new(BestModel),
+        ],
+        [PlayerRating::new(TrainingModel), PlayerRating::new(Random)],
+        [PlayerRating::new(TrainingModel), PlayerRating::new(Mcts)],
+        [
+            PlayerRating::new(TrainingModel),
+            PlayerRating::new(AlphaBeta),
+        ],
+    ];
 
     println!("[*] Starting self play");
 
@@ -322,6 +338,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                 &best_vs,
                 &vs,
                 &config.model_config,
+                &ratings,
                 options,
             );
 
@@ -332,6 +349,8 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                 "[*] Done evaluation in {:?}. New model winrate against the best: {}",
                 end, fight_statistics.self_fight.winrate
             );
+
+            update_ratings(&mut ratings, &fight_statistics);
             loss_stats.push_fight(should_change_best, fight_statistics);
 
             if should_change_best {
@@ -339,6 +358,9 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                 if let Err(e) = best_vs.copy(&vs) {
                     eprintln!("Was not able to copy best varstore {}", e);
                 }
+
+                // Change best model rating to be the same as for the training model
+                ratings[0][1].update_rating(*ratings[0][0].rating);
 
                 println!("[*] Saving best model...");
                 if let Err(err) = vs.save(format!(
@@ -370,4 +392,18 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn update_ratings(ratings: &mut [[PlayerRating; 2]; 4], statistics: &PitStatistics) {
+    ratings[0][0].update_rating(statistics.self_fight.rating_a);
+    ratings[0][1].update_rating(statistics.self_fight.rating_b);
+
+    ratings[1][0].update_rating(statistics.random_fight.rating_a);
+    ratings[1][1].update_rating(statistics.random_fight.rating_b);
+
+    ratings[2][0].update_rating(statistics.mcts_fight.rating_a);
+    ratings[2][1].update_rating(statistics.mcts_fight.rating_b);
+
+    ratings[3][0].update_rating(statistics.alphabeta_fight.rating_a);
+    ratings[3][1].update_rating(statistics.alphabeta_fight.rating_b);
 }
