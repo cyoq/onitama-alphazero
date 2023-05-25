@@ -257,16 +257,13 @@ impl ConvResNet {
     }
 
     pub fn alphaloss(&self, v: &Tensor, p: &Tensor, pi: &Tensor, z: &Tensor) -> (Tensor, Tensor) {
-        // let value_loss = v.mse_loss(
-        //     &z.to_kind(self.options.kind).to_device(self.options.device),
-        //     tch::Reduction::Mean,
-        // );
         let diff = z.to_device(self.options.device) - v;
         let value_loss = (&diff * &diff).mean(self.options.kind);
-        // let policy_loss = p.cross_entropy_loss::<Tensor>(pi, None, tch::Reduction::None, -100, 0.0);
+
         let policy_loss = -(p.log() * pi)
             .sum_dim_intlist([1].as_slice(), false, self.options.kind)
             .mean(self.options.kind);
+
         (value_loss, policy_loss)
     }
 }
