@@ -314,15 +314,16 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                 println!("Iteration: {:4} loss: {:5.2}", iter, f64::from(&loss));
             }
 
-            avg_epoch_loss = avg_loss / train_amnt as f64;
-            avg_epoch_value_loss = avg_value_loss / train_amnt as f64;
-            avg_epoch_policy_loss = avg_policy_loss / train_amnt as f64;
+            avg_epoch_loss += avg_loss / train_amnt as f64;
+            avg_epoch_value_loss += avg_value_loss / train_amnt as f64;
+            avg_epoch_policy_loss += avg_policy_loss / train_amnt as f64;
         }
+        let epochs = config.training_epochs as f64;
         loss_stats.push(
             iter,
-            avg_epoch_loss,
-            avg_epoch_value_loss,
-            avg_epoch_policy_loss,
+            avg_epoch_loss / epochs,
+            avg_epoch_value_loss / epochs,
+            avg_epoch_policy_loss / epochs,
         );
 
         // Evaluate the model against itself and other agents
