@@ -416,12 +416,13 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                 error!("[!] error while saving model: {}", err);
             } else {
                 info!("[*] Saved the model");
-                if let Err(e) = loss_stats.save() {
-                    error!("[!] Error while saving loss stats: {}", e);
-                };
-                info!("[*] Saved statistics!");
             }
         }
+
+        if let Err(e) = loss_stats.save() {
+            error!("[!] Error while saving loss stats: {}", e);
+        };
+        info!("[*] Saved statistics!");
     }
 
     Ok(())
