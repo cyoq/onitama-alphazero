@@ -256,7 +256,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
         let mut avg_epoch_value_loss: f64 = 0.;
         let mut avg_epoch_policy_loss: f64 = 0.;
 
-        for _epoch in 1..config.training_epochs + 1 {
+        for epoch in 1..config.training_epochs + 1 {
             if data_buffer.len() < config.train_batch_size {
                 info!(
                     "[*] Not enough data for training. Data amount: {}, expected: {}",
@@ -318,7 +318,12 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
                 opt.backward_step(&loss);
 
-                info!("[?] Iteration: {} loss: {:5.2}", iter, f64::from(&loss));
+                info!(
+                    "[?] Iteration: {}, epoch: {}, loss: {:5.2}",
+                    iter,
+                    epoch,
+                    f64::from(&loss)
+                );
             }
 
             avg_epoch_loss += avg_loss / train_amnt as f64;
