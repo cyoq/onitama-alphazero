@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use alphazero_training::{
-    alphazero_mcts::{AlphaZeroMctsConfig, TrainingAlphaZeroMcts},
+    alphazero_mcts::{AlphaZeroMcts, AlphaZeroMctsConfig},
     common::Options,
     net::ConvResNetConfig,
 };
@@ -207,7 +207,8 @@ impl PlayerSetup for AlphaZeroSetup {
 
     fn create_agent(&self) -> Box<dyn Agent> {
         // TODO: This thing must be receved from the application
-        let mut vs = nn::VarStore::new(Device::cuda_if_available());
+        let mut vs = nn::VarStore::new(Device::Cpu);
+
         let config = AlphaZeroMctsConfig {
             search_time: Duration::from_millis(self.search_time),
             exploration_c: self.exploration_c,
@@ -215,10 +216,10 @@ impl PlayerSetup for AlphaZeroSetup {
             train: false,
         };
         let net_config = ConvResNetConfig::default();
-        let options = Options::new(kind::FLOAT_CUDA);
-        Box::new(TrainingAlphaZeroMcts::from_model_file(
+        let options = Options::new(kind::FLOAT_CPU);
+        Box::new(AlphaZeroMcts::from_model_file(
             &mut vs,
-            "./models/best_model_20230425_163514.ot",
+            "./models/best_model_20230525_185202.ot",
             config,
             net_config,
             options,
