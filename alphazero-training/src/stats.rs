@@ -19,10 +19,17 @@ pub struct Stats {
     pub was_best_change: Vec<bool>,
     pub fight_statistics: Vec<PitStatistics>,
     pub games_played: Vec<GamesPlayed>,
+    pub dir: PathBuf,
 }
 
 impl Stats {
     pub fn new() -> Self {
+        let dir = PathBuf::from(format!(
+            "./loss_stats/loss_{}",
+            chrono::offset::Local::now().format("%Y%m%y_%H%M%S")
+        ));
+        fs::create_dir_all(dir.clone()).unwrap();
+
         Self {
             iteration: vec![],
             loss: vec![],
@@ -31,6 +38,7 @@ impl Stats {
             was_best_change: vec![],
             fight_statistics: vec![],
             games_played: vec![],
+            dir,
         }
     }
 
@@ -62,10 +70,10 @@ impl Stats {
     pub fn save(&self) -> anyhow::Result<()> {
         let content = serde_json::to_string_pretty(&self)
             .expect("Serde must serialize loss stats with no problem");
-        let dir = PathBuf::from("./loss_stats");
+        let dir = self.dir.clone();
         let filename = self.get_filename();
         let path = dir.join(filename);
-        fs::create_dir_all(dir)?;
+        fs::create_dir_all(dir.clone())?;
         fs::write(path, content)?;
 
         Ok(())
