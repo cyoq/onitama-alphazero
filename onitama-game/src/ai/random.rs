@@ -1,7 +1,7 @@
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
-use crate::game::{done_move::DoneMove, game_state::GameState};
+use crate::game::{done_move::DoneMove, game_state::GameState, r#move::Move};
 
 use super::agent::Agent;
 
@@ -18,11 +18,24 @@ impl Agent for Random {
         let card = cards[card_idx];
 
         let moves = state.generate_legal_moves(player_color, card);
-        let mov = moves[rng.gen_range(0..moves.len())];
+        // TODO: I have not implemented a turn skip when a random player does not have a legal move.
+        // Therefore for the random agent, he will just make one move disregarding any rule.
+        // However, it won't help him to win, because every other agent beats him up.
+        let mov = if moves.len() > 0 {
+            moves[rng.gen_range(0..moves.len())]
+        } else {
+            // He will just imitate a move from a5 to a4 with a pawn.
+            // If it does not exist, it will just appear on the board.
+            Move {
+                from: 0,
+                to: 5,
+                piece: crate::game::piece::PieceKind::Pawn,
+            }
+        };
 
         (
             DoneMove {
-                mov: mov,
+                mov,
                 used_card_idx: card_idx,
             },
             0.,
