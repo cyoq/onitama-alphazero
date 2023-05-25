@@ -13,6 +13,7 @@ use tch::{
     nn::{self, OptimizerConfig},
     Device, Tensor,
 };
+use tracing::{error, info, warn};
 
 use crate::{
     alphazero_mcts::{reward, AlphaZeroMctsConfig, TrainingAlphaZeroMcts},
@@ -71,7 +72,7 @@ pub fn self_play(
             player_color.switch();
 
             if max_plies < 0 {
-                println!("Game has become infinite!");
+                warn!("[@] Game has become infinite!");
                 break;
             }
 
@@ -87,7 +88,7 @@ pub fn self_play(
         play_buffer.extend(play_history.into_iter());
     }
 
-    println!(
+    info!(
         "[*] Self-played {} games, Play data size: {}",
         config.self_play_game_amnt,
         play_buffer.len(),
@@ -161,7 +162,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
     // let device = Device::cuda_if_available();
     let device = Device::Cpu;
-    println!("[*] Is CUDA available? {:?}", Device::is_cuda(device));
+    info!("[*] Is CUDA available? {:?}", Device::is_cuda(device));
     let options = if Device::is_cuda(device) {
         Options::new(kind::FLOAT_CUDA)
     } else {
@@ -172,7 +173,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
     let training_model = ConvResNet::new(&vs.root(), config.model_config.clone(), options);
     let mut best_vs = nn::VarStore::new(device);
     if let Err(e) = best_vs.copy(&vs) {
-        eprintln!("Was not able to copy varstore {}", e);
+        error!("[!] Was not able to copy varstore {}", e);
     }
 
     let mut opt = nn::Sgd {
@@ -182,7 +183,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
     .build(&vs, config.learning_rate)?;
     opt.set_weight_decay(config.l2_const);
 
-    println!("[*] {} threads are going to be used", config.thread_amnt);
+    info!("[*] {} threads are going to be used", config.thread_amnt);
 
     let mut loss_stats = Stats::new();
     use crate::elo_rating::FightPlayer::*;
@@ -201,7 +202,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
         ],
     ];
 
-    println!("[*] Starting self play");
+    info!("[*] Starting self play");
 
     let mut small_rng = SmallRng::from_entropy();
 
@@ -232,7 +233,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             }
         });
 
-        println!(
+        info!(
             "[*] Iteration: {}, Self-play time: {:?}, Data Buffer size: {}",
             iter,
             start.elapsed(),
@@ -251,8 +252,8 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
         for _epoch in 1..config.training_epochs + 1 {
             if data_buffer.len() < config.train_batch_size {
-                println!(
-                    "Not enough data for training. Data amount: {}, expected: {}",
+                info!(
+                    "[*] Not enough data for training. Data amount: {}, expected: {}",
                     data_buffer.len(),
                     config.train_batch_size
                 );
@@ -311,7 +312,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
                 opt.backward_step(&loss);
 
-                println!("Iteration: {:4} loss: {:5.2}", iter, f64::from(&loss));
+                info!("[?] Iteration: {} loss: {:5.2}", iter, f64::from(&loss));
             }
 
             avg_epoch_loss += avg_loss / train_amnt as f64;
@@ -326,9 +327,17 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             avg_epoch_policy_loss / epochs,
         );
 
+        info!(
+            "[*] I: {}, Average loss: {:5.2}, avg policy: {:5.2}, avg value: {:5.2}",
+            iter,
+            avg_epoch_loss / epochs,
+            avg_epoch_value_loss / epochs,
+            avg_epoch_policy_loss / epochs,
+        );
+
         // Evaluate the model against itself and other agents
         if iter % config.evaluation_checkpoint == 0 {
-            println!("[*] Starting evaluation phase");
+            info!("[*] Starting evaluation phase");
             let start = Instant::now();
 
             let mut evaluator = Evaluator::new(
@@ -343,7 +352,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             let (fight_statistics, should_change_best) = evaluator.pit();
             let end = start.elapsed();
 
-            println!(
+            info!(
                 "[*] Done evaluation in {:?}. New model winrate against the best: {}. New model rating: {}",
                 end, fight_statistics.self_fight.winrate,
                 fight_statistics.self_fight.rating_a
@@ -353,24 +362,24 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             loss_stats.push_fight(should_change_best, fight_statistics);
 
             if should_change_best {
-                println!("[*] New model is better. Changing..");
+                info!("[*] New model is better. Changing..");
                 if let Err(e) = best_vs.copy(&vs) {
-                    eprintln!("Was not able to copy best varstore {}", e);
+                    error!("[!] Was not able to copy best varstore: {}", e);
                 }
 
                 // Change best model rating to be the same as for the training model
                 ratings[0][1].update_rating(*ratings[0][0].rating);
 
-                println!("[*] Saving best model...");
+                info!("[*] Saving best model...");
                 if let Err(err) = vs.save(format!(
                     "{}/best_model_{}.ot",
                     folder,
                     Local::now().format("%Y%m%d_%H%M%S")
                 )) {
-                    eprintln!("error while saving model: {}", err);
+                    error!("[!] error while saving model: {}", err);
                 }
             } else {
-                println!("[*] New model is not the best one. Continue training..");
+                info!("[*] New model is not the best one. Continue training..");
             }
         }
 
@@ -383,13 +392,13 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             );
 
             if let Err(err) = vs.save(path) {
-                eprintln!("error while saving model: {}", err);
+                error!("[!] error while saving model: {}", err);
             } else {
-                println!("Saved the model");
+                info!("[*] Saved the model");
                 if let Err(e) = loss_stats.save() {
-                    eprintln!("Error while saving loss stats: {}", e);
+                    error!("[!] Error while saving loss stats: {}", e);
                 };
-                println!("Saved statistics!");
+                info!("[*] Saved statistics!");
             }
         }
     }
