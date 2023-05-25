@@ -64,8 +64,8 @@ impl EloRating {
         let sa = if is_a_win { 1. } else { 0. };
         let sb = 1. - sa;
 
-        let new_ra = K * (sa - ea);
-        let new_rb = K * (sb - eb);
+        let new_ra = ra + K * (sa - ea);
+        let new_rb = rb + K * (sb - eb);
         (new_ra, new_rb)
     }
 }
