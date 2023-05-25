@@ -1,4 +1,7 @@
-use std::time::{Duration, Instant};
+use std::{
+    fs,
+    time::{Duration, Instant},
+};
 
 use chrono::Local;
 use onitama_game::game::{
@@ -109,6 +112,8 @@ pub struct TrainConfig {
     pub thread_amnt: usize,
     // Maximum plies in the self play game to call it a draw
     pub max_plies: isize,
+    pub deck: Option<Deck>,
+    pub evaluator_config: EvaluatorConfig,
 }
 
 impl Default for TrainConfig {
@@ -141,6 +146,8 @@ impl Default for TrainConfig {
             evaluation_checkpoint: 3,
             thread_amnt,
             max_plies: 150,
+            deck: None,
+            evaluator_config: EvaluatorConfig::default(),
         }
     }
 }
@@ -148,6 +155,10 @@ impl Default for TrainConfig {
 // TODO: Need to properly split this function up
 // Otherwise it becomes quite a mess
 pub fn train(config: TrainConfig) -> anyhow::Result<()> {
+    let date = Local::now().format("%Y%m%d_%H%M%S");
+    let folder = format!("models/{}", date);
+    fs::create_dir_all(folder.clone()).unwrap();
+
     // let device = Device::cuda_if_available();
     let device = Device::Cpu;
     println!("[*] Is CUDA available? {:?}", Device::is_cuda(device));
@@ -163,20 +174,6 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
     if let Err(e) = best_vs.copy(&vs) {
         eprintln!("Was not able to copy varstore {}", e);
     }
-
-    // TODO: playing with the stable deck at the moment
-    // let deck = Some(Deck::new([
-    //     ORIGINAL_CARDS[0].clone(),
-    //     ORIGINAL_CARDS[1].clone(),
-    //     ORIGINAL_CARDS[2].clone(),
-    //     ORIGINAL_CARDS[3].clone(),
-    //     ORIGINAL_CARDS[4].clone(),
-    // ]));
-    let evaluator_config = EvaluatorConfig {
-        // deck: deck.clone(),
-        deck: None,
-        ..Default::default()
-    };
 
     let mut opt = nn::Sgd {
         momentum: 0.9,
@@ -225,7 +222,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                     model: best_model,
                     options,
                 };
-                let handle = s.spawn(|| self_play(mcts, options, None, &config));
+                let handle = s.spawn(|| self_play(mcts, options, config.deck.clone(), &config));
                 handles.push(handle);
             }
 
@@ -334,7 +331,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             let start = Instant::now();
 
             let mut evaluator = Evaluator::new(
-                evaluator_config.clone(),
+                config.evaluator_config.clone(),
                 &best_vs,
                 &vs,
                 &config.model_config,
@@ -346,8 +343,9 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             let end = start.elapsed();
 
             println!(
-                "[*] Done evaluation in {:?}. New model winrate against the best: {}",
-                end, fight_statistics.self_fight.winrate
+                "[*] Done evaluation in {:?}. New model winrate against the best: {}. New model rating: {}",
+                end, fight_statistics.self_fight.winrate,
+                fight_statistics.self_fight.rating_a
             );
 
             update_ratings(&mut ratings, &fight_statistics);
@@ -364,7 +362,8 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
                 println!("[*] Saving best model...");
                 if let Err(err) = vs.save(format!(
-                    "models/best_model_{}.ot",
+                    "{}/best_model_{}.ot",
+                    folder,
                     Local::now().format("%Y%m%d_%H%M%S")
                 )) {
                     eprintln!("error while saving model: {}", err);
@@ -376,17 +375,20 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
         // Checkpoint save
         if iter % config.save_checkpoint == 0 {
-            if let Err(err) = vs.save(format!(
-                "models/model_{}.ot",
+            let path = format!(
+                "{}/model_{}.ot",
+                folder,
                 Local::now().format("%Y%m%d_%H%M%S")
-            )) {
+            );
+
+            if let Err(err) = vs.save(path) {
                 eprintln!("error while saving model: {}", err);
             } else {
                 println!("Saved the model");
-                println!("Loss stats: {:?}", loss_stats);
                 if let Err(e) = loss_stats.save() {
                     eprintln!("Error while saving loss stats: {}", e);
                 };
+                println!("Saved statistics!");
             }
         }
     }
