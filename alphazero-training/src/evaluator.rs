@@ -10,6 +10,7 @@ use onitama_game::{
 };
 use serde::{Deserialize, Serialize};
 use tch::nn;
+use tracing::error;
 
 use crate::{
     alphazero_mcts::{AlphaZeroMcts, AlphaZeroMctsConfig},
@@ -201,22 +202,31 @@ impl<'a> Evaluator<'a> {
             train: false,
             ..Default::default()
         };
-        let new_model = Arc::new(Mutex::new(ConvResNet::new(
-            &self.new_nn_vs.root(),
+        let mut train_vs = nn::VarStore::new(self.options.device);
+        if let Err(e) = train_vs.copy(self.new_nn_vs) {
+            error!("Was not able to copy VarStore: {}", e);
+        }
+        let training_model = Arc::new(Mutex::new(ConvResNet::new(
+            &train_vs.root(),
             self.net_config.clone(),
             self.options,
         )));
-        let new_mcts = AlphaZeroMcts {
+        let train_mcts = AlphaZeroMcts {
             config: mcts_config.clone(),
-            model: new_model,
+            model: training_model,
             options: self.options,
         };
 
+        let mut best_vs = nn::VarStore::new(self.options.device);
+        if let Err(e) = best_vs.copy(self.best_nn_vs) {
+            error!("Was not able to copy VarStore: {}", e);
+        }
         let best_model = Arc::new(Mutex::new(ConvResNet::new(
-            &self.best_nn_vs.root(),
+            &best_vs.root(),
             self.net_config.clone(),
             self.options,
         )));
+
         let best_mcts = AlphaZeroMcts {
             config: mcts_config.clone(),
             model: best_model,
@@ -226,7 +236,7 @@ impl<'a> Evaluator<'a> {
         let config = self.config.clone();
         let ra = *ratings[0].rating;
         let rb = *ratings[1].rating;
-        std::thread::spawn(move || fight(config, Box::new(new_mcts), Box::new(best_mcts), ra, rb))
+        std::thread::spawn(move || fight(config, Box::new(train_mcts), Box::new(best_mcts), ra, rb))
     }
 
     pub fn fight_against_random(
@@ -239,8 +249,13 @@ impl<'a> Evaluator<'a> {
             train: false,
             ..Default::default()
         };
+
+        let mut train_vs = nn::VarStore::new(self.options.device);
+        if let Err(e) = train_vs.copy(self.new_nn_vs) {
+            error!("Was not able to copy VarStore: {}", e);
+        }
         let model = Arc::new(Mutex::new(ConvResNet::new(
-            &self.new_nn_vs.root(),
+            &train_vs.root(),
             self.net_config.clone(),
             self.options,
         )));
@@ -268,8 +283,14 @@ impl<'a> Evaluator<'a> {
             train: false,
             ..Default::default()
         };
+
+        let mut train_vs = nn::VarStore::new(self.options.device);
+        if let Err(e) = train_vs.copy(self.new_nn_vs) {
+            error!("Was not able to copy VarStore: {}", e);
+        }
+
         let model = Arc::new(Mutex::new(ConvResNet::new(
-            &self.new_nn_vs.root(),
+            &train_vs.root(),
             self.net_config.clone(),
             self.options,
         )));
@@ -300,8 +321,14 @@ impl<'a> Evaluator<'a> {
             train: false,
             ..Default::default()
         };
+
+        let mut train_vs = nn::VarStore::new(self.options.device);
+        if let Err(e) = train_vs.copy(self.new_nn_vs) {
+            error!("Was not able to copy VarStore: {}", e);
+        }
+
         let model = Arc::new(Mutex::new(ConvResNet::new(
-            &self.new_nn_vs.root(),
+            &train_vs.root(),
             self.net_config.clone(),
             self.options,
         )));

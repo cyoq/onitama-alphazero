@@ -119,7 +119,7 @@ pub struct TrainConfig {
 
 impl Default for TrainConfig {
     fn default() -> Self {
-        let thread_amnt = std::thread::available_parallelism().unwrap().get() / 2;
+        let thread_amnt = std::thread::available_parallelism().unwrap().get();
 
         Self {
             // Depends on the average game length
@@ -171,9 +171,11 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
     let vs = nn::VarStore::new(device);
     let training_model = ConvResNet::new(&vs.root(), config.model_config.clone(), options);
+
     let mut best_vs = nn::VarStore::new(device);
+    let _best_model = ConvResNet::new(&best_vs.root(), config.model_config.clone(), options);
     if let Err(e) = best_vs.copy(&vs) {
-        error!("[!] Was not able to copy varstore {}", e);
+        error!("[!] Was not able to copy the VarStore: {}", e);
     }
 
     let mut opt = nn::Sgd {
@@ -217,15 +219,17 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
             for _ in 0..config.thread_amnt {
                 let mut best_vs_copy = nn::VarStore::new(device);
-                if let Err(e) = best_vs_copy.copy(&best_vs) {
-                    error!("[!] Was not able to copy best varstore: {}", e);
-                }
-                let best_model =
+
+                let best_model_copy =
                     ConvResNet::new(&best_vs_copy.root(), config.model_config.clone(), options);
+
+                if let Err(e) = best_vs_copy.copy(&best_vs) {
+                    error!("Error while copying the best VarStore: {}", e);
+                }
 
                 let mcts = TrainingAlphaZeroMcts {
                     config: config.mcts_config.clone(),
-                    model: best_model,
+                    model: best_model_copy,
                     options,
                 };
 
@@ -317,13 +321,6 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
                 avg_policy_loss += f64::from(&policy);
 
                 opt.backward_step(&loss);
-
-                // info!(
-                //     "[?] Iteration: {}, epoch: {}, loss: {:5.2}",
-                //     iter,
-                //     epoch,
-                //     f64::from(&loss)
-                // );
             }
 
             avg_epoch_loss += avg_loss / train_amnt as f64;
@@ -383,40 +380,25 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             loss_stats.push_fight(should_change_best, fight_statistics);
 
             if should_change_best {
-                info!("[*] New model is better. Changing..");
+                info!("[*] New model is better. Changing...");
+
+                info!("[*] Saving best model...");
+                save_vs(&vs, &folder, iter, true);
+
                 if let Err(e) = best_vs.copy(&vs) {
-                    error!("[!] Was not able to copy best varstore: {}", e);
+                    error!("[!] Was not able to load the best VarStore: {}", e);
                 }
 
                 // Change best model rating to be the same as for the training model
                 ratings[0][1].update_rating(*ratings[0][0].rating);
-
-                info!("[*] Saving best model...");
-                if let Err(err) = vs.save(format!(
-                    "{}/best_model_{}.ot",
-                    folder,
-                    Local::now().format("%Y%m%d_%H%M%S")
-                )) {
-                    error!("[!] error while saving model: {}", err);
-                }
             } else {
-                info!("[*] New model is not the best one. Continue training..");
+                info!("[*] New model is not the best one. Continue training...");
             }
         }
 
-        // Checkpoint save
         if iter % config.save_checkpoint == 0 {
-            let path = format!(
-                "{}/model_{}.ot",
-                folder,
-                Local::now().format("%Y%m%d_%H%M%S")
-            );
-
-            if let Err(err) = vs.save(path) {
-                error!("[!] error while saving model: {}", err);
-            } else {
-                info!("[*] Saved the model");
-            }
+            info!("[*] Save checkpoint");
+            save_vs(&vs, &folder, iter, false);
         }
 
         if let Err(e) = loss_stats.save() {
@@ -426,6 +408,24 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn save_vs(vs: &nn::VarStore, folder: &str, iter: usize, is_best: bool) -> String {
+    let path = format!(
+        "{}/{}model_{}_{}.ot",
+        folder,
+        if is_best { "best_" } else { "" },
+        iter,
+        Local::now().format("%Y%m%d_%H%M%S")
+    );
+
+    if let Err(err) = vs.save(&path) {
+        error!("[!] Error while saving the model: {}", err);
+    } else {
+        info!("[*] Saved the model");
+    }
+
+    path
 }
 
 fn update_ratings(ratings: &mut [[PlayerRating; 2]; 4], statistics: &PitStatistics) {
