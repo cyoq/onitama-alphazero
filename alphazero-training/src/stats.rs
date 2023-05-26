@@ -26,7 +26,7 @@ impl Stats {
     pub fn new() -> Self {
         let dir = PathBuf::from(format!(
             "./loss_stats/loss_{}",
-            chrono::offset::Local::now().format("%Y%m%y_%H%M%S")
+            chrono::offset::Local::now().format("%Y%m%d_%H%M%S")
         ));
         fs::create_dir_all(dir.clone()).unwrap();
 
