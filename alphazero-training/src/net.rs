@@ -167,6 +167,13 @@ impl ConvResNet {
             .add(nn::linear(
                 &(path / "vh_linear1"),
                 25,
+                net_config.hidden_channels,
+                nn::LinearConfig::default(),
+            ))
+            .add_fn(|xs| xs.relu())
+            .add(nn::linear(
+                &(path / "vh_linear2"),
+                net_config.hidden_channels,
                 1,
                 nn::LinearConfig::default(),
             ))
