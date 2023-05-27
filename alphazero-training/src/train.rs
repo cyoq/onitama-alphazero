@@ -7,7 +7,7 @@ use chrono::Local;
 use onitama_game::game::{
     deck::Deck, move_result::MoveResult, player_color::PlayerColor, state::State,
 };
-use rand::{rngs::SmallRng, seq::IteratorRandom, SeedableRng};
+use rand::{seq::IteratorRandom, thread_rng};
 use tch::{
     kind,
     nn::{self, OptimizerConfig},
@@ -206,7 +206,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
 
     info!("[*] Starting self play");
 
-    let mut small_rng = SmallRng::from_entropy();
+    let mut rng = thread_rng();
 
     for iter in 1..config.iterations + 1 {
         let mut data_buffer = Vec::with_capacity(config.buffer_size);
@@ -278,7 +278,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
             for _ in 0..train_amnt {
                 let batch = data_buffer
                     .iter()
-                    .choose_multiple(&mut small_rng, config.train_batch_size);
+                    .choose_multiple(&mut rng, config.train_batch_size);
 
                 // Creating a batch of size [B, L, 5, 5] where L is a block layer size
                 let state_batch = Tensor::stack(

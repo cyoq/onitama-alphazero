@@ -4,7 +4,7 @@ use onitama_game::game::{
     card::CARD_NAMES, deck::Deck, done_move::DoneMove, move_result::MoveResult,
     player_color::PlayerColor, r#move::Move, state::State,
 };
-use rand::{rngs::SmallRng, SeedableRng};
+
 use rand_distr::{Dirichlet, Distribution};
 use tch::{IndexOp, Tensor};
 
@@ -185,14 +185,14 @@ impl<'a> MctsArena<'a> {
         // Values from Silver paper
         let epsilon = 0.25;
         let eta = 0.03;
-        let mut small_rng = SmallRng::from_entropy();
+        let mut rng = rand::thread_rng();
 
         let mut uct = |child: &MctsNode| {
             // if it is a root node, apply Dirichlet noise
             if parent.parent == None && self.config.train {
                 let action_num = children.len();
                 let dirichlet = Dirichlet::new_with_size(eta, action_num).unwrap();
-                let noise_vector = dirichlet.sample(&mut small_rng);
+                let noise_vector = dirichlet.sample(&mut rng);
                 // Root is at 0th index, other root children are in sequence
                 let noise = noise_vector[child.idx - 1];
 
