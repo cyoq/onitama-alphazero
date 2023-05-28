@@ -209,6 +209,7 @@ pub fn train(config: TrainConfig) -> anyhow::Result<()> {
     let mut rng = thread_rng();
 
     for iter in 1..config.iterations + 1 {
+        info!("[*] Iteration {} has started.", iter);
         let mut data_buffer = Vec::with_capacity(config.buffer_size);
 
         let start = Instant::now();
