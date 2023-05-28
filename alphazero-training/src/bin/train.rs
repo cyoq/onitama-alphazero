@@ -3,6 +3,7 @@ use std::{fs::File, sync::Arc, time::Duration};
 use alphazero_training::{
     alphazero_mcts::AlphaZeroMctsConfig,
     evaluator::EvaluatorConfig,
+    net::ConvResNetConfig,
     train::{train, TrainConfig},
 };
 use chrono::Local;
@@ -48,15 +49,27 @@ fn main() {
     // };
     let train_config = TrainConfig {
         mcts_config: AlphaZeroMctsConfig {
-            search_time: Duration::from_millis(200),
+            search_time: Duration::from_millis(20),
             max_playouts: 400,
             ..Default::default()
         },
-        iterations: 20,
+        model_config: ConvResNetConfig {
+            hidden_channels: 64,
+            // first model
+            input_channels: 21,
+            resnet_block_amnt: 5,
+            // second model
+            // input_channels: 10,
+            // resnet_block_amnt: 5,
+        },
+        iterations: 10,
         self_play_game_amnt: 100,
         save_checkpoint: 2,
-        evaluation_checkpoint: 2,
+        evaluation_checkpoint: 5,
+        thread_amnt: 12,
+        learning_rate: 1e-4,
         evaluator_config: EvaluatorConfig {
+            winrate_percent: 0.55,
             game_amnt: 20,
             ..Default::default()
         },
