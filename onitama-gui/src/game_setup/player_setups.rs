@@ -171,7 +171,7 @@ pub struct AlphaZeroSetup {
     pub search_time: u64,
     pub exploration_c: f64,
     pub max_playouts: u32,
-    pub model_path: String,
+    // pub model_path: String,
 }
 
 impl Default for AlphaZeroSetup {
@@ -180,7 +180,7 @@ impl Default for AlphaZeroSetup {
             search_time: 1000,
             exploration_c: 2f64.sqrt(),
             max_playouts: 5000,
-            model_path: "".to_owned(),
+            // model_path: "".to_owned(),
         }
     }
 }
@@ -215,11 +215,15 @@ impl PlayerSetup for AlphaZeroSetup {
             max_playouts: self.max_playouts,
             train: false,
         };
-        let net_config = ConvResNetConfig::default();
+        let net_config = ConvResNetConfig {
+            hidden_channels: 64,
+            input_channels: 21,
+            resnet_block_amnt: 5,
+        };
         let options = Options::new(kind::FLOAT_CPU);
         Box::new(AlphaZeroMcts::from_model_file(
             &mut vs,
-            "./models/best_model_20230525_185202.ot",
+            "./models/best_model_21_20230528_192217.ot",
             config,
             net_config,
             options,
@@ -227,6 +231,6 @@ impl PlayerSetup for AlphaZeroSetup {
     }
 
     fn player_type(&self) -> PlayerType {
-        PlayerType::Mcts
+        PlayerType::AlphaZero
     }
 }
