@@ -223,7 +223,7 @@ impl PlayerSetup for AlphaZeroSetup {
         let options = Options::new(kind::FLOAT_CPU);
         Box::new(AlphaZeroMcts::from_model_file(
             &mut vs,
-            "./models/best_model_21_20230528_192217.ot",
+            "./models/model_40_20230529_141755.ot",
             config,
             net_config,
             options,

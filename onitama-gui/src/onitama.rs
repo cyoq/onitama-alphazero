@@ -140,7 +140,7 @@ impl Onitama {
         // load the font
         font_def.font_data.insert(
             "MesloLGS".to_string(),
-            FontData::from_static(include_bytes!("../assets/fonts/MesloLGS_NF_Regular.ttf")),
+            FontData::from_static(include_bytes!("../../assets/fonts/MesloLGS_NF_Regular.ttf")),
         );
 
         // set the font to be in the first priority
@@ -160,22 +160,22 @@ impl Onitama {
             (
                 Piece::new(PieceKind::King, PlayerColor::Blue),
                 "blue_king",
-                "onitama-gui/assets/images/blue_king.svg",
+                "assets/images/blue_king.svg",
             ),
             (
                 Piece::new(PieceKind::Pawn, PlayerColor::Blue),
                 "blue_pawn",
-                "onitama-gui/assets/images/blue_pawn.svg",
+                "assets/images/blue_pawn.svg",
             ),
             (
                 Piece::new(PieceKind::King, PlayerColor::Red),
                 "red_king",
-                "onitama-gui/assets/images/red_king.svg",
+                "assets/images/red_king.svg",
             ),
             (
                 Piece::new(PieceKind::Pawn, PlayerColor::Red),
                 "red_pawn",
-                "onitama-gui/assets/images/red_pawn.svg",
+                "assets/images/red_pawn.svg",
             ),
         ];
 
