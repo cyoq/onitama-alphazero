@@ -15,6 +15,9 @@ Cargo.lock
 /target
 cards.jpg
 saves
-models
+models/test_models
+alphazero-training/models
+alphazero-training/loss_stats
+alphazero-training/logs
 loss_stats
 logs
