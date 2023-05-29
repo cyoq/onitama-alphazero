@@ -51,7 +51,8 @@ fn main() {
         mcts_config: AlphaZeroMctsConfig {
             search_time: Duration::from_millis(20),
             max_playouts: 400,
-            ..Default::default()
+            exploration_c: 5.,
+            train: true,
         },
         model_config: ConvResNetConfig {
             hidden_channels: 64,
@@ -67,7 +68,7 @@ fn main() {
         save_checkpoint: 2,
         evaluation_checkpoint: 5,
         thread_amnt: 12,
-        learning_rate: 1e-4,
+        learning_rate: 5e-3,
         evaluator_config: EvaluatorConfig {
             winrate_percent: 0.55,
             game_amnt: 20,
