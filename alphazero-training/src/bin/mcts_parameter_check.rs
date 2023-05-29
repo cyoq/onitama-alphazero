@@ -86,4 +86,47 @@ pub fn play_with_c_value() {
     }
 }
 
-fn main() {}
+pub fn play_with_n_value() {
+    let game_amnt = 100;
+    let n_values = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
+    for i in 0..n_values.len() {
+        let mcts1: Box<dyn Agent> = Box::new(Mcts {
+            search_time: Duration::from_millis(400),
+            min_node_visits: n_values[i],
+            exploration_c: 1.,
+            max_playouts: 1600,
+        });
+
+        let mut handles = vec![];
+        for k in (i + 1)..n_values.len() {
+            let mcts2: Box<dyn Agent> = Box::new(Mcts {
+                search_time: Duration::from_millis(400),
+                min_node_visits: n_values[k],
+                exploration_c: 1.,
+                max_playouts: 1600,
+            });
+
+            let clone = mcts1.clone();
+            let handle = std::thread::spawn(move || play(clone, mcts2, game_amnt));
+            handles.push(handle);
+        }
+
+        let now = Instant::now();
+        for (j, handle) in handles.into_iter().enumerate() {
+            let wins = handle.join().unwrap();
+            println!(
+                "MCTS with n = {} vs MCTS with n = {} -> winrate: {:3.2}",
+                n_values[i],
+                n_values[i + j + 1],
+                (wins as f64 / game_amnt as f64),
+            );
+        }
+        println!("Elapsed: {:?}\n", now.elapsed());
+    }
+}
+
+fn main() {
+    // play_with_c_value();
+    play_with_n_value();
+}
