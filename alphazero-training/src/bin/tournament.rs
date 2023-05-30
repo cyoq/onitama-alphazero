@@ -7,7 +7,7 @@ use alphazero_training::{
     net::ConvResNetConfig,
 };
 use onitama_game::{
-    ai::{agent::Agent, alpha_beta::AlphaBeta, mcts::Mcts},
+    ai::{agent::Agent, alpha_beta::AlphaBeta, mcts::Mcts, random::Random},
     game::{
         card::CARD_NAMES, deck::Deck, game_state::GameState, move_result::MoveResult,
         player_color::PlayerColor,
@@ -84,6 +84,7 @@ pub fn pit() {
     let mut alphabeta_rating = 800.;
     let mut mcts_rating = 800.;
     let mut alphazero_rating = 800.;
+    let mut random_rating = 800.;
 
     let mut decks = Vec::with_capacity(GAME_AMNT);
     for _ in 0..GAME_AMNT {
@@ -130,6 +131,8 @@ pub fn pit() {
         Options::new(kind::FLOAT_CPU),
     ));
 
+    let random: Box<dyn Agent> = Box::new(Random);
+
     play(
         &alphabeta,
         &mcts,
@@ -149,10 +152,37 @@ pub fn pit() {
     );
 
     play(
+        &alphabeta,
+        &random,
+        &mut alphabeta_rating,
+        &mut random_rating,
+        GAME_AMNT,
+        &decks,
+    );
+
+    play(
         &mcts,
         &alphazero,
         &mut mcts_rating,
         &mut alphazero_rating,
+        GAME_AMNT,
+        &decks,
+    );
+
+    play(
+        &mcts,
+        &random,
+        &mut mcts_rating,
+        &mut random_rating,
+        GAME_AMNT,
+        &decks,
+    );
+
+    play(
+        &alphazero,
+        &random,
+        &mut alphazero_rating,
+        &mut random_rating,
         GAME_AMNT,
         &decks,
     );
