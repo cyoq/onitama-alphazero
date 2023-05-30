@@ -21,6 +21,3 @@ To start the training, check [train.rs](alphazero-training/src/bin/train.rs) for
 ```
 cd alphazero-training; cargo run --release --bin train
 ```
-
-## TODO:
-More information on a project will be pushed later
