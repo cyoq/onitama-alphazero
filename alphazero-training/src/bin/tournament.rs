@@ -8,7 +8,10 @@ use alphazero_training::{
 };
 use onitama_game::{
     ai::{agent::Agent, alpha_beta::AlphaBeta, mcts::Mcts},
-    game::{deck::Deck, game_state::GameState, move_result::MoveResult, player_color::PlayerColor},
+    game::{
+        card::CARD_NAMES, deck::Deck, game_state::GameState, move_result::MoveResult,
+        player_color::PlayerColor,
+    },
 };
 use tch::{kind, nn::VarStore, Device};
 
@@ -17,7 +20,8 @@ fn play(
     opponent: &Box<dyn Agent>,
     ra: &mut f64,
     rb: &mut f64,
-    game_amnt: u32,
+    game_amnt: usize,
+    decks: &Vec<Deck>,
 ) {
     let mut agents = [agent, opponent];
     let mut agent_color = PlayerColor::Red;
@@ -26,7 +30,7 @@ fn play(
 
     let now = Instant::now();
     while game < game_amnt {
-        let deck = Deck::default();
+        let deck = decks[game].clone();
         let mut state = GameState::with_deck(deck);
         let mut progress = MoveResult::InProgress;
 
@@ -74,11 +78,30 @@ fn play(
     println!("Elapsed: {:?}\n", now.elapsed());
 }
 
+const GAME_AMNT: usize = 100;
+
 pub fn pit() {
-    let game_amnt = 100;
     let mut alphabeta_rating = 800.;
     let mut mcts_rating = 800.;
     let mut alphazero_rating = 800.;
+
+    let mut decks = Vec::with_capacity(GAME_AMNT);
+    for _ in 0..GAME_AMNT {
+        decks.push(Deck::default());
+    }
+    println!("Using decks: ");
+    for i in 0..decks.len() {
+        println!(
+            "{}. Deck: {:?}, Color: {:?}",
+            i + 1,
+            decks[i]
+                .cards
+                .iter()
+                .map(|c| CARD_NAMES[c.index])
+                .collect::<Vec<_>>(),
+            decks[i].neutral_card().player_color
+        );
+    }
 
     let alphabeta: Box<dyn Agent> = Box::new(AlphaBeta {
         max_depth: 8,
@@ -112,7 +135,8 @@ pub fn pit() {
         &mcts,
         &mut alphabeta_rating,
         &mut mcts_rating,
-        game_amnt,
+        GAME_AMNT,
+        &decks,
     );
 
     play(
@@ -120,7 +144,8 @@ pub fn pit() {
         &alphazero,
         &mut alphabeta_rating,
         &mut alphazero_rating,
-        game_amnt,
+        GAME_AMNT,
+        &decks,
     );
 
     play(
@@ -128,7 +153,8 @@ pub fn pit() {
         &alphazero,
         &mut mcts_rating,
         &mut alphazero_rating,
-        game_amnt,
+        GAME_AMNT,
+        &decks,
     );
 }
 
