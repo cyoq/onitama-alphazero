@@ -120,7 +120,7 @@ pub fn pit() {
     let net_config = ConvResNetConfig::default();
     let alphazero: Box<dyn Agent> = Box::new(AlphaZeroMcts::from_model_file(
         &mut vs,
-        "../models/model.ot",
+        "../models/model_5e-3.ot",
         AlphaZeroMctsConfig {
             search_time: Duration::from_secs(1),
             exploration_c: 1.0,

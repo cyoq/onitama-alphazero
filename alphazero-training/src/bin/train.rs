@@ -49,7 +49,7 @@ fn main() {
     // };
     let train_config = TrainConfig {
         mcts_config: AlphaZeroMctsConfig {
-            search_time: Duration::from_millis(20),
+            search_time: Duration::from_millis(400),
             max_playouts: 400,
             exploration_c: 5.,
             train: true,
@@ -63,10 +63,10 @@ fn main() {
             // input_channels: 10,
             // resnet_block_amnt: 5,
         },
-        iterations: 10,
+        iterations: 40,
         self_play_game_amnt: 100,
-        save_checkpoint: 2,
-        evaluation_checkpoint: 5,
+        save_checkpoint: 5,
+        evaluation_checkpoint: 1,
         thread_amnt: 12,
         learning_rate: 5e-3,
         evaluator_config: EvaluatorConfig {
